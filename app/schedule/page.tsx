@@ -1,11 +1,9 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
 import prisma from '@/lib/database'
 import { generateSessionsForRange, getMondayOfWeek } from '@/lib/generateSessions'
-import { WeeklySchedule } from './WeeklySchedule'
-import { MonthCalendar } from './MonthCalendar'
+import { ScheduleShell } from './ScheduleShell'
 
 export default async function SchedulePage({
   searchParams,
@@ -19,10 +17,11 @@ export default async function SchedulePage({
 
   const params = await searchParams
   const viewMode = params.view === 'month' ? 'month' : 'week'
+  const today = new Date()
+  const todayStr = today.toISOString().split('T')[0]
 
   // ── Month view ──────────────────────────────────────────────────────────────
   if (viewMode === 'month') {
-    const today = new Date()
     const currentMonth = params.month
       ?? `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
 
@@ -50,22 +49,25 @@ export default async function SchedulePage({
       class: { title: s.class.title, startTime: s.class.startTime, type: s.class.type },
     }))
 
-    const weekToggle = getMondayOfWeek(today).toISOString().split('T')[0]
+    const weekStr = getMondayOfWeek(today).toISOString().split('T')[0]
 
     return (
       <div className="max-w-6xl mx-auto px-4 py-10">
-        <div className="mb-6 flex items-end justify-between gap-4 flex-wrap">
-          <div>
-            <div className="inline-block bg-brand-red px-3 py-1 mb-3">
-              <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">
-                Schedule
-              </span>
-            </div>
-            <h1 className="font-display text-2xl text-ink">Class Schedule</h1>
+        <div className="mb-6">
+          <div className="inline-block bg-brand-red px-3 py-1 mb-3">
+            <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Schedule</span>
           </div>
-          <ViewToggle active="month" weekStr={weekToggle} monthStr={currentMonth} />
+          <h1 className="font-display text-2xl text-ink">Class Schedule</h1>
         </div>
-        <MonthCalendar sessions={monthSessions} currentMonth={currentMonth} />
+        <ScheduleShell
+          userId={session.user.id}
+          view="month"
+          todayStr={todayStr}
+          weekStr={weekStr}
+          monthStr={currentMonth}
+          monthSessions={monthSessions}
+          currentMonth={currentMonth}
+        />
       </div>
     )
   }
@@ -73,7 +75,7 @@ export default async function SchedulePage({
   // ── Week view ────────────────────────────────────────────────────────────────
   const monday = params.week
     ? (() => { const d = new Date(params.week!); d.setUTCHours(0, 0, 0, 0); return d })()
-    : getMondayOfWeek(new Date())
+    : getMondayOfWeek(today)
   const sunday = new Date(monday)
   sunday.setUTCDate(monday.getUTCDate() + 6)
   sunday.setUTCHours(23, 59, 59, 999)
@@ -139,57 +141,25 @@ export default async function SchedulePage({
   })
 
   const mondayStr = monday.toISOString().split('T')[0]
-  const monthToggle = `${monday.getUTCFullYear()}-${String(monday.getUTCMonth() + 1).padStart(2, '0')}`
+  const monthStr = `${monday.getUTCFullYear()}-${String(monday.getUTCMonth() + 1).padStart(2, '0')}`
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
-      <div className="mb-6 flex items-end justify-between gap-4 flex-wrap">
-        <div>
-          <div className="inline-block bg-brand-red px-3 py-1 mb-3">
-            <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">
-              Schedule
-            </span>
-          </div>
-          <h1 className="font-display text-2xl text-ink">Class Schedule</h1>
+      <div className="mb-6">
+        <div className="inline-block bg-brand-red px-3 py-1 mb-3">
+          <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Schedule</span>
         </div>
-        <ViewToggle active="week" weekStr={mondayStr} monthStr={monthToggle} />
+        <h1 className="font-display text-2xl text-ink">Class Schedule</h1>
       </div>
-      <WeeklySchedule days={days} currentMonday={mondayStr} />
-    </div>
-  )
-}
-
-function ViewToggle({
-  active,
-  weekStr,
-  monthStr,
-}: {
-  active: 'week' | 'month'
-  weekStr: string
-  monthStr: string
-}) {
-  return (
-    <div className="flex gap-1 mb-1">
-      <Link
-        href={`/schedule?view=week&week=${weekStr}`}
-        className={`px-3 py-1.5 text-sm font-bold transition-colors ${
-          active === 'week'
-            ? 'bg-brand-red text-paper'
-            : 'border border-smoke text-steel hover:border-steel hover:text-ink'
-        }`}
-      >
-        Week
-      </Link>
-      <Link
-        href={`/schedule?view=month&month=${monthStr}`}
-        className={`px-3 py-1.5 text-sm font-bold transition-colors ${
-          active === 'month'
-            ? 'bg-brand-red text-paper'
-            : 'border border-smoke text-steel hover:border-steel hover:text-ink'
-        }`}
-      >
-        Month
-      </Link>
+      <ScheduleShell
+        userId={session.user.id}
+        view="week"
+        todayStr={todayStr}
+        weekStr={mondayStr}
+        monthStr={monthStr}
+        days={days}
+        currentMonday={mondayStr}
+      />
     </div>
   )
 }

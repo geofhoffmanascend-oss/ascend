@@ -4,12 +4,16 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
 import { BeltBadge } from '@/app/components/BeltBadge'
+import { getMondayOfWeek } from '@/lib/generateSessions'
+import { ViewToggle } from '../ScheduleShell'
 
 type Belt = 'white' | 'blue' | 'purple' | 'brown' | 'black' | 'coral' | 'red'
 
 const TYPE_LABELS: Record<string, string> = {
   gi: 'Gi', nogi: 'No-Gi', open_mat: 'Open Mat', kids: 'Kids',
-  competition_prep: 'Comp Prep', seminar: 'Seminar', fundamentals: 'Fundamentals',
+  competition_prep: 'Comp Prep', seminar: 'Seminar', fundamentals: 'Basics (Gi)',
+  nogi_fundamentals: 'Basics (No-Gi)', muay_thai: 'Muay Thai',
+  wrestling: 'Wrestling', self_defense: 'Self Defense',
 }
 
 export default async function DayViewPage({ params }: { params: Promise<{ date: string }> }) {
@@ -45,20 +49,18 @@ export default async function DayViewPage({ params }: { params: Promise<{ date: 
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC',
   })
 
+  const todayStr = new Date().toISOString().split('T')[0]
+  const weekStr = getMondayOfWeek(day).toISOString().split('T')[0]
+  const monthStr = date.slice(0, 7)
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
-      <div className="mb-2">
-        <Link href="/schedule" className="text-xs text-ash hover:text-ink transition-colors">
-          ← Schedule
-        </Link>
-      </div>
-      <div className="mb-8">
+      <div className="mb-6">
         <div className="inline-block bg-brand-red px-3 py-1 mb-3">
-          <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">
-            Day View
-          </span>
+          <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Schedule</span>
         </div>
-        <h1 className="font-display text-2xl text-ink">{formatted}</h1>
+        <h1 className="font-display text-2xl text-ink mb-4">{formatted}</h1>
+        <ViewToggle active="day" todayStr={todayStr} weekStr={weekStr} monthStr={monthStr} />
       </div>
 
       {sessions.length === 0 && (

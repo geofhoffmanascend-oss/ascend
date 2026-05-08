@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { JOURNAL_PROMPTS } from '@/lib/journalPrompts'
+import { PushPermissionButton } from '@/app/components/PushPermissionButton'
 
 type Prefs = {
   notifyClassUpdates:    boolean
@@ -60,6 +61,12 @@ export function SettingsForm({ userId, initial, forums: initialForums }: Props) 
 
   return (
     <div className="flex flex-col gap-6">
+
+      <section className="border border-smoke bg-paper p-6 flex flex-col gap-4">
+        <p className="text-xs font-bold uppercase tracking-widest text-steel">Push Notifications</p>
+        <p className="text-xs text-ash -mt-2">Receive real-time alerts on this device.</p>
+        <PushPermissionButton />
+      </section>
 
       <section className="border border-smoke bg-paper p-6 flex flex-col gap-4">
         <p className="text-xs font-bold uppercase tracking-widest text-steel">Notification Types</p>

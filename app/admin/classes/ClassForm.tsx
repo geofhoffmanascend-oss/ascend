@@ -22,10 +22,12 @@ type Props = {
 }
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-const TYPES = ['gi', 'nogi', 'open_mat', 'kids', 'competition_prep', 'seminar', 'fundamentals']
+const TYPES = ['gi', 'nogi', 'open_mat', 'kids', 'competition_prep', 'seminar', 'fundamentals', 'nogi_fundamentals', 'muay_thai', 'wrestling', 'self_defense']
 const TYPE_LABELS: Record<string, string> = {
   gi: 'Gi', nogi: 'No-Gi', open_mat: 'Open Mat', kids: 'Kids',
-  competition_prep: 'Comp Prep', seminar: 'Seminar', fundamentals: 'Fundamentals',
+  competition_prep: 'Comp Prep', seminar: 'Seminar', fundamentals: 'Basics (Gi)',
+  nogi_fundamentals: 'Basics (No-Gi)', muay_thai: 'Muay Thai',
+  wrestling: 'Wrestling', self_defense: 'Self Defense',
 }
 
 export function ClassForm({ instructors, initial }: Props) {

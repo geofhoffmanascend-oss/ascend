@@ -21,7 +21,7 @@ function NavLink({
       href={href}
       onClick={onClick}
       className={`px-2 py-1 text-sm font-medium transition-colors shrink-0 ${
-        highlight ? 'text-brand-red hover:text-red-400' : 'text-paper hover:text-brand-red'
+        highlight ? 'text-brand-red hover:text-brand-red-light' : 'text-paper hover:text-brand-red'
       }`}
     >
       {children}
@@ -37,8 +37,10 @@ export function Header() {
   return (
     <header className="bg-ink-soft border-b border-steel/30">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link href="/" className="font-display font-bold text-paper text-lg tracking-tight">
-          Ascend
+        <Link href="/" className="flex items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/AJJ.webp" alt="Ascend" width={32} height={32} className="rounded-full" />
+          <span className="hidden md:block font-display font-bold text-paper text-lg tracking-tight">Ascend</span>
         </Link>
 
         {/* Desktop nav */}

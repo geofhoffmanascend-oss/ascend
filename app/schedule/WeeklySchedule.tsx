@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { BeltBadge } from '@/app/components/BeltBadge'
+import { type Filters } from './ScheduleFilters'
 
 type Belt = 'white' | 'blue' | 'purple' | 'brown' | 'black' | 'coral' | 'red'
 
@@ -34,7 +35,9 @@ const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 const TYPE_LABELS: Record<string, string> = {
   gi: 'Gi', nogi: 'No-Gi', open_mat: 'Open Mat', kids: 'Kids',
-  competition_prep: 'Comp Prep', seminar: 'Seminar', fundamentals: 'Fundamentals',
+  competition_prep: 'Comp Prep', seminar: 'Seminar', fundamentals: 'Basics (Gi)',
+  nogi_fundamentals: 'Basics (No-Gi)', muay_thai: 'Muay Thai',
+  wrestling: 'Wrestling', self_defense: 'Self Defense',
 }
 
 function addDays(dateStr: string, days: number) {
@@ -52,7 +55,21 @@ function isToday(dateStr: string) {
   return new Date().toISOString().split('T')[0] === dateStr
 }
 
-export function WeeklySchedule({ days, currentMonday }: { days: Day[]; currentMonday: string }) {
+function timeBucket(time: string): 'am' | 'noon' | 'pm' {
+  const h = parseInt(time.split(':')[0], 10)
+  if (h < 12) return 'am'
+  if (h < 14) return 'noon'
+  return 'pm'
+}
+
+function applyFilters(sessions: Session[], filters: Filters): Session[] {
+  return sessions.filter(s => {
+    if (s.class.type === 'open_mat') return false
+    return filters.types.includes(s.class.type) && filters.times.includes(timeBucket(s.class.startTime))
+  })
+}
+
+export function WeeklySchedule({ days, currentMonday, filters }: { days: Day[]; currentMonday: string; filters: Filters }) {
   const router = useRouter()
   const [sessions, setSessions] = useState<Record<string, Session>>(() => {
     const map: Record<string, Session> = {}
@@ -117,6 +134,25 @@ export function WeeklySchedule({ days, currentMonday }: { days: Day[]; currentMo
     }
   }
 
+  const allOpenMats = days.flatMap(d => d.sessions.filter(s => s.class.type === 'open_mat'))
+
+  function renderCard(s: Session) {
+    const live = sessions[s.id] ?? s
+    const committed = !!live.myCommitment
+    return (
+      <SessionCard
+        key={s.id}
+        session={live}
+        committed={committed}
+        expanded={expandedRoster === s.id}
+        onToggleCommit={() => toggleCommit(live)}
+        onToggleRoster={() => setExpandedRoster(expandedRoster === s.id ? null : s.id)}
+        onCheckin={() => handleCheckin(live)}
+        inCheckinWindow={isInCheckinWindow(live.date, live.class.startTime)}
+      />
+    )
+  }
+
   return (
     <div>
       {/* Week navigation */}
@@ -142,6 +178,7 @@ export function WeeklySchedule({ days, currentMonday }: { days: Day[]; currentMo
       <div className="hidden md:grid grid-cols-7 gap-2">
         {days.map((day, i) => {
           const today = isToday(day.date)
+          const filtered = applyFilters(day.sessions, filters)
           return (
             <div key={day.date}>
               <div className={`mb-2 pb-1 border-b ${today ? 'border-brand-red' : 'border-smoke'}`}>
@@ -151,25 +188,10 @@ export function WeeklySchedule({ days, currentMonday }: { days: Day[]; currentMo
                 <p className="text-xs text-ash">{formatDate(day.date)}</p>
               </div>
               <div className="flex flex-col gap-2">
-                {day.sessions.length === 0 && (
+                {filtered.length === 0 && (
                   <p className="text-xs text-ash italic">—</p>
                 )}
-                {day.sessions.map(s => {
-                  const live = sessions[s.id] ?? s
-                  const committed = !!live.myCommitment
-                  return (
-                    <SessionCard
-                      key={s.id}
-                      session={live}
-                      committed={committed}
-                      expanded={expandedRoster === s.id}
-                      onToggleCommit={() => toggleCommit(live)}
-                      onToggleRoster={() => setExpandedRoster(expandedRoster === s.id ? null : s.id)}
-                      onCheckin={() => handleCheckin(live)}
-                      inCheckinWindow={isInCheckinWindow(live.date, live.class.startTime)}
-                    />
-                  )
-                })}
+                {filtered.map(renderCard)}
               </div>
             </div>
           )
@@ -179,7 +201,8 @@ export function WeeklySchedule({ days, currentMonday }: { days: Day[]; currentMo
       {/* Mobile list */}
       <div className="md:hidden flex flex-col gap-4">
         {days.map((day, i) => {
-          if (day.sessions.length === 0) return null
+          const filtered = applyFilters(day.sessions, filters)
+          if (filtered.length === 0) return null
           const today = isToday(day.date)
           return (
             <div key={day.date}>
@@ -189,27 +212,63 @@ export function WeeklySchedule({ days, currentMonday }: { days: Day[]; currentMo
                 </p>
               </div>
               <div className="flex flex-col gap-2">
-                {day.sessions.map(s => {
-                  const live = sessions[s.id] ?? s
-                  const committed = !!live.myCommitment
-                  return (
-                    <SessionCard
-                      key={s.id}
-                      session={live}
-                      committed={committed}
-                      expanded={expandedRoster === s.id}
-                      onToggleCommit={() => toggleCommit(live)}
-                      onToggleRoster={() => setExpandedRoster(expandedRoster === s.id ? null : s.id)}
-                      onCheckin={() => handleCheckin(live)}
-                      inCheckinWindow={isInCheckinWindow(live.date, live.class.startTime)}
-                    />
-                  )
-                })}
+                {filtered.map(renderCard)}
               </div>
             </div>
           )
         })}
       </div>
+
+      {/* Open Mat section */}
+      {allOpenMats.length > 0 && (
+        <div className="mt-8 border-t border-smoke pt-6">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel mb-4">Open Mat</p>
+          <div className="flex flex-wrap gap-3">
+            {allOpenMats.map(s => {
+              const live = sessions[s.id] ?? s
+              const committed = !!live.myCommitment
+              return (
+                <div
+                  key={s.id}
+                  className={`border bg-paper p-3 flex flex-col gap-2 min-w-48 ${
+                    committed ? 'border-l-2 border-l-brand-red border-t-smoke border-r-smoke border-b-smoke' : 'border-smoke'
+                  }`}
+                >
+                  <div>
+                    <p className="text-xs font-bold text-ink">{DAY_LABELS[days.findIndex(d => d.date === s.date)]} · {formatDate(s.date)}</p>
+                    <p className="text-xs text-ash mt-0.5">{s.class.startTime}–{s.class.endTime}</p>
+                  </div>
+                  <div className="flex items-center justify-between pt-1 border-t border-smoke">
+                    <button
+                      onClick={() => toggleCommit(live)}
+                      className={`text-xs font-bold uppercase tracking-wide transition-colors ${
+                        committed ? 'text-brand-red hover:text-red-700' : 'text-steel hover:text-ink'
+                      }`}
+                    >
+                      {committed ? 'Registered ✓' : 'Register'}
+                    </button>
+                    {!committed && live.committedCount > 0 && (
+                      <span className="text-xs text-ash">{live.committedCount} going</span>
+                    )}
+                  </div>
+                  {committed && isInCheckinWindow(live.date, live.class.startTime) && (
+                    live.myCheckedIn ? (
+                      <span className="text-xs font-bold text-green-600 uppercase tracking-wide">Checked In ✓</span>
+                    ) : (
+                      <button
+                        onClick={() => handleCheckin(live)}
+                        className="text-xs font-bold uppercase tracking-wide text-steel hover:text-brand-red transition-colors"
+                      >
+                        Check In
+                      </button>
+                    )
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

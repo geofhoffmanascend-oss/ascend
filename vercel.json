@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/checkin-reminders",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/feedback-prompts",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}

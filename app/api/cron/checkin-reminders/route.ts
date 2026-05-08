@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/database'
 import { createNotification } from '@/lib/notify'
+import { sendPush } from '@/lib/push'
 import { sessionStartTime } from '@/lib/checkin'
 
 export async function GET(req: NextRequest) {
-  const secret = req.nextUrl.searchParams.get('secret')
-  if (!secret || secret !== process.env.CRON_SECRET) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authHeader = req.headers.get('authorization')
+  const querySecret = req.nextUrl.searchParams.get('secret')
+  const valid =
+    authHeader === `Bearer ${process.env.CRON_SECRET}` ||
+    querySecret === process.env.CRON_SECRET
+  if (!valid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const now = new Date()
   // Window: sessions starting 10–20 minutes from now
@@ -34,7 +37,14 @@ export async function GET(req: NextRequest) {
         `Time to check in for ${s.class.title}`,
         { body: 'Class starts in ~15 minutes. Tap to check in.', link: `/schedule` },
       )
-      if (notif) sent++
+      if (notif) {
+        sent++
+        sendPush(c.userId, {
+          title: `Time to check in for ${s.class.title}`,
+          body: 'Class starts in ~15 minutes. Tap to check in.',
+          link: '/schedule',
+        }).catch(() => {})
+      }
     }
   }
 

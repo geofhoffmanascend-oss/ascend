@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { type Filters } from './ScheduleFilters'
 
 type MonthSession = {
   id: string
@@ -18,12 +19,21 @@ function mondayOffset(date: Date) {
   return (date.getUTCDay() + 6) % 7
 }
 
+function timeBucket(time: string): 'am' | 'noon' | 'pm' {
+  const h = parseInt(time.split(':')[0], 10)
+  if (h < 12) return 'am'
+  if (h < 14) return 'noon'
+  return 'pm'
+}
+
 export function MonthCalendar({
   sessions,
   currentMonth,
+  filters,
 }: {
   sessions: MonthSession[]
-  currentMonth: string // 'YYYY-MM'
+  currentMonth: string
+  filters: Filters
 }) {
   const router = useRouter()
 
@@ -46,9 +56,14 @@ export function MonthCalendar({
     router.push(`/schedule?view=month&month=${d.toISOString().slice(0, 7)}`)
   }
 
-  // Group sessions by date string
+  // Group sessions by date string, applying filters (open_mat always included)
   const byDate: Record<string, MonthSession[]> = {}
   for (const s of sessions) {
+    const isOpenMat = s.class.type === 'open_mat'
+    if (!isOpenMat) {
+      if (!filters.types.includes(s.class.type)) continue
+      if (!filters.times.includes(timeBucket(s.class.startTime))) continue
+    }
     if (!byDate[s.date]) byDate[s.date] = []
     byDate[s.date].push(s)
   }

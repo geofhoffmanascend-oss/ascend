@@ -24,6 +24,10 @@ enum ClassType {
   competition_prep
   seminar
   fundamentals
+  nogi_fundamentals
+  muay_thai
+  wrestling
+  self_defense
 }
 
 enum DayOfWeek {
@@ -157,6 +161,7 @@ model User {
   instructorNotes      StudentNote[]     @relation("NoteAuthor")
   lessonPlansAuthored  LessonPlan[]
   notifications        Notification[]
+  pushSubscriptions    PushSubscription[]
   sentMessages         DirectMessage[]   @relation("SentMessages")
   receivedMessages     DirectMessage[]   @relation("ReceivedMessages")
   trainingLogs         TrainingLog[]
@@ -476,6 +481,18 @@ model ClassFeedback {
   createdAt       DateTime          @default(now())
 
   @@unique([userId, classSessionId])
+}
+
+// ── Push Subscriptions ─────────────────────────────────────────────────────────
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
 }
 
 // ── Gym Settings ───────────────────────────────────────────────────────────────

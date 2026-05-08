@@ -7,7 +7,7 @@ export function QRCodeDisplay({ token }: { token: string }) {
   const [dataUrl, setDataUrl] = useState<string>('')
 
   useEffect(() => {
-    QRCode.toDataURL(token, { width: 160, margin: 1, color: { dark: '#0A0A0A', light: '#FAFAFA' } })
+    QRCode.toDataURL(`${window.location.origin}/checkin/${token}`, { width: 160, margin: 1, color: { dark: '#0A0A0A', light: '#FAFAFA' } })
       .then(setDataUrl)
   }, [token])
 

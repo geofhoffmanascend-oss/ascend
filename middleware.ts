@@ -26,7 +26,9 @@ export default withAuth(
         const { pathname } = req.nextUrl
         const publicPaths = ['/', '/about', '/login', '/register']
         if (publicPaths.some(p => pathname === p)) return true
+        if (pathname.startsWith('/checkin')) return true
         if (pathname.startsWith('/api/auth')) return true
+        if (pathname.startsWith('/api/checkin/public')) return true
         return !!token
       },
     },

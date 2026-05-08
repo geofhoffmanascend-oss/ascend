@@ -7,8 +7,11 @@ import path from 'path'
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined }
 
-function createPrismaClient() {
-  const dbUrl = new URL(process.env.DATABASE_URL!)
+function createPrismaClient(): PrismaClient {
+  const rawUrl = process.env.DATABASE_URL
+  if (!rawUrl) throw new Error('DATABASE_URL is not set')
+
+  const dbUrl = new URL(rawUrl)
   const certPath = path.join(os.homedir(), '.postgresql', 'root.crt')
   const ca = fs.existsSync(certPath) ? fs.readFileSync(certPath).toString() : undefined
 
@@ -25,8 +28,18 @@ function createPrismaClient() {
   return new PrismaClient({ adapter })
 }
 
-const prisma = globalForPrisma.prisma ?? createPrismaClient()
+function getClient(): PrismaClient {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = createPrismaClient()
+  }
+  return globalForPrisma.prisma
+}
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+// Proxy defers instantiation to first property access (request time, not build time)
+const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    return getClient()[prop as keyof PrismaClient]
+  },
+})
 
 export default prisma

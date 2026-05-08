@@ -5,6 +5,7 @@ import Link from 'next/link'
 import prisma from '@/lib/database'
 import { getMondayOfWeek } from '@/lib/generateSessions'
 import { DeleteAccountButton } from '@/app/components/DeleteAccountButton'
+import { CheckinButton } from '@/app/components/CheckinButton'
 
 const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -17,7 +18,11 @@ export default async function DashboardPage() {
   sunday.setUTCDate(monday.getUTCDate() + 6)
   sunday.setUTCHours(23, 59, 59, 999)
 
-  const [commitments, recentPosts] = await Promise.all([
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  thirtyDaysAgo.setUTCHours(0, 0, 0, 0)
+
+  const [commitments, attendanceRecords, recentLogs, recentPosts] = await Promise.all([
   prisma.commitment.findMany({
     where: {
       userId: session.user.id,
@@ -32,6 +37,27 @@ export default async function DashboardPage() {
       },
     },
     orderBy: [{ classSession: { date: 'asc' } }, { classSession: { class: { startTime: 'asc' } } }],
+  }),
+  prisma.attendance.findMany({
+    where: {
+      userId: session.user.id,
+      attended: true,
+      classSession: { date: { gte: thirtyDaysAgo } },
+    },
+    select: {
+      id: true, classSessionId: true,
+      classSession: { select: { date: true, class: { select: { title: true } } } },
+    },
+    orderBy: { classSession: { date: 'desc' } },
+  }),
+  prisma.trainingLog.findMany({
+    where: { userId: session.user.id },
+    orderBy: { createdAt: 'desc' },
+    take: 3,
+    select: {
+      id: true, isGuided: true, isPrivate: true, createdAt: true,
+      classSession: { select: { date: true, class: { select: { title: true } } } },
+    },
   }),
   prisma.post.findMany({
     where: {
@@ -53,6 +79,31 @@ export default async function DashboardPage() {
   }),
 ])
 
+  const todayStr = new Date().toISOString().split('T')[0]
+  const checkedInIds = new Set(attendanceRecords.map(r => r.classSessionId))
+
+  // Compute streak: consecutive calendar weeks (Mon–Sun) with at least one attended class
+  const attendedWeeks = new Set(
+    attendanceRecords.map(r => {
+      const d = new Date(r.classSession.date)
+      const day = d.getUTCDay()
+      const diff = (day === 0 ? -6 : 1 - day)
+      d.setUTCDate(d.getUTCDate() + diff)
+      return d.toISOString().split('T')[0]
+    })
+  )
+  let streak = 0
+  const checkWeek = getMondayOfWeek(new Date())
+  for (let i = 0; i < 52; i++) {
+    const key = checkWeek.toISOString().split('T')[0]
+    if (attendedWeeks.has(key)) {
+      streak++
+      checkWeek.setUTCDate(checkWeek.getUTCDate() - 7)
+    } else {
+      break
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
       <div className="mb-8">
@@ -71,33 +122,108 @@ export default async function DashboardPage() {
         <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">This Week</p>
         {commitments.length === 0 ? (
           <div className="border border-smoke bg-paper p-5">
-            <p className="text-ash text-sm">No classes committed this week. <Link href="/schedule" className="text-brand-red hover:text-red-700 font-medium">View schedule →</Link></p>
+            <p className="text-ash text-sm">No classes registered this week. <Link href="/schedule" className="text-brand-red hover:text-red-700 font-medium">View schedule →</Link></p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
             {commitments.map(c => {
               const s = c.classSession
               const dateObj = new Date(s.date)
+              const sessionDateStr = s.date.toISOString().split('T')[0]
               const dayLabel = DAY_ABBR[dateObj.getUTCDay()]
               const dateLabel = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
+              const isToday = sessionDateStr === todayStr
+              const alreadyCheckedIn = checkedInIds.has(s.id)
               return (
-                <Link
+                <div
                   key={c.id}
-                  href={`/schedule/${s.date.toISOString().split('T')[0]}`}
-                  className={`border bg-paper p-4 flex items-center justify-between hover:border-steel transition-colors ${s.cancelled ? 'opacity-60' : 'border-l-2 border-l-brand-red border-t-smoke border-r-smoke border-b-smoke'}`}
+                  className={`border bg-paper p-4 flex items-center justify-between transition-colors ${s.cancelled ? 'opacity-60 border-smoke' : 'border-l-2 border-l-brand-red border-t-smoke border-r-smoke border-b-smoke'}`}
                 >
-                  <div>
+                  <Link href={`/schedule/${sessionDateStr}`} className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-ink">{s.class.title}</p>
                     <p className="text-xs text-ash mt-0.5">{dayLabel} {dateLabel} · {s.class.startTime}</p>
+                  </Link>
+                  <div className="ml-4 shrink-0">
+                    {s.cancelled ? (
+                      <span className="px-2 py-0.5 bg-brand-red text-paper text-xs font-bold uppercase tracking-wide">
+                        Cancelled
+                      </span>
+                    ) : alreadyCheckedIn ? (
+                      <span className="px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-brand-red border border-brand-red">
+                        Checked In
+                      </span>
+                    ) : isToday ? (
+                      <CheckinButton classSessionId={s.id} />
+                    ) : null}
                   </div>
-                  {s.cancelled && (
-                    <span className="px-2 py-0.5 bg-brand-red text-paper text-xs font-bold uppercase tracking-wide">
-                      Cancelled
-                    </span>
-                  )}
-                </Link>
+                </div>
               )
             })}
+          </div>
+        )}
+      </div>
+
+      {/* Attendance summary */}
+      <div className="mb-8">
+        <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">Attendance (Last 30 Days)</p>
+        <div className="flex gap-4 flex-wrap mb-3">
+          <div className="border border-smoke bg-paper px-5 py-4">
+            <p className="text-2xl font-display font-bold text-ink">{attendanceRecords.length}</p>
+            <p className="text-xs text-ash uppercase tracking-wide">Classes Attended</p>
+          </div>
+          <div className="border border-smoke bg-paper px-5 py-4">
+            <p className="text-2xl font-display font-bold text-ink">{streak}</p>
+            <p className="text-xs text-ash uppercase tracking-wide">Week Streak</p>
+          </div>
+        </div>
+        {attendanceRecords.length > 0 && (
+          <div className="flex flex-col gap-1">
+            {attendanceRecords.slice(0, 5).map(r => (
+              <div key={r.id} className="border border-smoke bg-paper px-4 py-2 flex items-center justify-between">
+                <p className="text-sm text-ink">{r.classSession.class.title}</p>
+                <p className="text-xs text-ash">
+                  {new Date(r.classSession.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+        {attendanceRecords.length === 0 && (
+          <p className="text-ash text-sm italic">No attended classes in the last 30 days.</p>
+        )}
+      </div>
+
+      {/* Recent journal entries */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel">Training Journal</p>
+          <Link href="/journal" className="text-xs text-ash hover:text-ink transition-colors">View all →</Link>
+        </div>
+        {recentLogs.length === 0 ? (
+          <Link href="/journal/new" className="block border border-smoke bg-paper p-4 text-sm text-ash hover:border-steel transition-colors">
+            No journal entries yet. Write your first entry →
+          </Link>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {recentLogs.map(log => (
+              <Link
+                key={log.id}
+                href={`/journal/${log.id}`}
+                className="border border-smoke bg-paper p-4 hover:border-steel transition-colors flex items-center justify-between gap-4"
+              >
+                <div>
+                  <p className="text-sm text-ink">
+                    {log.classSession ? log.classSession.class.title : 'General Entry'}
+                  </p>
+                  <p className="text-xs text-ash mt-0.5">
+                    {log.classSession
+                      ? new Date(log.classSession.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
+                      : new Date(log.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </p>
+                </div>
+                <span className="text-xs text-ash">{log.isGuided ? 'Guided' : 'Free-form'}</span>
+              </Link>
+            ))}
           </div>
         )}
       </div>

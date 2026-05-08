@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/database'
+import { createNotification } from '@/lib/notify'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
@@ -19,6 +20,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const message = await prisma.lessonMessage.create({
     data: { lessonId, authorId: session.user.id, content: content.trim() },
+  })
+
+  // Notify the other participant
+  const recipientId = session.user.id === lesson.instructorId ? lesson.requesterId : lesson.instructorId
+  const senderName = session.user.name ?? 'Someone'
+  await createNotification(recipientId, 'private_message', `New message from ${senderName}`, {
+    body: content.trim().slice(0, 80),
+    link: `/lessons/${lessonId}`,
   })
 
   return NextResponse.json({ ...message, author: { name: session.user.name } }, { status: 201 })

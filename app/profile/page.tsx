@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
 import { BeltBadge } from '@/app/components/BeltBadge'
+import { QRCodeDisplay } from '@/app/components/QRCodeDisplay'
 import { GoalsSection } from './GoalsSection'
 import { CompetitionsSection } from './CompetitionsSection'
 
@@ -19,6 +20,7 @@ export default async function ProfilePage() {
       belt: true,
       stripes: true,
       weightClass: true,
+      qrToken: true,
       bio: true,
       phone: true,
       emergencyContact: true,
@@ -129,6 +131,12 @@ export default async function ProfilePage() {
               <p className="text-ink text-sm">{user.emergencyContact ?? <span className="text-ash italic">Not set</span>}</p>
             </div>
           </div>
+        </div>
+
+        {/* QR check-in code */}
+        <div className="border border-smoke bg-paper p-6 flex flex-col items-center gap-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel self-start">Check-in QR Code</p>
+          <QRCodeDisplay token={user.qrToken} />
         </div>
 
         <GoalsSection goals={goals} />

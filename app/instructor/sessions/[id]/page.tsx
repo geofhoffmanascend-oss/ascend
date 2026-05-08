@@ -88,10 +88,10 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
         {/* Committed roster */}
         <div className="border border-smoke bg-paper p-6">
           <p className="text-xs font-bold uppercase tracking-widest text-steel mb-4">
-            Committed ({cs.commitments.length})
+            Registered ({cs.commitments.length})
           </p>
           {cs.commitments.length === 0 ? (
-            <p className="text-ash text-sm italic">No one committed.</p>
+            <p className="text-ash text-sm italic">No one registered.</p>
           ) : (
             <div className="flex flex-col gap-3">
               {cs.commitments.map(c => (
@@ -117,8 +117,8 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
       {/* 4.7 — Reach-out prompt */}
       {regularAbsentees.length > 0 && (
         <div className="mt-6 border border-smoke bg-paper p-6">
-          <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Haven't Committed</p>
-          <p className="text-xs text-ash mb-4">These students have attended this class before but aren't committed this session.</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Not Registered</p>
+          <p className="text-xs text-ash mb-4">These students have attended this class before but haven't registered this session.</p>
           <div className="flex flex-wrap gap-3">
             {regularAbsentees.map(u => (
               <Link

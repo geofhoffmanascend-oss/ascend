@@ -79,7 +79,7 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
         {!nextSession ? (
           <p className="text-ash text-sm italic">No session this week.</p>
         ) : nextSession.commitments.length === 0 ? (
-          <p className="text-ash text-sm italic">No one committed yet.</p>
+          <p className="text-ash text-sm italic">No one registered yet.</p>
         ) : (
           <div className="flex flex-col gap-4">
             {Object.entries(byWeightClass).map(([wc, commitments]) => (

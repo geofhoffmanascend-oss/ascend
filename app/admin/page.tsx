@@ -71,6 +71,14 @@ export default async function AdminHomePage() {
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Forums</p>
           <p className="text-slate text-sm">Moderation and subscriptions</p>
         </Link>
+        <Link href="/admin/feedback" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel">Feedback</p>
+          <p className="text-slate text-sm">Student class feedback</p>
+        </Link>
+        <Link href="/admin/settings" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel">Gym Settings</p>
+          <p className="text-slate text-sm">Review URL and gym configuration</p>
+        </Link>
         <Link href="/instructor" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Instructor View</p>
           <p className="text-slate text-sm">Today's sessions and rosters</p>

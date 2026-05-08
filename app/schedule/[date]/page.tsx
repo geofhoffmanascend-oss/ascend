@@ -103,10 +103,10 @@ export default async function DayViewPage({ params }: { params: Promise<{ date: 
 
               <div className="border-t border-smoke pt-4">
                 <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">
-                  {s.commitments.length} Committed
+                  {s.commitments.length} Registered
                 </p>
                 {s.commitments.length === 0 ? (
-                  <p className="text-ash text-xs italic">No one committed yet.</p>
+                  <p className="text-ash text-xs italic">No one registered yet.</p>
                 ) : (
                   <div className="flex flex-wrap gap-3">
                     {s.commitments.map(c => (

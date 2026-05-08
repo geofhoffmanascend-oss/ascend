@@ -70,7 +70,7 @@ export default async function ForumListPage() {
 
         {classForums.length === 0 && (
           <p className="text-ash text-sm italic">
-            Commit to a class to join its forum. <Link href="/schedule" className="text-brand-red hover:text-red-700">View schedule →</Link>
+            Register for a class to join its forum. <Link href="/schedule" className="text-brand-red hover:text-red-700">View schedule →</Link>
           </p>
         )}
       </div>

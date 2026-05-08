@@ -82,6 +82,19 @@ enum NotificationType {
   general
 }
 
+enum CheckInSource {
+  manual
+  app
+  qr_code
+}
+
+enum FeedbackSentiment {
+  positive
+  neutral
+  negative
+  concern
+}
+
 // ── Auth (NextAuth) ────────────────────────────────────────────────────────────
 
 model User {
@@ -104,6 +117,12 @@ model User {
   belt             Belt      @default(white)
   stripes          Int       @default(0)
   weightClass      String?
+
+  // QR check-in token
+  qrToken              String  @unique @default(cuid())
+
+  // Journal settings
+  defaultJournalPrompts String?
 
   // Notification preferences
   notifyClassUpdates    Boolean @default(true)
@@ -140,6 +159,8 @@ model User {
   notifications        Notification[]
   sentMessages         DirectMessage[]   @relation("SentMessages")
   receivedMessages     DirectMessage[]   @relation("ReceivedMessages")
+  trainingLogs         TrainingLog[]
+  classFeedback        ClassFeedback[]
 }
 
 model Account {
@@ -210,6 +231,8 @@ model ClassSession {
   class        Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
   commitments  Commitment[]
   attendance   Attendance[]
+  trainingLogs TrainingLog[]
+  feedback     ClassFeedback[]
 
   @@unique([classId, date])
 }
@@ -230,12 +253,14 @@ model Commitment {
 }
 
 model Attendance {
-  id             String   @id @default(cuid())
+  id             String        @id @default(cuid())
   userId         String
   classSessionId String
-  attended       Boolean  @default(true)
+  attended       Boolean       @default(true)
   markedById     String
-  createdAt      DateTime @default(now())
+  checkedInAt    DateTime?
+  checkInSource  CheckInSource @default(manual)
+  createdAt      DateTime      @default(now())
 
   user         User         @relation(fields: [userId], references: [id])
   classSession ClassSession @relation(fields: [classSessionId], references: [id], onDelete: Cascade)
@@ -418,4 +443,46 @@ model DirectMessage {
   body        String
   readAt      DateTime?
   createdAt   DateTime  @default(now())
+}
+
+// ── Training Journal ───────────────────────────────────────────────────────────
+
+model TrainingLog {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classSessionId  String?
+  classSession    ClassSession? @relation(fields: [classSessionId], references: [id], onDelete: SetNull)
+  isPrivate       Boolean       @default(false)
+  isGuided        Boolean       @default(false)
+  freeFormContent String?
+  guidedResponses Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+// ── Class Feedback ─────────────────────────────────────────────────────────────
+
+model ClassFeedback {
+  id              String            @id @default(cuid())
+  userId          String
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classSessionId  String
+  classSession    ClassSession      @relation(fields: [classSessionId], references: [id], onDelete: Cascade)
+  sentiment       FeedbackSentiment
+  rating          Int?
+  responses       Json
+  reviewRequested Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+
+  @@unique([userId, classSessionId])
+}
+
+// ── Gym Settings ───────────────────────────────────────────────────────────────
+
+model GymSettings {
+  id        String   @id @default(cuid())
+  reviewUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

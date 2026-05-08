@@ -41,7 +41,7 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-4 py-20 grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
             {
-              label: 'Commit to Class',
+              label: 'Register for Class',
               body: 'Declare attendance before class so instructors can plan training partners by division.',
             },
             {

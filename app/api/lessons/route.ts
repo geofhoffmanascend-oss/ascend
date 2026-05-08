@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/database'
+import { createNotification } from '@/lib/notify'
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -23,5 +24,13 @@ export async function POST(req: NextRequest) {
       notes: notes?.trim() || null,
     },
   })
+
+  const requesterName = session.user.name ?? 'A student'
+  const dateLabel = new Date(scheduledAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+  await createNotification(instructorId, 'general', `Private lesson request from ${requesterName}`, {
+    body: `Requested for ${dateLabel}`,
+    link: `/instructor/lessons`,
+  })
+
   return NextResponse.json(lesson, { status: 201 })
 }

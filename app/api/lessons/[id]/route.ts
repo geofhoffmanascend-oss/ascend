@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/database'
+import { createNotification } from '@/lib/notify'
+
+const STATUS_LABELS: Record<string, string> = {
+  confirmed: 'confirmed',
+  cancelled: 'cancelled',
+  completed: 'completed',
+  pending:   'updated',
+}
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
@@ -26,5 +34,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(location !== undefined && { location }),
     },
   })
+
+  // Notify the other participant when something meaningful changes
+  const actorName = session.user.name ?? 'Your instructor'
+  if (status !== undefined) {
+    const notifyId = session.user.id === lesson.instructorId ? lesson.requesterId : lesson.instructorId
+    const label = STATUS_LABELS[status] ?? 'updated'
+    await createNotification(notifyId, 'general', `Private lesson ${label}`, {
+      body: `${actorName} ${label} your lesson request.`,
+      link: `/lessons/${id}`,
+    })
+  } else if (scheduledAt !== undefined) {
+    const notifyId = session.user.id === lesson.instructorId ? lesson.requesterId : lesson.instructorId
+    const dateLabel = new Date(scheduledAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+    await createNotification(notifyId, 'general', 'Lesson rescheduled', {
+      body: `${actorName} changed the time to ${dateLabel}.`,
+      link: `/lessons/${id}`,
+    })
+  }
+
   return NextResponse.json(updated)
 }

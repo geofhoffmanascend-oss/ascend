@@ -29,6 +29,18 @@ export default async function InstructorStudentPage({ params }: { params: Promis
         orderBy: { createdAt: 'desc' },
         take: 10,
       },
+      trainingLogs: {
+        where: {
+          isPrivate: false,
+          classSession: { class: { instructorId: session.user.id } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        select: {
+          id: true, isGuided: true, createdAt: true,
+          classSession: { select: { date: true, class: { select: { title: true } } } },
+        },
+      },
     },
   })
 
@@ -97,6 +109,32 @@ export default async function InstructorStudentPage({ params }: { params: Promis
                     </span>
                   </div>
                 </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Training logs (non-private only) */}
+        {student.trainingLogs.length > 0 && (
+          <div className="border border-smoke bg-paper p-6">
+            <p className="text-xs font-bold uppercase tracking-widest text-steel mb-4">Training Journal</p>
+            <div className="flex flex-col gap-2">
+              {student.trainingLogs.map(log => (
+                <Link
+                  key={log.id}
+                  href={`/journal/${log.id}`}
+                  className="flex items-center justify-between text-sm hover:text-brand-red transition-colors"
+                >
+                  <span className="text-ink">
+                    {log.classSession ? log.classSession.class.title : 'General Entry'}
+                  </span>
+                  <span className="text-xs text-ash">
+                    {log.classSession
+                      ? new Date(log.classSession.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
+                      : new Date(log.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    {' · '}{log.isGuided ? 'Guided' : 'Free-form'}
+                  </span>
+                </Link>
               ))}
             </div>
           </div>

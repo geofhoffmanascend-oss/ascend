@@ -43,6 +43,12 @@ const POST_TYPE_LABELS: Record<string, string> = {
   text: 'Post', video_link: 'Video', question: 'Question', announcement: 'Announcement',
 }
 
+function formatDate(iso: string, short = false) {
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', ...(short ? {} : { year: 'numeric' }),
+  })
+}
+
 export function ForumClient({ forumId, posts: initial, userId, userRole, isSubscribed: initSub, forumType }: Props) {
   const [posts, setPosts] = useState(initial)
   const [subscribed, setSubscribed] = useState(initSub)
@@ -68,8 +74,9 @@ export function ForumClient({ forumId, posts: initial, userId, userRole, isSubsc
       const post = await res.json()
       const newPost: Post = { ...post, createdAt: post.createdAt, replies: [] }
       setPosts(prev => {
-        const updated = post.pinned ? [newPost, ...prev] : [...prev.filter(p => p.pinned), newPost, ...prev.filter(p => !p.pinned)]
-        return updated
+        return post.pinned
+          ? [newPost, ...prev]
+          : [...prev.filter(p => p.pinned), newPost, ...prev.filter(p => !p.pinned)]
       })
       setForm({ content: '', type: 'text', videoUrl: '' })
       setShowForm(false)
@@ -127,6 +134,7 @@ export function ForumClient({ forumId, posts: initial, userId, userRole, isSubsc
 
   return (
     <div>
+      {/* Toolbar */}
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => setShowForm(s => !s)}
@@ -144,6 +152,7 @@ export function ForumClient({ forumId, posts: initial, userId, userRole, isSubsc
         )}
       </div>
 
+      {/* New post form */}
       {showForm && (
         <form onSubmit={createPost} className="border border-smoke bg-paper p-5 mb-6 flex flex-col gap-3">
           <div className="flex gap-2 flex-wrap">
@@ -191,72 +200,73 @@ export function ForumClient({ forumId, posts: initial, userId, userRole, isSubsc
         <p className="text-ash text-sm italic">No posts yet. Be the first!</p>
       )}
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         {sortedPosts.map(post => (
           <div key={post.id} className={`border bg-paper ${post.pinned ? 'border-brand-red/40' : 'border-smoke'}`}>
-            <div className="p-5">
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${POST_TYPE_STYLES[post.type] ?? POST_TYPE_STYLES.text}`}>
-                    {POST_TYPE_LABELS[post.type] ?? post.type}
-                  </span>
-                  {post.pinned && <span className="text-xs text-brand-red font-bold uppercase tracking-wide">📌 Pinned</span>}
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {canPin && (
-                    <button onClick={() => togglePin(post)} className="text-xs text-ash hover:text-brand-red transition-colors">
-                      {post.pinned ? 'Unpin' : 'Pin'}
-                    </button>
-                  )}
-                  {(post.author.role === userId || userRole === 'admin') && (
-                    <button onClick={() => deletePost(post.id)} className="text-xs text-ash hover:text-brand-red transition-colors">✕</button>
-                  )}
-                </div>
+
+            {/* Post header */}
+            <div className="px-5 pt-4 pb-1 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <BeltBadge belt={post.author.belt as Belt} stripes={0} />
+                <span className="text-sm font-medium text-ink">{post.author.name ?? 'Unknown'}</span>
+                <span className="text-xs text-ash">{formatDate(post.createdAt)}</span>
+                <span className={`px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${POST_TYPE_STYLES[post.type] ?? POST_TYPE_STYLES.text}`}>
+                  {POST_TYPE_LABELS[post.type] ?? post.type}
+                </span>
+                {post.pinned && <span className="text-xs text-brand-red font-bold uppercase tracking-wide">📌 Pinned</span>}
               </div>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                {canPin && (
+                  <button onClick={() => togglePin(post)} className="text-xs text-ash hover:text-brand-red transition-colors">
+                    {post.pinned ? 'Unpin' : 'Pin'}
+                  </button>
+                )}
+                {(post.author.role === userId || userRole === 'admin') && (
+                  <button onClick={() => deletePost(post.id)} className="text-xs text-ash hover:text-brand-red transition-colors">✕</button>
+                )}
+              </div>
+            </div>
 
+            {/* Post body */}
+            <div className="px-5 py-3">
               <p className="text-ink text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
-
               {post.videoUrl && (
                 <a href={post.videoUrl} target="_blank" rel="noopener noreferrer"
                   className="inline-block mt-2 text-xs text-brand-red hover:text-red-700 underline">
                   Watch video →
                 </a>
               )}
-
-              <div className="flex items-center gap-2 mt-3">
-                <BeltBadge belt={post.author.belt as Belt} stripes={0} />
-                <p className="text-xs text-ash">
-                  {post.author.name ?? 'Unknown'} · {new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                </p>
-              </div>
             </div>
 
-            {/* Replies */}
-            {post.replies.length > 0 && (
-              <div className="border-t border-smoke">
-                {post.replies.map(reply => (
-                  <div key={reply.id} className="px-5 py-3 border-b border-smoke last:border-b-0 bg-mist/40 flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm text-ink">{reply.content}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <BeltBadge belt={reply.author.belt as Belt} stripes={0} />
-                        <p className="text-xs text-ash">
-                          {reply.author.name ?? 'Unknown'} · {new Date(reply.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </p>
+            {/* Replies + reply form */}
+            <div className="px-5 pb-4">
+              {/* Nested replies */}
+              {post.replies.length > 0 && (
+                <div className="mt-1 mb-3 flex flex-col gap-2 border-l-2 border-steel/25 pl-4 ml-1">
+                  {post.replies.map(reply => (
+                    <div key={reply.id} className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <BeltBadge belt={reply.author.belt as Belt} stripes={0} />
+                          <span className="text-xs font-medium text-ink">{reply.author.name ?? 'Unknown'}</span>
+                          <span className="text-xs text-ash">{formatDate(reply.createdAt, true)}</span>
+                        </div>
+                        <p className="text-sm text-ink leading-relaxed">{reply.content}</p>
                       </div>
+                      {(reply.author.role === userId || userRole === 'admin') && (
+                        <button
+                          onClick={() => deletePost(reply.id, true, post.id)}
+                          className="text-xs text-ash hover:text-brand-red transition-colors flex-shrink-0 mt-0.5"
+                        >✕</button>
+                      )}
                     </div>
-                    {(reply.author.role === userId || userRole === 'admin') && (
-                      <button onClick={() => deletePost(reply.id, true, post.id)} className="text-xs text-ash hover:text-brand-red transition-colors flex-shrink-0">✕</button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
 
-            {/* Reply form */}
-            <div className="border-t border-smoke px-5 py-3">
+              {/* Reply input */}
               {replyTo === post.id ? (
-                <div className="flex gap-2">
+                <div className="flex gap-2 mt-2 border-l-2 border-brand-red/40 pl-4 ml-1">
                   <input
                     type="text"
                     value={replyContent}
@@ -280,9 +290,9 @@ export function ForumClient({ forumId, posts: initial, userId, userRole, isSubsc
               ) : (
                 <button
                   onClick={() => setReplyTo(post.id)}
-                  className="text-xs text-ash hover:text-ink transition-colors"
+                  className="text-xs text-ash hover:text-ink transition-colors mt-1"
                 >
-                  Reply
+                  ↩ Reply
                 </button>
               )}
             </div>

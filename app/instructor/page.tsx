@@ -71,7 +71,7 @@ export default async function InstructorHomePage() {
               </div>
               <div className="text-right flex-shrink-0 ml-4">
                 <p className="text-xl font-display font-bold text-ink">{s._count.commitments}</p>
-                <p className="text-xs text-ash">committed</p>
+                <p className="text-xs text-ash">registered</p>
                 {s.cancelled && (
                   <span className="mt-1 inline-block px-2 py-0.5 bg-brand-red text-paper text-xs font-bold uppercase">
                     Cancelled
@@ -91,6 +91,14 @@ export default async function InstructorHomePage() {
         <Link href="/instructor/plans" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Lesson Plans</p>
           <p className="text-slate text-sm">Create and manage lesson plans</p>
+        </Link>
+        <Link href="/instructor/feedback" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel">Feedback</p>
+          <p className="text-slate text-sm">Student feedback for your classes</p>
+        </Link>
+        <Link href="/instructor/scan" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel">QR Check-in</p>
+          <p className="text-slate text-sm">Scan student QR codes at the door</p>
         </Link>
         <Link href="/dashboard" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Dashboard</p>

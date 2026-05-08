@@ -141,31 +141,31 @@ All scaffolding complete. Database setup pending — see notes below.
 
 ## PHASE 10 — Student Check-in & Attendance
 
-### [ ] 10.1 — Student self check-in from app (available in window before class starts)
-### [ ] 10.2 — Pre-class push notification 15 minutes before a committed class with check-in prompt — **create guide before starting**
-### [ ] 10.3 — Check-in auto-marks student present in instructor attendance portal
-### [ ] 10.4 — Per-user QR code for gym-side scanning as an alternative to app check-in — **create guide before starting**
-### [ ] 10.5 — Enhanced admin attendance reports: breakdowns by class group, by instructor, by individual student
-### [ ] 10.6 — Student attendance record and streak on their dashboard
+### [x] 10.1 — Student self check-in from app (available in window before class starts)
+### [x] 10.2 — Pre-class push notification 15 minutes before a committed class with check-in prompt
+### [x] 10.3 — Check-in auto-marks student present in instructor attendance portal
+### [x] 10.4 — Per-user QR code for gym-side scanning as an alternative to app check-in
+### [x] 10.5 — Enhanced admin attendance reports: breakdowns by class group, by instructor, by individual student
+### [x] 10.6 — Student attendance record and streak on their dashboard
 
 ---
 
 ## PHASE 11 — Training Journal
 
-### [ ] 11.1 — Training log model and API: linked to class session, private flag, free-form and guided content — **create guide before starting**
-### [ ] 11.2 — Free-form log entry: plain text box, private toggle with tooltip (private logs hidden from instructors)
-### [ ] 11.3 — Guided journal mode: toggled per entry, structured prompts (sleep, energy, diet, conditioning, technique notes, class objective, personal goal + did you accomplish it, comfort zone, drill partner quality, rolling intensity, focus, key takeaways, future items). Only answered prompts are saved.
-### [ ] 11.4 — Default guided questions setting in user settings: students pick which prompts appear by default
-### [ ] 11.5 — Journal history on student dashboard: list of past logs, filterable by class
+### [x] 11.1 — Training log model and API: linked to class session, private flag, free-form and guided content
+### [x] 11.2 — Free-form log entry: plain text box, private toggle with tooltip (private logs hidden from instructors)
+### [x] 11.3 — Guided journal mode: toggled per entry, structured prompts (sleep, energy, diet, conditioning, technique notes, class objective, personal goal + did you accomplish it, comfort zone, drill partner quality, rolling intensity, focus, key takeaways, future items). Only answered prompts are saved.
+### [x] 11.4 — Default guided questions setting in user settings: students pick which prompts appear by default
+### [x] 11.5 — Journal history on student dashboard: list of past logs, filterable by class
 
 ---
 
 ## PHASE 12 — Post-class Feedback & Reviews
 
-### [ ] 12.1 — Post-class push notification 1 hour after class begins (only if student checked in): "Log Training" and "Give Feedback" buttons — **create guide before starting**
-### [ ] 12.2 — Feedback flow: branching questions to classify experience as positive, negative, or specific concern. All responses logged and visible to instructors/admins.
-### [ ] 12.3 — Positive feedback path: if highly rated, prompt for public review and open admin-configured review URL in new tab (recommend Google Business Profile as default)
-### [ ] 12.4 — Admin setting for public review URL
+### [x] 12.1 — Post-class push notification 1 hour after class begins (only if student checked in): "Log Training" and "Give Feedback" buttons
+### [x] 12.2 — Feedback flow: branching questions to classify experience as positive, negative, or specific concern. All responses logged and visible to instructors/admins.
+### [x] 12.3 — Positive feedback path: if highly rated, prompt for public review and open admin-configured review URL in new tab
+### [x] 12.4 — Admin setting for public review URL
 
 ---
 

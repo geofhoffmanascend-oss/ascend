@@ -15,6 +15,7 @@ type Session = {
   notes: string | null
   committedCount: number
   myCommitment: { id: string } | null
+  myCheckedIn: boolean
   otherCommitted: { name: string; belt: string }[]
   class: {
     id: string
@@ -59,6 +60,27 @@ export function WeeklySchedule({ days, currentMonday }: { days: Day[]; currentMo
     return map
   })
   const [expandedRoster, setExpandedRoster] = useState<string | null>(null)
+
+  async function handleCheckin(session: Session) {
+    const res = await fetch('/api/checkin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ classSessionId: session.id }),
+    })
+    if (res.ok) {
+      setSessions(prev => ({ ...prev, [session.id]: { ...prev[session.id], myCheckedIn: true } }))
+    }
+  }
+
+  function isInCheckinWindow(dateStr: string, _startTime: string): boolean {
+    const classDay = new Date(dateStr)
+    const today = new Date()
+    return (
+      classDay.getUTCFullYear() === today.getFullYear() &&
+      classDay.getUTCMonth() === today.getMonth() &&
+      classDay.getUTCDate() === today.getDate()
+    )
+  }
 
   function prevWeek() { router.push(`/schedule?week=${addDays(currentMonday, -7)}`) }
   function nextWeek() { router.push(`/schedule?week=${addDays(currentMonday, 7)}`) }
@@ -143,6 +165,8 @@ export function WeeklySchedule({ days, currentMonday }: { days: Day[]; currentMo
                       expanded={expandedRoster === s.id}
                       onToggleCommit={() => toggleCommit(live)}
                       onToggleRoster={() => setExpandedRoster(expandedRoster === s.id ? null : s.id)}
+                      onCheckin={() => handleCheckin(live)}
+                      inCheckinWindow={isInCheckinWindow(live.date, live.class.startTime)}
                     />
                   )
                 })}
@@ -176,6 +200,8 @@ export function WeeklySchedule({ days, currentMonday }: { days: Day[]; currentMo
                       expanded={expandedRoster === s.id}
                       onToggleCommit={() => toggleCommit(live)}
                       onToggleRoster={() => setExpandedRoster(expandedRoster === s.id ? null : s.id)}
+                      onCheckin={() => handleCheckin(live)}
+                      inCheckinWindow={isInCheckinWindow(live.date, live.class.startTime)}
                     />
                   )
                 })}
@@ -189,13 +215,15 @@ export function WeeklySchedule({ days, currentMonday }: { days: Day[]; currentMo
 }
 
 function SessionCard({
-  session, committed, expanded, onToggleCommit, onToggleRoster,
+  session, committed, expanded, onToggleCommit, onToggleRoster, onCheckin, inCheckinWindow,
 }: {
   session: Session
   committed: boolean
   expanded: boolean
   onToggleCommit: () => void
   onToggleRoster: () => void
+  onCheckin: () => void
+  inCheckinWindow: boolean
 }) {
   return (
     <div className={`border bg-paper p-3 flex flex-col gap-2 ${committed ? 'border-l-2 border-l-brand-red border-t-smoke border-r-smoke border-b-smoke' : 'border-smoke'} ${session.cancelled ? 'opacity-60' : ''}`}>
@@ -222,27 +250,41 @@ function SessionCard({
       )}
 
       {!session.cancelled && (
-        <div className="flex items-center justify-between pt-1 border-t border-smoke">
-          <button
-            onClick={onToggleCommit}
-            className={`text-xs font-bold uppercase tracking-wide transition-colors ${
-              committed
-                ? 'text-brand-red hover:text-red-700'
-                : 'text-steel hover:text-ink'
-            }`}
-          >
-            {committed ? 'Committed ✓' : 'Commit'}
-          </button>
-          {committed && session.otherCommitted.length > 0 && (
+        <div className="flex flex-col gap-1.5 pt-1 border-t border-smoke">
+          <div className="flex items-center justify-between">
             <button
-              onClick={onToggleRoster}
-              className="text-xs text-ash hover:text-ink transition-colors"
+              onClick={onToggleCommit}
+              className={`text-xs font-bold uppercase tracking-wide transition-colors ${
+                committed
+                  ? 'text-brand-red hover:text-red-700'
+                  : 'text-steel hover:text-ink'
+              }`}
             >
-              +{session.committedCount - 1} others
+              {committed ? 'Registered ✓' : 'Register'}
             </button>
-          )}
-          {!committed && session.committedCount > 0 && (
-            <span className="text-xs text-ash">{session.committedCount} going</span>
+            {committed && session.otherCommitted.length > 0 && (
+              <button
+                onClick={onToggleRoster}
+                className="text-xs text-ash hover:text-ink transition-colors"
+              >
+                +{session.committedCount - 1} others
+              </button>
+            )}
+            {!committed && session.committedCount > 0 && (
+              <span className="text-xs text-ash">{session.committedCount} going</span>
+            )}
+          </div>
+          {committed && inCheckinWindow && (
+            session.myCheckedIn ? (
+              <span className="text-xs font-bold text-green-600 uppercase tracking-wide">Checked In ✓</span>
+            ) : (
+              <button
+                onClick={onCheckin}
+                className="text-xs font-bold uppercase tracking-wide text-steel hover:text-brand-red transition-colors"
+              >
+                Check In
+              </button>
+            )
           )}
         </div>
       )}

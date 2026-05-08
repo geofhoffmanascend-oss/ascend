@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3002",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start -p 3002",
     "lint": "eslint",
     "db:seed": "tsx prisma/seed.ts",
@@ -20,6 +20,7 @@
     "next-auth": "^4.24.14",
     "pg": "^8.20.0",
     "prisma": "^7.8.0",
+    "qrcode": "^1.5.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "swr": "^2.4.1"
@@ -29,6 +30,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

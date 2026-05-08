@@ -1,4 +1,4 @@
-const CACHE = 'ascend-v3'
+const CACHE = 'ascend-v4'
 
 const STATIC_PATTERNS = [
   /^\/_next\/static\//,
@@ -40,13 +40,17 @@ self.addEventListener('fetch', e => {
       })
     )
   } else {
+    // Never cache auth or API routes
+    if (url.pathname.startsWith('/api/')) return
+
     // Network-first: try network, fall back to cache for pages
     e.respondWith(
       fetch(request)
         .then(res => {
-          // Cache navigations (HTML pages) for offline fallback
+          // Cache navigations (HTML pages) for offline fallback — clone before async open
           if (request.mode === 'navigate' && res.ok) {
-            caches.open(CACHE).then(c => c.put(request, res.clone()))
+            const clone = res.clone()
+            caches.open(CACHE).then(c => c.put(request, clone))
           }
           return res
         })

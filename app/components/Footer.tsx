@@ -1,0 +1,12 @@
+export function Footer() {
+  return (
+    <footer className="border-t border-smoke bg-mist">
+      <div className="max-w-6xl mx-auto px-4 py-6 flex items-center justify-between">
+        <p className="font-display text-xs font-bold tracking-widest uppercase text-steel">
+          Ascend
+        </p>
+        <p className="text-xs text-ash">Train. Commit. Improve.</p>
+      </div>
+    </footer>
+  )
+}

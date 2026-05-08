@@ -46,7 +46,7 @@ export function AdminSettingsForm({ initial }: { initial: { reviewUrl: string } 
         <button
           type="submit"
           disabled={saving}
-          className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors disabled:opacity-60"
+          className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors disabled:opacity-60"
         >
           {saving ? 'Saving…' : 'Save Settings'}
         </button>

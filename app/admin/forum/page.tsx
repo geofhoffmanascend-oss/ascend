@@ -49,7 +49,7 @@ export default async function AdminForumPage() {
                 <p className="font-medium text-ink">{f.title}</p>
                 <p className="text-xs text-ash">{FORUM_LABELS[f.type] ?? f.type} · {f._count.posts} posts · {f._count.subscriptions} subscribers</p>
               </div>
-              <Link href={`/forum/${f.id}`} className="text-xs text-brand-red hover:text-red-700 transition-colors">
+              <Link href={`/forum/${f.id}`} className="text-xs text-brand-red hover:text-brand-red-dark transition-colors">
                 Open Forum →
               </Link>
             </div>

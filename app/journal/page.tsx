@@ -28,7 +28,7 @@ export default async function JournalPage() {
         </div>
         <Link
           href="/journal/new"
-          className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors"
+          className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors"
         >
           + New Entry
         </Link>

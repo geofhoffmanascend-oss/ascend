@@ -78,7 +78,7 @@ export function Header() {
               <Link href="/login" className="text-paper text-sm font-medium hover:text-brand-red transition-colors">
                 Sign In
               </Link>
-              <Link href="/register" className="px-3 py-1.5 bg-brand-red text-paper text-sm font-bold tracking-wide hover:bg-red-700 transition-colors">
+              <Link href="/register" className="px-3 py-1.5 bg-brand-red text-paper text-sm font-bold tracking-wide hover:bg-brand-red-dark transition-colors">
                 Join
               </Link>
             </>

@@ -74,7 +74,7 @@ export function LessonDetailClient({
               <button
                 key={a.next}
                 onClick={() => updateStatus(a.next)}
-                className={`px-4 py-2 text-sm font-bold tracking-wide transition-colors ${a.next === 'cancelled' ? 'border border-smoke text-steel hover:border-brand-red hover:text-brand-red' : 'bg-brand-red text-paper hover:bg-red-700'}`}
+                className={`px-4 py-2 text-sm font-bold tracking-wide transition-colors ${a.next === 'cancelled' ? 'border border-smoke text-steel hover:border-brand-red hover:text-brand-red' : 'bg-brand-red text-paper hover:bg-brand-red-dark'}`}
               >
                 {a.label}
               </button>
@@ -110,7 +110,7 @@ export function LessonDetailClient({
             <button
               type="submit"
               disabled={saving || !content.trim()}
-              className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors disabled:opacity-60"
+              className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors disabled:opacity-60"
             >
               Send
             </button>

@@ -36,7 +36,7 @@ export function CheckinButton({ classSessionId }: { classSessionId: string }) {
       <button
         onClick={checkin}
         disabled={state === 'loading'}
-        className="px-3 py-1.5 bg-brand-red text-paper text-xs font-bold uppercase tracking-wide hover:bg-red-700 transition-colors disabled:opacity-50 shrink-0"
+        className="px-3 py-1.5 bg-brand-red text-paper text-xs font-bold uppercase tracking-wide hover:bg-brand-red-dark transition-colors disabled:opacity-50 shrink-0"
       >
         {state === 'loading' ? 'Checking in…' : 'Check In'}
       </button>

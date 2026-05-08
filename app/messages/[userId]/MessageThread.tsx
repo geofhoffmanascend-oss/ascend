@@ -90,7 +90,7 @@ export function MessageThread({ messages: initial, currentUserId, recipientId, c
           <button
             type="submit"
             disabled={sending || !body.trim()}
-            className="px-5 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors disabled:opacity-60"
+            className="px-5 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors disabled:opacity-60"
           >
             Send
           </button>

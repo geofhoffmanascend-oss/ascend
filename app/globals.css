@@ -6,9 +6,6 @@
   --color-brand-red-dark: #0f1a30;
   --color-brand-red-light: #253d6e;
 
-  /* Map Tailwind's red-700 hover to brand dark so existing hover:bg-red-700 classes follow */
-  --color-red-700: #0f1a30;
-
   /* Monochrome scale — ink (darkest) → paper (lightest) */
   --color-ink: #0A0A0A;
   --color-ink-soft: #1F1F1F;

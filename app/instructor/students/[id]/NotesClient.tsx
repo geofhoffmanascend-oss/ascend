@@ -45,7 +45,7 @@ export function NotesClient({ studentId, initial }: { studentId: string; initial
         <button
           type="submit"
           disabled={saving || !content.trim()}
-          className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors disabled:opacity-60"
+          className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors disabled:opacity-60"
         >
           Add
         </button>

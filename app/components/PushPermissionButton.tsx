@@ -110,7 +110,7 @@ export function PushPermissionButton() {
       <button
         onClick={subscribe}
         disabled={busy}
-        className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors disabled:opacity-50"
+        className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors disabled:opacity-50"
       >
         {busy ? 'Enabling…' : 'Enable'}
       </button>

@@ -66,7 +66,7 @@ export function GoalsSection({ goals: initial }: { goals: Goal[] }) {
         <p className="text-xs font-bold uppercase tracking-widest text-steel">Goals</p>
         <button
           onClick={() => setShowForm(s => !s)}
-          className="text-xs font-bold uppercase tracking-widest text-brand-red hover:text-red-700 transition-colors"
+          className="text-xs font-bold uppercase tracking-widest text-brand-red hover:text-brand-red-dark transition-colors"
         >
           {showForm ? 'Cancel' : '+ Add Goal'}
         </button>
@@ -92,7 +92,7 @@ export function GoalsSection({ goals: initial }: { goals: Goal[] }) {
             <button
               type="submit"
               disabled={saving || !description.trim()}
-              className="px-5 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors disabled:opacity-60"
+              className="px-5 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors disabled:opacity-60"
             >
               {saving ? 'Saving…' : 'Add'}
             </button>

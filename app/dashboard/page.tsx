@@ -122,7 +122,7 @@ export default async function DashboardPage() {
         <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">This Week</p>
         {commitments.length === 0 ? (
           <div className="border border-smoke bg-paper p-5">
-            <p className="text-ash text-sm">No classes registered this week. <Link href="/schedule" className="text-brand-red hover:text-red-700 font-medium">View schedule →</Link></p>
+            <p className="text-ash text-sm">No classes registered this week. <Link href="/schedule" className="text-brand-red hover:text-brand-red-dark font-medium">View schedule →</Link></p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">

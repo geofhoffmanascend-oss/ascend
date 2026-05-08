@@ -68,7 +68,7 @@ export default async function AdminFeedbackPage({ searchParams }: { searchParams
           <option value="">All classes</option>
           {classes.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
         </select>
-        <button type="submit" className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors">Filter</button>
+        <button type="submit" className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors">Filter</button>
       </form>
 
       <div className="flex flex-col gap-2">

@@ -242,7 +242,7 @@ export function WeeklySchedule({ days, currentMonday, filters }: { days: Day[]; 
                     <button
                       onClick={() => toggleCommit(live)}
                       className={`text-xs font-bold uppercase tracking-wide transition-colors ${
-                        committed ? 'text-brand-red hover:text-red-700' : 'text-steel hover:text-ink'
+                        committed ? 'text-brand-red hover:text-brand-red-dark' : 'text-steel hover:text-ink'
                       }`}
                     >
                       {committed ? 'Registered ✓' : 'Register'}
@@ -315,7 +315,7 @@ function SessionCard({
               onClick={onToggleCommit}
               className={`text-xs font-bold uppercase tracking-wide transition-colors ${
                 committed
-                  ? 'text-brand-red hover:text-red-700'
+                  ? 'text-brand-red hover:text-brand-red-dark'
                   : 'text-steel hover:text-ink'
               }`}
             >

@@ -59,7 +59,7 @@ export function CompetitionsSection({ competitions: initial }: { competitions: C
         <p className="text-xs font-bold uppercase tracking-widest text-steel">Competition History</p>
         <button
           onClick={() => setShowForm(s => !s)}
-          className="text-xs font-bold uppercase tracking-widest text-brand-red hover:text-red-700 transition-colors"
+          className="text-xs font-bold uppercase tracking-widest text-brand-red hover:text-brand-red-dark transition-colors"
         >
           {showForm ? 'Cancel' : '+ Add'}
         </button>
@@ -122,7 +122,7 @@ export function CompetitionsSection({ competitions: initial }: { competitions: C
             <button
               type="submit"
               disabled={saving || !form.name.trim() || !form.date}
-              className="px-5 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors disabled:opacity-60"
+              className="px-5 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors disabled:opacity-60"
             >
               {saving ? 'Saving…' : 'Add Competition'}
             </button>

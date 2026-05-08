@@ -112,7 +112,7 @@ export default async function AttendanceReportPage({ searchParams }: { searchPar
           className="px-4 py-2 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors" />
         <input type="date" name="to" defaultValue={to ?? toDate.toISOString().split('T')[0]}
           className="px-4 py-2 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors" />
-        <button type="submit" className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors">
+        <button type="submit" className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors">
           Filter
         </button>
       </form>

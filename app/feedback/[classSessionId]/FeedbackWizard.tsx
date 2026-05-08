@@ -150,7 +150,7 @@ export function FeedbackWizard({ classSessionId, reviewUrl }: { classSessionId: 
         <button
           onClick={handleSubmit}
           disabled={saving}
-          className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors disabled:opacity-60"
+          className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors disabled:opacity-60"
         >
           {saving ? 'Submitting…' : 'Submit Feedback'}
         </button>
@@ -171,7 +171,7 @@ export function FeedbackWizard({ classSessionId, reviewUrl }: { classSessionId: 
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setStep('done')}
-            className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors text-center"
+            className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors text-center"
           >
             Leave a Review
           </a>
@@ -192,7 +192,7 @@ export function FeedbackWizard({ classSessionId, reviewUrl }: { classSessionId: 
       <p className="text-sm text-ash">Your feedback has been recorded.</p>
       <Link
         href="/dashboard"
-        className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors"
+        className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors"
       >
         Back to Dashboard
       </Link>

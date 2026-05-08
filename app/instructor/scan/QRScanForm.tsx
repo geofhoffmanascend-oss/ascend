@@ -60,7 +60,7 @@ export function QRScanForm({ sessions }: { sessions: SessionOption[] }) {
       <button
         type="submit"
         disabled={loading || !token.trim()}
-        className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors disabled:opacity-60"
+        className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors disabled:opacity-60"
       >
         {loading ? 'Checking in…' : 'Check In Student'}
       </button>

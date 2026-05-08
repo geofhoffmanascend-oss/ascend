@@ -11,7 +11,7 @@ export default function NotFound() {
         <p className="text-ash text-sm mb-8">This page doesn't exist or has been moved.</p>
         <Link
           href="/dashboard"
-          className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors"
+          className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors"
         >
           Back to Dashboard
         </Link>

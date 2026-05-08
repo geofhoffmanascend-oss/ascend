@@ -64,7 +64,7 @@ export default async function LessonsPage() {
           </div>
           <h1 className="font-display text-2xl text-ink">Private Lessons</h1>
         </div>
-        <Link href="/lessons/new" className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors">
+        <Link href="/lessons/new" className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors">
           + Request
         </Link>
       </div>

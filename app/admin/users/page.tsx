@@ -67,7 +67,7 @@ export default async function AdminUsersPage({
             <option key={b} value={b}>{b.charAt(0).toUpperCase() + b.slice(1)}</option>
           ))}
         </select>
-        <button type="submit" className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors">
+        <button type="submit" className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors">
           Filter
         </button>
         {(q || role || belt) && (

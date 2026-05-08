@@ -118,7 +118,7 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
           <div className="mt-4 pt-4 border-t border-smoke">
             <Link
               href={`/instructor/sessions/${nextSession.id}`}
-              className="text-sm font-medium text-brand-red hover:text-red-700 transition-colors"
+              className="text-sm font-medium text-brand-red hover:text-brand-red-dark transition-colors"
             >
               View full session → mark attendance, add notes
             </Link>

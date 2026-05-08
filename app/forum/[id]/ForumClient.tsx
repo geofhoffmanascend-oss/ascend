@@ -138,7 +138,7 @@ export function ForumClient({ forumId, posts: initial, userId, userRole, isSubsc
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => setShowForm(s => !s)}
-          className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors"
+          className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors"
         >
           {showForm ? 'Cancel' : '+ New Post'}
         </button>
@@ -188,7 +188,7 @@ export function ForumClient({ forumId, posts: initial, userId, userRole, isSubsc
             <button
               type="submit"
               disabled={saving || !form.content.trim()}
-              className="px-5 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors disabled:opacity-60"
+              className="px-5 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors disabled:opacity-60"
             >
               {saving ? 'Posting…' : 'Post'}
             </button>
@@ -232,7 +232,7 @@ export function ForumClient({ forumId, posts: initial, userId, userRole, isSubsc
               <p className="text-ink text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
               {post.videoUrl && (
                 <a href={post.videoUrl} target="_blank" rel="noopener noreferrer"
-                  className="inline-block mt-2 text-xs text-brand-red hover:text-red-700 underline">
+                  className="inline-block mt-2 text-xs text-brand-red hover:text-brand-red-dark underline">
                   Watch video →
                 </a>
               )}
@@ -279,7 +279,7 @@ export function ForumClient({ forumId, posts: initial, userId, userRole, isSubsc
                   <button
                     onClick={() => createReply(post.id)}
                     disabled={saving || !replyContent.trim()}
-                    className="px-3 py-2 bg-brand-red text-paper text-xs font-bold hover:bg-red-700 transition-colors disabled:opacity-60"
+                    className="px-3 py-2 bg-brand-red text-paper text-xs font-bold hover:bg-brand-red-dark transition-colors disabled:opacity-60"
                   >
                     Reply
                   </button>

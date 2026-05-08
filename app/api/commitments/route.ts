@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/database'
+import { isInCheckinWindow } from '@/lib/checkin'
+import { createNotification } from '@/lib/notify'
+import { sendPush } from '@/lib/push'
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -22,7 +25,10 @@ export async function POST(req: NextRequest) {
     }),
     prisma.classSession.findUnique({
       where: { id: classSessionId },
-      select: { class: { select: { forum: { select: { id: true } } } } },
+      select: {
+        date: true,
+        class: { select: { title: true, startTime: true, forum: { select: { id: true } } } },
+      },
     }),
   ])
 
@@ -33,6 +39,22 @@ export async function POST(req: NextRequest) {
       weightClass: user?.weightClass ?? null,
     },
   })
+
+  // Same-day check-in reminder push (fire and forget)
+  if (classSession && isInCheckinWindow(classSession.date)) {
+    const title = classSession.class.title
+    const time = classSession.class.startTime
+    createNotification(session.user.id, 'checkin_prompt', `You have ${title} today at ${time}`, {
+      body: 'Tap to check in when you arrive.',
+      link: '/schedule',
+    }).then(notif => {
+      if (notif) sendPush(session.user.id, {
+        title: `You have ${title} today at ${time}`,
+        body: 'Tap to check in when you arrive.',
+        link: '/schedule',
+      }).catch(() => {})
+    }).catch(() => {})
+  }
 
   // Auto-subscribe to class forum on first commitment
   const forumId = classSession?.class?.forum?.id

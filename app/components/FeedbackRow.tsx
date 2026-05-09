@@ -11,6 +11,7 @@ type FeedbackData = {
   rating: number | null
   responses: QA[]
   reviewRequested: boolean
+  anonymous: boolean
   createdAt: string
   user: { name: string | null; belt: string }
   classSession: { date: string; class: { title: string } }
@@ -37,7 +38,7 @@ export function FeedbackRow({ feedback: f }: { feedback: FeedbackData }) {
             {f.sentiment}
           </span>
           <div className="min-w-0">
-            <p className="text-sm text-ink truncate">{f.user.name ?? 'Unknown'}</p>
+            <p className="text-sm text-ink truncate">{f.anonymous ? 'Anonymous' : (f.user.name ?? 'Unknown')}</p>
             <p className="text-xs text-ash">
               {f.classSession.class.title} · {new Date(f.classSession.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
             </p>

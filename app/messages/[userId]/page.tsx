@@ -1,7 +1,6 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
-import { redirect } from 'next/navigation'
-import { notFound } from 'next/navigation'
+import { redirect, notFound } from 'next/navigation'
 import prisma from '@/lib/database'
 import { MessageThread } from './MessageThread'
 
@@ -41,7 +40,18 @@ export default async function ConversationPage({ params }: { params: Promise<{ u
     readAt: m.readAt?.toISOString() ?? null,
   }))
 
-  const canSend = other.allowDmsFromStudents || session.user.role !== 'student'
+  const isRestricted = !other.allowDmsFromStudents && session.user.role === 'student'
+
+  // Check for existing message request when DMs are restricted
+  let requestStatus: 'pending' | 'approved' | null = null
+  if (isRestricted) {
+    const req = await prisma.messageRequest.findUnique({
+      where: { senderId_recipientId: { senderId: myId, recipientId: otherId } },
+      select: { status: true },
+    })
+    if (req?.status === 'pending') requestStatus = 'pending'
+    if (req?.status === 'approved') requestStatus = 'approved'
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
@@ -57,7 +67,8 @@ export default async function ConversationPage({ params }: { params: Promise<{ u
         messages={serialized}
         currentUserId={myId}
         recipientId={otherId}
-        canSend={canSend}
+        isRestricted={isRestricted}
+        requestStatus={requestStatus}
       />
     </div>
   )

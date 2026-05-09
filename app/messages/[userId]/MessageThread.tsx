@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { Toast } from '@/app/components/Toast'
 
 type Message = {
   id: string
@@ -13,15 +14,19 @@ type Props = {
   messages: Message[]
   currentUserId: string
   recipientId: string
-  canSend: boolean
+  isRestricted: boolean
+  requestStatus: 'pending' | 'approved' | null
 }
 
-export function MessageThread({ messages: initial, currentUserId, recipientId, canSend }: Props) {
+export function MessageThread({ messages: initial, currentUserId, recipientId, isRestricted, requestStatus: initialRequestStatus }: Props) {
   const [messages, setMessages] = useState(initial)
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
-  const [error, setError] = useState('')
+  const [toast, setToast] = useState<{ message: string; type: 'info' | 'success' | 'error' } | null>(null)
+  const [requestStatus, setRequestStatus] = useState(initialRequestStatus)
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  const clearToast = useCallback(() => setToast(null), [])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -30,8 +35,11 @@ export function MessageThread({ messages: initial, currentUserId, recipientId, c
   async function send(e: React.FormEvent) {
     e.preventDefault()
     if (!body.trim()) return
+    if (requestStatus === 'pending') {
+      setToast({ message: 'Your request is still pending. They haven\'t responded yet.', type: 'info' })
+      return
+    }
     setSending(true)
-    setError('')
 
     const res = await fetch(`/api/messages/${recipientId}`, {
       method: 'POST',
@@ -39,21 +47,48 @@ export function MessageThread({ messages: initial, currentUserId, recipientId, c
       body: JSON.stringify({ body }),
     })
 
+    const data = await res.json()
+
     if (!res.ok) {
-      const data = await res.json()
-      setError(data.error ?? 'Failed to send.')
+      setToast({ message: data.error ?? 'Failed to send.', type: 'error' })
       setSending(false)
       return
     }
 
-    const msg = await res.json()
-    setMessages(ms => [...ms, { ...msg, createdAt: msg.createdAt }])
+    if (data.type === 'request') {
+      if (data.status === 'created') {
+        setRequestStatus('pending')
+        setToast({ message: 'Message sent as a request — they\'ll be notified and can approve it.', type: 'info' })
+        setBody('')
+      } else if (data.status === 'pending') {
+        setToast({ message: 'You already have a pending request with this user.', type: 'info' })
+      }
+      setSending(false)
+      return
+    }
+
+    setMessages(ms => [...ms, { ...data, createdAt: data.createdAt }])
     setBody('')
     setSending(false)
   }
 
+  const showRequestBanner = isRestricted && requestStatus === 'pending'
+  const canType = !isRestricted || requestStatus === 'approved' || requestStatus === null
+
   return (
     <div className="flex flex-col gap-4">
+      {showRequestBanner && (
+        <div className="border border-smoke bg-mist px-4 py-3 text-xs text-steel">
+          Your message request is pending. You'll be notified when they respond.
+        </div>
+      )}
+
+      {isRestricted && requestStatus === null && (
+        <div className="border border-smoke bg-mist px-4 py-3 text-xs text-steel">
+          This user has restricted messages from students. Your first message will be sent as a request.
+        </div>
+      )}
+
       <div className="flex flex-col gap-3 min-h-[200px] max-h-[60vh] overflow-y-auto border border-smoke bg-paper p-4">
         {messages.length === 0 && (
           <p className="text-ash text-sm text-center mt-8">No messages yet. Say hello!</p>
@@ -78,30 +113,31 @@ export function MessageThread({ messages: initial, currentUserId, recipientId, c
         <div ref={bottomRef} />
       </div>
 
-      {canSend ? (
-        <form onSubmit={send} className="flex gap-2">
-          <input
-            type="text"
-            value={body}
-            onChange={e => setBody(e.target.value)}
-            placeholder="Type a message…"
-            className="flex-1 px-4 py-3 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors"
-          />
-          <button
-            type="submit"
-            disabled={sending || !body.trim()}
-            className="px-5 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors disabled:opacity-60"
-          >
-            Send
-          </button>
-        </form>
-      ) : (
-        <p className="text-xs text-ash italic text-center border border-smoke bg-paper p-3">
-          This user is not accepting direct messages from students.
-        </p>
-      )}
+      <form onSubmit={send} className="flex gap-2">
+        <input
+          type="text"
+          value={body}
+          onChange={e => setBody(e.target.value)}
+          placeholder={
+            requestStatus === 'pending'
+              ? 'Request pending…'
+              : isRestricted && requestStatus === null
+              ? 'Send a message request…'
+              : 'Type a message…'
+          }
+          disabled={!canType}
+          className="flex-1 px-4 py-3 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors disabled:opacity-50"
+        />
+        <button
+          type="submit"
+          disabled={sending || !body.trim() || requestStatus === 'pending'}
+          className="px-5 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors disabled:opacity-60"
+        >
+          {requestStatus === 'pending' ? 'Pending' : 'Send'}
+        </button>
+      </form>
 
-      {error && <p className="text-sm text-brand-red">{error}</p>}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={clearToast} />}
     </div>
   )
 }

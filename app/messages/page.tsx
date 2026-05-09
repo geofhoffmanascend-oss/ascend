@@ -3,6 +3,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
+import { NewMessageButton } from './NewMessageButton'
 
 export default async function MessagesPage() {
   const session = await getServerSession(authOptions)
@@ -10,14 +11,17 @@ export default async function MessagesPage() {
 
   const userId = session.user.id
 
-  const messages = await prisma.directMessage.findMany({
-    where: { OR: [{ senderId: userId }, { recipientId: userId }] },
-    orderBy: { createdAt: 'desc' },
-    include: {
-      sender:    { select: { id: true, name: true, avatarUrl: true } },
-      recipient: { select: { id: true, name: true, avatarUrl: true } },
-    },
-  })
+  const [messages, pendingRequestCount] = await Promise.all([
+    prisma.directMessage.findMany({
+      where: { OR: [{ senderId: userId }, { recipientId: userId }] },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        sender:    { select: { id: true, name: true, avatarUrl: true } },
+        recipient: { select: { id: true, name: true, avatarUrl: true } },
+      },
+    }),
+    prisma.messageRequest.count({ where: { recipientId: userId, status: 'pending' } }),
+  ])
 
   // One entry per conversation partner (latest message per thread)
   const seen = new Set<string>()
@@ -38,8 +42,36 @@ export default async function MessagesPage() {
             Messages
           </span>
         </div>
-        <h1 className="font-display text-2xl text-ink">Direct Messages</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="font-display text-2xl text-ink">Direct Messages</h1>
+          <NewMessageButton />
+        </div>
       </div>
+
+      {pendingRequestCount > 0 && (
+        <Link
+          href="/messages/requests"
+          className="flex items-center justify-between border border-smoke bg-paper px-4 py-3 mb-4 hover:border-steel transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <span className="w-2 h-2 bg-brand-red rounded-full" />
+            <span className="text-sm text-ink font-medium">Message Requests</span>
+          </div>
+          <span className="text-xs font-bold text-paper bg-brand-red px-2 py-0.5 rounded-full">
+            {pendingRequestCount}
+          </span>
+        </Link>
+      )}
+
+      {pendingRequestCount === 0 && (
+        <Link
+          href="/messages/requests"
+          className="flex items-center justify-between border border-smoke bg-paper px-4 py-3 mb-4 hover:border-steel transition-colors"
+        >
+          <span className="text-sm text-steel">Message Requests</span>
+          <span className="text-xs text-ash">None pending</span>
+        </Link>
+      )}
 
       {conversations.length === 0 ? (
         <div className="border border-smoke bg-paper p-10 text-center">

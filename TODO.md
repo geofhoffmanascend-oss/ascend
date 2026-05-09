@@ -169,6 +169,40 @@ All scaffolding complete. Database setup pending — see notes below.
 
 ---
 
+## PRODUCTION ISSUES — In Progress
+
+### [ ] P1 — Service worker registration failing in production
+SW errors seen in order (each step was a fix attempt):
+1. "The script resource is behind a redirect" — caused by middleware intercepting `/sw.js` for unauthenticated users → **Fixed:** added `sw\\.js`, `manifest\\.json`, `icons/` to middleware matcher exclusion
+2. "DOMException: The operation is insecure" — sw.js not served with correct MIME type or blocked by implicit CSP → **Fixed:** added explicit `Content-Type: application/javascript`, `Service-Worker-Allowed: /`, `Cache-Control: no-cache` headers in `next.config.ts`
+3. "TypeError: Failed to execute 'clone' on 'Response': Response body is already used" — `res.clone()` was called inside async `caches.open().then()`, after `res` was already consumed → **Fixed:** moved to `const clone = res.clone()` synchronously before the async call. Also excluded all `/api/*` routes from SW caching. Cache bumped to `ascend-v4`.
+- **If still broken after deploy:** check browser devtools → Application → Service Workers for the actual error. Also verify `sw.js` returns `Content-Type: application/javascript` (check Network tab). If MIME type is wrong, Vercel may be ignoring `next.config.ts` headers for public/ files — fallback is to add headers in `vercel.json`.
+
+### [ ] P2 — Production auth: credentials login 401 on preview deployment URLs
+Symptom: `POST /api/auth/callback/credentials → 401` on `ascend-nj8ondsyc-*.vercel.app` URLs.
+Root cause: `NEXTAUTH_URL` is set to `https://ascend-ten-olive.vercel.app`. NextAuth v4 validates CSRF tokens against this URL — any other hostname (preview deploys) gets 401.
+Fix options:
+- Use `https://ascend-ten-olive.vercel.app` (canonical URL) — works, no code change needed
+- OR remove `NEXTAUTH_URL` from Vercel env vars entirely so NextAuth auto-detects from request host (`vercel env rm NEXTAUTH_URL production` after `vercel link --project ascend --yes`)
+- **NOT YET APPLIED** — confirm which URL the user is hitting first
+
+### [ ] P3 — `/api/auth/register` returning 500 in production
+Not yet diagnosed. Error is caught and logged as `[register]` in Vercel function logs. Check Vercel logs for the actual exception. Likely a DB connection issue or missing env var.
+
+---
+
+## PHASE 15 — Anonymous Feedback + DM Improvements
+
+### [x] 15.1 — Anonymous feedback toggle on feedback wizard; instructor/admin views show "Anonymous" when flagged
+### [x] 15.2 — User search modal for starting new direct message conversations
+### [x] 15.3 — Message request system: students DMing restricted users send a request instead; recipient approves/declines from /messages/requests
+### [x] 15.4 — Toast notification in Settings when user disables student DMs (explains request flow)
+### [x] 15.5 — Toast in MessageThread when message is sent as a request (pending/created states)
+
+**Requires `prisma db push`** — adds `anonymous` to `ClassFeedback` and new `MessageRequest` model + `MessageRequestStatus` enum.
+
+---
+
 ## OPTIONAL PHASE 13 — Media Archive
 
 ### [ ] 13.1 — Photo/video upload (Vercel Blob or S3)

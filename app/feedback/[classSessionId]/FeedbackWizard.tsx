@@ -39,6 +39,7 @@ export function FeedbackWizard({ classSessionId, reviewUrl }: { classSessionId: 
   const [rating, setRating] = useState(0)
   const [sentiment, setSentiment] = useState<Sentiment>('positive')
   const [answers, setAnswers] = useState<string[]>([])
+  const [anonymous, setAnonymous] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const questions = QUESTIONS[sentiment]
@@ -72,6 +73,7 @@ export function FeedbackWizard({ classSessionId, reviewUrl }: { classSessionId: 
         rating,
         responses,
         reviewRequested: showReview,
+        anonymous,
       }),
     })
 
@@ -146,6 +148,18 @@ export function FeedbackWizard({ classSessionId, reviewUrl }: { classSessionId: 
             )}
           </div>
         ))}
+
+        <label className="flex items-center gap-3 cursor-pointer select-none">
+          <div className="relative shrink-0">
+            <input type="checkbox" className="sr-only" checked={anonymous} onChange={() => setAnonymous(a => !a)} />
+            <div className={`w-10 h-5 rounded-full transition-colors ${anonymous ? 'bg-brand-red' : 'bg-smoke'}`} />
+            <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-paper rounded-full shadow transition-transform ${anonymous ? 'translate-x-5' : ''}`} />
+          </div>
+          <div>
+            <p className="text-sm text-ink font-medium">Submit anonymously</p>
+            <p className="text-xs text-ash">Your name and belt won't be shown to instructors.</p>
+          </div>
+        </label>
 
         <button
           onClick={handleSubmit}

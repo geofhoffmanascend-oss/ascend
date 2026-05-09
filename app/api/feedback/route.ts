@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { classSessionId, sentiment, rating, responses, reviewRequested } = await req.json()
+  const { classSessionId, sentiment, rating, responses, reviewRequested, anonymous } = await req.json()
 
   if (!classSessionId || !sentiment) {
     return NextResponse.json({ error: 'classSessionId and sentiment required' }, { status: 400 })
@@ -40,12 +40,14 @@ export async function POST(req: NextRequest) {
       rating: rating ?? null,
       responses: responses ?? [],
       reviewRequested: !!reviewRequested,
+      anonymous: !!anonymous,
     },
     update: {
       sentiment: sentiment as FeedbackSentiment,
       rating: rating ?? null,
       responses: responses ?? [],
       reviewRequested: !!reviewRequested,
+      anonymous: !!anonymous,
     },
   })
 

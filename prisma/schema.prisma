@@ -99,6 +99,12 @@ enum FeedbackSentiment {
   concern
 }
 
+enum MessageRequestStatus {
+  pending
+  approved
+  denied
+}
+
 // ── Auth (NextAuth) ────────────────────────────────────────────────────────────
 
 model User {
@@ -164,6 +170,8 @@ model User {
   pushSubscriptions    PushSubscription[]
   sentMessages         DirectMessage[]   @relation("SentMessages")
   receivedMessages     DirectMessage[]   @relation("ReceivedMessages")
+  sentMessageRequests     MessageRequest[] @relation("SentRequests")
+  receivedMessageRequests MessageRequest[] @relation("ReceivedRequests")
   trainingLogs         TrainingLog[]
   classFeedback        ClassFeedback[]
 }
@@ -450,6 +458,22 @@ model DirectMessage {
   createdAt   DateTime  @default(now())
 }
 
+// ── Message Requests ──────────────────────────────────────────────────────────
+
+model MessageRequest {
+  id             String               @id @default(cuid())
+  senderId       String
+  sender         User                 @relation("SentRequests",     fields: [senderId],    references: [id], onDelete: Cascade)
+  recipientId    String
+  recipient      User                 @relation("ReceivedRequests", fields: [recipientId], references: [id], onDelete: Cascade)
+  initialMessage String
+  status         MessageRequestStatus @default(pending)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@unique([senderId, recipientId])
+}
+
 // ── Training Journal ───────────────────────────────────────────────────────────
 
 model TrainingLog {
@@ -478,6 +502,7 @@ model ClassFeedback {
   rating          Int?
   responses       Json
   reviewRequested Boolean           @default(false)
+  anonymous       Boolean           @default(false)
   createdAt       DateTime          @default(now())
 
   @@unique([userId, classSessionId])

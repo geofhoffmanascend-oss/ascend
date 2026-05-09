@@ -45,24 +45,42 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
 
   if (!recipient) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-  // Enforce DM permission: if recipient opted out of student DMs, only allow instructors/admins
-  if (!recipient.allowDmsFromStudents && session.user.role === 'student') {
-    return NextResponse.json(
-      { error: 'This user is not accepting direct messages from students.' },
-      { status: 403 },
-    )
-  }
-
   const { body } = await req.json()
   if (!body?.trim()) return NextResponse.json({ error: 'Message body required' }, { status: 400 })
+
+  const senderName = session.user.name ?? 'Someone'
+
+  // If recipient has restricted DMs and sender is a student, route to message request
+  if (!recipient.allowDmsFromStudents && session.user.role === 'student') {
+    // Check for approved request — if approved, allow normal DM
+    const existingRequest = await prisma.messageRequest.findUnique({
+      where: { senderId_recipientId: { senderId, recipientId } },
+    })
+
+    if (existingRequest?.status === 'approved') {
+      // Approved — fall through to normal DM below
+    } else if (existingRequest?.status === 'pending') {
+      return NextResponse.json({ type: 'request', status: 'pending' }, { status: 200 })
+    } else {
+      // Create or re-create request
+      await prisma.messageRequest.upsert({
+        where: { senderId_recipientId: { senderId, recipientId } },
+        create: { senderId, recipientId, initialMessage: body.trim(), status: 'pending' },
+        update: { initialMessage: body.trim(), status: 'pending' },
+      })
+      await createNotification(recipientId, 'private_message', `Message request from ${senderName}`, {
+        body: 'They want to send you a message. Approve or deny in your Messages inbox.',
+        link: '/messages/requests',
+      })
+      return NextResponse.json({ type: 'request', status: 'created' }, { status: 201 })
+    }
+  }
 
   const message = await prisma.directMessage.create({
     data: { senderId, recipientId, body: body.trim() },
     include: { sender: { select: { id: true, name: true, avatarUrl: true } } },
   })
 
-  // Notify recipient
-  const senderName = session.user.name ?? 'Someone'
   await createNotification(recipientId, 'private_message', `New message from ${senderName}`, {
     body: body.trim().slice(0, 80),
     link: `/messages/${senderId}`,

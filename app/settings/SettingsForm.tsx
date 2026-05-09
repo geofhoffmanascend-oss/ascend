@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { JOURNAL_PROMPTS } from '@/lib/journalPrompts'
 import { PushPermissionButton } from '@/app/components/PushPermissionButton'
+import { Toast } from '@/app/components/Toast'
 
 type Prefs = {
   notifyClassUpdates:    boolean
@@ -25,6 +26,8 @@ export function SettingsForm({ userId, initial, forums: initialForums }: Props) 
   const [prefs, setPrefs] = useState<Prefs>(initial)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const clearToast = useCallback(() => setToast(null), [])
 
   const allPromptKeys = JOURNAL_PROMPTS.map(p => p.key)
   const enabledPromptKeys: string[] = prefs.defaultJournalPrompts
@@ -32,7 +35,13 @@ export function SettingsForm({ userId, initial, forums: initialForums }: Props) 
     : allPromptKeys
 
   function toggle(field: keyof Omit<Prefs, 'defaultJournalPrompts'>) {
-    setPrefs(p => ({ ...p, [field]: !p[field] }))
+    setPrefs(p => {
+      const next = { ...p, [field]: !p[field] }
+      if (field === 'allowDmsFromStudents' && !next.allowDmsFromStudents) {
+        setToast('Students will now send you a message request instead of a direct message. You can approve or decline requests from your Messages inbox.')
+      }
+      return next
+    })
     setSaved(false)
   }
 
@@ -134,6 +143,8 @@ export function SettingsForm({ userId, initial, forums: initialForums }: Props) 
         </button>
         {saved && <p className="text-sm text-steel">Saved.</p>}
       </div>
+
+      {toast && <Toast message={toast} type="info" onClose={clearToast} durationMs={6000} />}
     </div>
   )
 }

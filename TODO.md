@@ -178,13 +178,8 @@ SW errors seen in order (each step was a fix attempt):
 3. "TypeError: Failed to execute 'clone' on 'Response': Response body is already used" — `res.clone()` was called inside async `caches.open().then()`, after `res` was already consumed → **Fixed:** moved to `const clone = res.clone()` synchronously before the async call. Also excluded all `/api/*` routes from SW caching. Cache bumped to `ascend-v4`.
 - **If still broken after deploy:** check browser devtools → Application → Service Workers for the actual error. Also verify `sw.js` returns `Content-Type: application/javascript` (check Network tab). If MIME type is wrong, Vercel may be ignoring `next.config.ts` headers for public/ files — fallback is to add headers in `vercel.json`.
 
-### [ ] P2 — Production auth: credentials login 401 on preview deployment URLs
-Symptom: `POST /api/auth/callback/credentials → 401` on `ascend-nj8ondsyc-*.vercel.app` URLs.
-Root cause: `NEXTAUTH_URL` is set to `https://ascend-ten-olive.vercel.app`. NextAuth v4 validates CSRF tokens against this URL — any other hostname (preview deploys) gets 401.
-Fix options:
-- Use `https://ascend-ten-olive.vercel.app` (canonical URL) — works, no code change needed
-- OR remove `NEXTAUTH_URL` from Vercel env vars entirely so NextAuth auto-detects from request host (`vercel env rm NEXTAUTH_URL production` after `vercel link --project ascend --yes`)
-- **NOT YET APPLIED** — confirm which URL the user is hitting first
+### [x] P2 — Production auth: credentials login 401 on preview deployment URLs
+Fixed: removed `NEXTAUTH_URL` from Vercel production env — NextAuth now auto-detects host, works on all deployment URLs.
 
 ### [ ] P3 — `/api/auth/register` returning 500 in production
 Not yet diagnosed. Error is caught and logged as `[register]` in Vercel function logs. Check Vercel logs for the actual exception. Likely a DB connection issue or missing env var.

@@ -75,6 +75,10 @@ export default async function AdminHomePage() {
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Feedback</p>
           <p className="text-slate text-sm">Student class feedback</p>
         </Link>
+        <Link href="/admin/store" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel">Gear Store</p>
+          <p className="text-slate text-sm">Products, orders, and pickup confirmation</p>
+        </Link>
         <Link href="/admin/settings" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Gym Settings</p>
           <p className="text-slate text-sm">Review URL and gym configuration</p>

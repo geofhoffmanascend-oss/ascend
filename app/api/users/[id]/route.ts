@@ -20,7 +20,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     bio, phone, emergencyContact, belt, stripes, name, avatarUrl, weightClass, onboardingDone,
     notifyClassUpdates, notifyInstructorNotes, notifyPrivateMessages,
     notifyCheckinPrompts, notifyFeedbackPrompts, notifyByEmail, allowDmsFromStudents,
-    defaultJournalPrompts,
+    allowMediaTagging, defaultJournalPrompts,
   } = body
 
   const user = await prisma.user.update({
@@ -42,6 +42,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(notifyFeedbackPrompts !== undefined && { notifyFeedbackPrompts }),
       ...(notifyByEmail !== undefined && { notifyByEmail }),
       ...(allowDmsFromStudents !== undefined && { allowDmsFromStudents }),
+      ...(allowMediaTagging    !== undefined && { allowMediaTagging }),
       ...(defaultJournalPrompts !== undefined && { defaultJournalPrompts }),
     },
     select: {

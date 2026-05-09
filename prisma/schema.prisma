@@ -105,6 +105,18 @@ enum MessageRequestStatus {
   denied
 }
 
+enum MediaType {
+  photo
+  video_link
+}
+
+enum OrderStatus {
+  pending
+  ready
+  picked_up
+  cancelled
+}
+
 // ── Auth (NextAuth) ────────────────────────────────────────────────────────────
 
 model User {
@@ -142,6 +154,7 @@ model User {
   notifyFeedbackPrompts Boolean @default(true)
   notifyByEmail         Boolean @default(false)
   allowDmsFromStudents  Boolean @default(true)
+  allowMediaTagging     Boolean @default(true)
 
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
@@ -172,8 +185,11 @@ model User {
   receivedMessages     DirectMessage[]   @relation("ReceivedMessages")
   sentMessageRequests     MessageRequest[] @relation("SentRequests")
   receivedMessageRequests MessageRequest[] @relation("ReceivedRequests")
+  uploadedMedia           MediaItem[]      @relation("UploaderMedia")
+  mediaTags               MediaTag[]       @relation("TaggedInMedia")
   trainingLogs         TrainingLog[]
   classFeedback        ClassFeedback[]
+  orders               Order[]
 }
 
 model Account {
@@ -508,6 +524,51 @@ model ClassFeedback {
   @@unique([userId, classSessionId])
 }
 
+// ── Media Archive ─────────────────────────────────────────────────────────────
+
+model MediaItem {
+  id           String         @id @default(cuid())
+  uploaderId   String
+  uploader     User           @relation("UploaderMedia", fields: [uploaderId], references: [id], onDelete: Cascade)
+  url          String
+  publicId     String?
+  thumbnailUrl String?
+  type         MediaType
+  caption      String?
+  forSale      Boolean        @default(false)
+  price        Int?
+  createdAt    DateTime       @default(now())
+  tags         MediaTag[]
+  hashtags     MediaHashtag[]
+}
+
+model Hashtag {
+  id        String         @id @default(cuid())
+  tag       String         @unique
+  createdAt DateTime       @default(now())
+  media     MediaHashtag[]
+}
+
+model MediaHashtag {
+  mediaItemId String
+  hashtagId   String
+  mediaItem   MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+  hashtag     Hashtag   @relation(fields: [hashtagId],   references: [id], onDelete: Cascade)
+
+  @@id([mediaItemId, hashtagId])
+}
+
+model MediaTag {
+  id          String    @id @default(cuid())
+  mediaItemId String
+  mediaItem   MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation("TaggedInMedia", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@unique([mediaItemId, userId])
+}
+
 // ── Push Subscriptions ─────────────────────────────────────────────────────────
 
 model PushSubscription {
@@ -527,4 +588,41 @@ model GymSettings {
   reviewUrl String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ── Gear Store ─────────────────────────────────────────────────────────────────
+
+model Product {
+  id            String      @id @default(cuid())
+  name          String
+  description   String?
+  price         Int
+  imageUrl      String?
+  stock         Int         @default(0)
+  available     Boolean     @default(true)
+  category      String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  orderItems    OrderItem[]
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     OrderItem[]
+  status    OrderStatus @default(pending)
+  notes     String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int     @default(1)
+  price     Int
 }

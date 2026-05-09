@@ -52,6 +52,8 @@ export function Header() {
               <NavLink href="/forum">Forum</NavLink>
               <NavLink href="/lessons">Lessons</NavLink>
               <NavLink href="/journal">Journal</NavLink>
+              <NavLink href="/gallery">Gallery</NavLink>
+              <NavLink href="/store">Store</NavLink>
 
               {(session.user.role === 'instructor' || session.user.role === 'admin') && (
                 <>
@@ -119,6 +121,8 @@ export function Header() {
               <NavLink href="/forum" onClick={close}>Forum</NavLink>
               <NavLink href="/lessons" onClick={close}>Lessons</NavLink>
               <NavLink href="/journal" onClick={close}>Journal</NavLink>
+              <NavLink href="/gallery" onClick={close}>Gallery</NavLink>
+              <NavLink href="/store" onClick={close}>Store</NavLink>
 
               {(session.user.role === 'instructor' || session.user.role === 'admin') && (
                 <>

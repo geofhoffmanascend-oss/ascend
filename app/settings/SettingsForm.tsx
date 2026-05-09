@@ -13,6 +13,7 @@ type Prefs = {
   notifyFeedbackPrompts: boolean
   notifyByEmail:         boolean
   allowDmsFromStudents:  boolean
+  allowMediaTagging:     boolean
   defaultJournalPrompts: string | null
 }
 
@@ -39,6 +40,9 @@ export function SettingsForm({ userId, initial, forums: initialForums }: Props) 
       const next = { ...p, [field]: !p[field] }
       if (field === 'allowDmsFromStudents' && !next.allowDmsFromStudents) {
         setToast('Students will now send you a message request instead of a direct message. You can approve or decline requests from your Messages inbox.')
+      }
+      if (field === 'allowMediaTagging' && !next.allowMediaTagging) {
+        setToast('People can no longer tag you in photos. Existing tags are not affected.')
       }
       return next
     })
@@ -104,6 +108,12 @@ export function SettingsForm({ userId, initial, forums: initialForums }: Props) 
           description="When off, only instructors and admins can send you direct messages."
           checked={prefs.allowDmsFromStudents}
           onChange={() => toggle('allowDmsFromStudents')}
+        />
+        <Toggle
+          label="Allow photo tagging"
+          description="When off, no one can tag you in gallery photos."
+          checked={prefs.allowMediaTagging}
+          onChange={() => toggle('allowMediaTagging')}
         />
       </section>
 

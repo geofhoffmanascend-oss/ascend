@@ -19,6 +19,7 @@ export default async function SettingsPage() {
         notifyFeedbackPrompts: true,
         notifyByEmail:         true,
         allowDmsFromStudents:  true,
+        allowMediaTagging:     true,
         defaultJournalPrompts: true,
       },
     }),

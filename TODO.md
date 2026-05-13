@@ -157,6 +157,7 @@ All scaffolding complete. Database setup pending — see notes below.
 ### [x] 11.3 — Guided journal mode: toggled per entry, structured prompts (sleep, energy, diet, conditioning, technique notes, class objective, personal goal + did you accomplish it, comfort zone, drill partner quality, rolling intensity, focus, key takeaways, future items). Only answered prompts are saved.
 ### [x] 11.4 — Default guided questions setting in user settings: students pick which prompts appear by default
 ### [x] 11.5 — Journal history on student dashboard: list of past logs, filterable by class
+### [x] 11.6 — Optional entry title field (replaces "General Entry" label; falls back to class name)
 
 ---
 
@@ -236,7 +237,9 @@ Not yet diagnosed. Error is caught and logged as `[register]` in Vercel function
 ### [x] 16.6 — Admin role manager UI: toggle roles per user, student always required
 ### [x] 16.7 — `RoleManager` component on admin user detail page
 
-### [ ] R4 — DB push + data migration required (TWO STEPS — see below)
+### [x] R4 — DB push + data migration — DONE (Step 1: schema pushed, migration SQL run to populate roles[])
+### [ ] R4b — Phase 16 cleanup: remove old `role Role` field from User model + `prisma db push`
+> One-liner: delete the `role Role @default(student)` line from schema.prisma, then push. Confirm no remaining references to `session.user.role` (singular) before pushing.
 
 ### [x] 16.8 — Instructor schedule view: upcoming sessions, registered/checked-in counts
 ### [x] 16.9 — Per-session notes editor with public/private toggle (visible to committed students on day view)
@@ -244,6 +247,29 @@ Not yet diagnosed. Error is caught and logged as `[register]` in Vercel function
 ### [x] 16.11 — Instructor-initiated private lessons (1–2 students; 3–4 needs schema expansion)
 ### [x] 16.12 — Instructor push notification UI (notify all committed students per session)
 ### [x] 16.13 — Vendor dashboard placeholder page + route
+### [x] 16.14 — Schedule prev/next navigation (Day/Week/Month views, desktop + mobile)
+### [x] 16.15 — JWT callback: re-fetch roles from DB on every refresh so role changes take effect immediately (no re-login needed)
+
+---
+
+## PHASE 17 — Class Group Membership & Schedule Grouping
+
+Schema pushed: `ClassGroup` enum (`grappling | striking | kids | competition | seminar`), `blockedClassGroups ClassGroup[]` and `hiddenClassGroups ClassGroup[]` on User, `title String?` on TrainingLog.
+
+**Type → group mapping:**
+- Grappling: gi, nogi, fundamentals, nogi_fundamentals, open_mat, wrestling
+- Striking: muay_thai, self_defense
+- Kids: kids
+- Competition: competition_prep
+- Seminar: seminar
+
+### [ ] 17.1 — Admin class access UI: per-user toggles for each ClassGroup on admin user detail page; `PUT /api/admin/users/[id]/class-access`
+### [ ] 17.2 — User schedule preferences: "Show on schedule" section in /settings; `PUT /api/user/class-preferences`
+### [ ] 17.3 — Schedule enforcement: admin-blocked groups → class card grayed out + register button hidden; user-hidden groups → class not shown at all
+### [ ] 17.4 — Check-in enforcement: block self check-in and QR scan if class group is admin-blocked for that user
+### [ ] 17.5 — Schedule time-slot grouping headers
+  - Weekdays: 6am (before 10am) / Noon (10am–2pm) / PM (2pm+) / Competition (competition_prep any day)
+  - Weekends: by class type only (Grappling / Striking / etc.) — no time split
 
 ---
 

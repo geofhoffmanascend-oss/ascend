@@ -51,9 +51,7 @@ export default async function JournalPage() {
             >
               <div className="min-w-0">
                 <p className="text-sm text-ink font-medium">
-                  {log.classSession
-                    ? log.classSession.class.title
-                    : 'General Entry'}
+                  {log.title || (log.classSession ? log.classSession.class.title : 'Journal Entry')}
                 </p>
                 <p className="text-xs text-ash mt-0.5">
                   {log.classSession

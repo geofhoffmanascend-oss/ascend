@@ -130,6 +130,14 @@ enum OrderStatus {
   cancelled
 }
 
+enum ClassGroup {
+  grappling
+  striking
+  kids
+  competition
+  seminar
+}
+
 // ── Auth (NextAuth) ────────────────────────────────────────────────────────────
 
 model User {
@@ -170,6 +178,11 @@ model User {
   notifyByEmail         Boolean @default(false)
   allowDmsFromStudents  Boolean @default(true)
   allowMediaTagging     Boolean @default(true)
+
+  // Class access (admin-controlled membership restrictions)
+  blockedClassGroups    ClassGroup[] @default([])
+  // Schedule preferences (user-controlled visibility)
+  hiddenClassGroups     ClassGroup[] @default([])
 
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
@@ -533,6 +546,7 @@ model TrainingLog {
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   classSessionId  String?
   classSession    ClassSession? @relation(fields: [classSessionId], references: [id], onDelete: SetNull)
+  title           String?
   isPrivate       Boolean       @default(false)
   isGuided        Boolean       @default(false)
   freeFormContent String?

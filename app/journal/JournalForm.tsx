@@ -9,6 +9,7 @@ type Props = {
   defaultPromptKeys: string[]
   initial?: {
     id: string
+    title: string | null
     isPrivate: boolean
     isGuided: boolean
     freeFormContent: string | null
@@ -20,6 +21,7 @@ const CATEGORY_LABELS = { wellness: 'Wellness', training: 'Training', reflection
 
 export function JournalForm({ classSessionId, defaultPromptKeys, initial }: Props) {
   const router = useRouter()
+  const [title, setTitle] = useState(initial?.title ?? '')
   const [isPrivate, setIsPrivate] = useState(initial?.isPrivate ?? false)
   const [isGuided, setIsGuided] = useState(initial?.isGuided ?? false)
   const [freeForm, setFreeForm] = useState(initial?.freeFormContent ?? '')
@@ -51,6 +53,7 @@ export function JournalForm({ classSessionId, defaultPromptKeys, initial }: Prop
 
     const body = {
       classSessionId,
+      title: title.trim() || null,
       isPrivate,
       isGuided,
       freeFormContent: !isGuided ? freeForm : null,
@@ -79,6 +82,18 @@ export function JournalForm({ classSessionId, defaultPromptKeys, initial }: Prop
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+
+      {/* Optional title */}
+      <div className="flex flex-col gap-1">
+        <label className="text-xs font-bold uppercase tracking-widest text-steel">Title <span className="font-normal normal-case tracking-normal text-ash">(optional)</span></label>
+        <input
+          type="text"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          placeholder="e.g. Back takes, guard passing…"
+          className="w-full px-4 py-3 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors"
+        />
+      </div>
 
       {/* Controls row */}
       <div className="flex flex-wrap gap-6 border border-smoke bg-paper p-4">

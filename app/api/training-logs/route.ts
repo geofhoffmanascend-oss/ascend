@@ -28,12 +28,13 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { classSessionId, isPrivate, isGuided, freeFormContent, guidedResponses } = await req.json()
+  const { classSessionId, title, isPrivate, isGuided, freeFormContent, guidedResponses } = await req.json()
 
   const log = await prisma.trainingLog.create({
     data: {
       userId: session.user.id,
       classSessionId: classSessionId || null,
+      title: title || null,
       isPrivate: !!isPrivate,
       isGuided: !!isGuided,
       freeFormContent: freeFormContent || null,

@@ -41,11 +41,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  const { isPrivate, isGuided, freeFormContent, guidedResponses } = await req.json()
+  const { title, isPrivate, isGuided, freeFormContent, guidedResponses } = await req.json()
 
   const log = await prisma.trainingLog.update({
     where: { id },
     data: {
+      ...(title !== undefined && { title: title || null }),
       ...(isPrivate !== undefined && { isPrivate }),
       ...(isGuided !== undefined && { isGuided }),
       ...(freeFormContent !== undefined && { freeFormContent }),

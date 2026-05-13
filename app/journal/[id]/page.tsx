@@ -57,6 +57,7 @@ export default async function JournalEntryPage({
           defaultPromptKeys={defaultKeys}
           initial={{
             id: log.id,
+            title: log.title ?? null,
             isPrivate: log.isPrivate,
             isGuided: log.isGuided,
             freeFormContent: log.freeFormContent,
@@ -78,7 +79,7 @@ export default async function JournalEntryPage({
             <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Journal</span>
           </div>
           <h1 className="font-display text-2xl text-ink">
-            {log.classSession ? log.classSession.class.title : 'General Entry'}
+            {log.title || (log.classSession ? log.classSession.class.title : 'Journal Entry')}
           </h1>
           <p className="text-sm text-ash mt-1">
             {log.classSession

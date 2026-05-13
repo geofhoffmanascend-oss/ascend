@@ -16,7 +16,7 @@ const TYPE_LABELS: Record<string, string> = {
 export default async function ClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
-  if (session.user.role !== 'instructor' && session.user.role !== 'admin') redirect('/dashboard')
+  if (!session.user.roles?.includes('instructor') && !session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const { id } = await params
 
@@ -28,7 +28,7 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
   })
 
   if (!cls) notFound()
-  if (session.user.role !== 'admin' && cls.instructorId !== session.user.id) redirect('/instructor/classes')
+  if (!session.user.roles?.includes('admin') && cls.instructorId !== session.user.id) redirect('/instructor/classes')
 
   const monday = getMondayOfWeek(new Date())
   const sunday = new Date(monday)

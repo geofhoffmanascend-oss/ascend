@@ -21,7 +21,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const isOwner = log.userId === session.user.id
   const isInstructor =
     !log.isPrivate &&
-    (session.user.role === 'instructor' || session.user.role === 'admin') &&
+    (session.user.roles?.includes('instructor') || session.user.roles?.includes('admin')) &&
     log.classSession?.class.instructorId === session.user.id
 
   if (!isOwner && !isInstructor) {

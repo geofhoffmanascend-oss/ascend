@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { mutate } from 'swr'
 import { NotificationType } from '@prisma/client'
 
 type Notification = {
@@ -35,6 +36,7 @@ export function NotificationList({ notifications: initial }: { notifications: No
     await fetch('/api/notifications/mark-all-read', { method: 'POST' })
     setNotifications(ns => ns.map(n => ({ ...n, read: true })))
     setMarking(false)
+    mutate('/api/notifications/unread-count')
     router.refresh()
   }
 
@@ -42,6 +44,7 @@ export function NotificationList({ notifications: initial }: { notifications: No
     if (!n.read) {
       await fetch(`/api/notifications/${n.id}`, { method: 'PATCH' })
       setNotifications(ns => ns.map(x => x.id === n.id ? { ...x, read: true } : x))
+      mutate('/api/notifications/unread-count')
     }
     if (n.link) router.push(n.link)
   }

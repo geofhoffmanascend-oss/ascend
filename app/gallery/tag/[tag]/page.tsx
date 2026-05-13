@@ -54,7 +54,7 @@ export default async function HashtagAlbumPage({ params }: { params: Promise<{ t
         initialItems={serialized}
         nextCursor={nextCursor}
         currentUserId={session.user.id}
-        currentUserRole={session.user.role}
+        currentUserRoles={session.user.roles}
       />
     </div>
   )

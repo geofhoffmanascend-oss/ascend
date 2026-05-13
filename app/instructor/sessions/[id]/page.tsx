@@ -5,6 +5,9 @@ import Link from 'next/link'
 import prisma from '@/lib/database'
 import { BeltBadge } from '@/app/components/BeltBadge'
 import { AttendanceClient } from './AttendanceClient'
+import { SessionNotesEditor } from './SessionNotesEditor'
+import { ReleaseButton } from './ReleaseButton'
+import { NotifyButton } from './NotifyButton'
 
 type Belt = 'white' | 'blue' | 'purple' | 'brown' | 'black' | 'coral' | 'red'
 
@@ -16,7 +19,7 @@ const TYPE_LABELS: Record<string, string> = {
 export default async function SessionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
-  if (session.user.role !== 'instructor' && session.user.role !== 'admin') redirect('/dashboard')
+  if (!session.user.roles?.includes('instructor') && !session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const { id } = await params
 
@@ -35,11 +38,12 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
         orderBy: { createdAt: 'asc' },
       },
       attendance: { select: { userId: true, attended: true } },
+      subRequests: { where: { status: 'open' }, select: { id: true } },
     },
   })
 
   if (!cs) notFound()
-  if (session.user.role !== 'admin' && cs.class.instructorId !== session.user.id) redirect('/instructor')
+  if (!session.user.roles?.includes('admin') && cs.class.instructorId !== session.user.id) redirect('/instructor')
 
   // 4.7 — students who attended before but haven't committed this session
   const committedIds = new Set(cs.commitments.map(c => c.userId))
@@ -73,6 +77,10 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
           {cs.class.location && ` · ${cs.class.location}`}
         </p>
         <p className="text-xs text-ash mt-0.5">{TYPE_LABELS[cs.class.type] ?? cs.class.type}</p>
+        <div className="flex items-center gap-3 mt-4">
+          <NotifyButton sessionId={id} studentCount={cs.commitments.length} />
+          <ReleaseButton sessionId={id} alreadyReleased={cs.subRequests.length > 0} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -134,10 +142,19 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
         </div>
       )}
 
-      {/* Notes */}
+      {/* Session notes editor */}
+      <div className="mt-6">
+        <SessionNotesEditor
+          sessionId={id}
+          initialNotes={cs.sessionNotes ?? null}
+          initialPublic={cs.notesPublic}
+        />
+      </div>
+
+      {/* Legacy notes */}
       {cs.notes && (
-        <div className="mt-6 border border-smoke bg-paper p-6">
-          <p className="text-xs font-bold uppercase tracking-widest text-steel mb-2">Session Notes</p>
+        <div className="mt-4 border border-smoke bg-paper p-6">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel mb-2">Admin Notes</p>
           <p className="text-sm text-ink">{cs.notes}</p>
         </div>
       )}

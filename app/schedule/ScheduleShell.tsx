@@ -43,6 +43,42 @@ function saveFilters(userId: string, filters: Filters) {
   } catch {}
 }
 
+// ── Period Nav (prev / label / next) ──────────────────────────────────────────
+
+export function PeriodNav({
+  label,
+  prevUrl,
+  nextUrl,
+}: {
+  label: string
+  prevUrl: string
+  nextUrl: string
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <Link
+        href={prevUrl}
+        className="p-2 border border-smoke text-steel hover:border-steel hover:text-ink transition-colors"
+        aria-label="Previous"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </Link>
+      <span className="text-sm font-medium text-ink min-w-[140px] text-center">{label}</span>
+      <Link
+        href={nextUrl}
+        className="p-2 border border-smoke text-steel hover:border-steel hover:text-ink transition-colors"
+        aria-label="Next"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </Link>
+    </div>
+  )
+}
+
 // ── View Toggle ────────────────────────────────────────────────────────────────
 
 export function ViewToggle({
@@ -76,6 +112,9 @@ type Props = {
   todayStr: string
   weekStr: string
   monthStr: string
+  prevUrl: string
+  nextUrl: string
+  periodLabel: string
   // week
   days?: Day[]
   currentMonday?: string
@@ -87,6 +126,7 @@ type Props = {
 export function ScheduleShell({
   userId, view,
   todayStr, weekStr, monthStr,
+  prevUrl, nextUrl, periodLabel,
   days, currentMonday,
   monthSessions, currentMonth,
 }: Props) {
@@ -108,9 +148,12 @@ export function ScheduleShell({
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+      <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
         <ViewToggle active={view} todayStr={todayStr} weekStr={weekStr} monthStr={monthStr} />
         <ScheduleFilters filters={filters} onChange={handleChange} />
+      </div>
+      <div className="flex justify-center mb-6">
+        <PeriodNav prevUrl={prevUrl} nextUrl={nextUrl} label={periodLabel} />
       </div>
 
       {view === 'week' && days && currentMonday && (

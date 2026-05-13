@@ -8,7 +8,7 @@ import { PlanForm } from '../PlanForm'
 export default async function EditLessonPlanPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
-  if (session.user.role !== 'instructor' && session.user.role !== 'admin') redirect('/dashboard')
+  if (!session.user.roles?.includes('instructor') && !session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const { id } = await params
   const plan = await prisma.lessonPlan.findUnique({ where: { id } })

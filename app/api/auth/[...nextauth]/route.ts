@@ -7,7 +7,20 @@ import bcrypt from 'bcryptjs'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
-  session: { strategy: 'jwt' },
+  session: { strategy: 'jwt', maxAge: 30 * 24 * 60 * 60 },
+  jwt: { maxAge: 30 * 24 * 60 * 60 },
+  cookies: {
+    sessionToken: {
+      name: 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 30 * 24 * 60 * 60,
+      },
+    },
+  },
   pages: {
     signIn: '/login',
   },
@@ -29,7 +42,7 @@ export const authOptions: NextAuthOptions = {
         const valid = await bcrypt.compare(credentials.password, user.passwordHash)
         if (!valid) return null
 
-        return { id: user.id, name: user.name, email: user.email, role: user.role }
+        return { id: user.id, name: user.name, email: user.email, roles: user.roles as any }
       },
     }),
     GoogleProvider({
@@ -41,18 +54,17 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
-        token.role = (user as any).role
-      }
-      if (token.id && !token.role) {
-        const dbUser = await prisma.user.findUnique({ where: { id: token.id } })
-        if (dbUser) token.role = dbUser.role
+        token.roles = (user as any).roles ?? ['student']
+      } else if (token.id) {
+        const dbUser = await prisma.user.findUnique({ where: { id: token.id }, select: { roles: true } })
+        if (dbUser) token.roles = dbUser.roles as any
       }
       return token
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id
-        session.user.role = token.role
+        session.user.roles = token.roles ?? ['student']
       }
       return session
     },
@@ -60,10 +72,13 @@ export const authOptions: NextAuthOptions = {
   events: {
     async signIn({ user, account }) {
       if (account?.provider === 'google') {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { role: 'student' },
-        }).catch(() => {})
+        const dbUser = await prisma.user.findUnique({ where: { id: user.id } })
+        if (dbUser && (!dbUser.roles || dbUser.roles.length === 0)) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { roles: ['student'] },
+          }).catch(() => {})
+        }
       }
     },
   },

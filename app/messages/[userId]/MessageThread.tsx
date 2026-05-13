@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { mutate } from 'swr'
 import { Toast } from '@/app/components/Toast'
 
 type Message = {
@@ -27,6 +28,10 @@ export function MessageThread({ messages: initial, currentUserId, recipientId, i
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const clearToast = useCallback(() => setToast(null), [])
+
+  useEffect(() => {
+    mutate('/api/messages/unread-count')
+  }, [])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })

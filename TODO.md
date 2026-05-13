@@ -226,14 +226,54 @@ Not yet diagnosed. Error is caught and logged as `[register]` in Vercel function
 
 ---
 
-## ITEMS REQUIRING USER RESPONSE
+## PHASE 16 — Multi-Role System + Instructor Workflow
 
-### [ ] R1 — Run `prisma db push` for Phase 14 schema (Product, Order, OrderItem, OrderStatus enum)
-> Tell Claude: "prisma db push" when ready to apply the schema to the database.
+### [x] 16.1 — Schema: `roles Role[]`, `VendorType`, `instructor_only` forum, `sessionNotes`, `ClassSubRequest`
+### [x] 16.2 — Auth: session/token updated to `roles[]`, middleware updated, all role checks migrated
+### [x] 16.3 — `lib/roles.ts` helper: `hasRole`, `hasAnyRole`, `isAdmin`, `isInstructor`, `isVendor`
+### [x] 16.4 — Anonymous feedback: filtered from instructor view, UI note added
+### [x] 16.5 — Instructor-only forum: access-gated, shown only to instructors, auto-subscribe on role assign
+### [x] 16.6 — Admin role manager UI: toggle roles per user, student always required
+### [x] 16.7 — `RoleManager` component on admin user detail page
 
-### [ ] R2 — Cloudinary credentials needed for photo uploads
-> Add to .env.local: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-> Then push to Vercel: vercel env add CLOUDINARY_CLOUD_NAME production (repeat for each)
+### [ ] R4 — DB push + data migration required (TWO STEPS — see below)
+
+### [x] 16.8 — Instructor schedule view: upcoming sessions, registered/checked-in counts
+### [x] 16.9 — Per-session notes editor with public/private toggle (visible to committed students on day view)
+### [x] 16.10 — Class release/substitution flow (release session → notify instructors → claim)
+### [x] 16.11 — Instructor-initiated private lessons (1–2 students; 3–4 needs schema expansion)
+### [x] 16.12 — Instructor push notification UI (notify all committed students per session)
+### [x] 16.13 — Vendor dashboard placeholder page + route
+
+---
+
+## ACTIVE BUGS — Fix at start of next session
+
+### [ ] BUG-1 — Header hydration mismatch (PRIORITY)
+**Symptom:** Console error: "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties." Nav links disappear or are inconsistent.
+**Cause:** Turbopack dev server is caching old compiled Header HTML. Multiple edits to Header.tsx during the session left the compiled server output stale. Clearing `.next` and restarting dev server did not fully resolve it.
+**What to try:** 
+- Read the current `app/components/Header.tsx` as ground truth (it has the correct `md:` breakpoint code)
+- Check for any other cached build artifacts (`.next`, `node_modules/.cache`)
+- Consider if `useSession()` causes server/client mismatch (session is null on server, populated on client — this is expected but could compound with class mismatch)
+- The real fix may be to suppress hydration warnings on the Header using `suppressHydrationWarning` or restructure so session-dependent nav renders client-only
+
+### [ ] BUG-2 — Gallery grid images not displaying correctly
+**Symptom:** Gallery view layout/density options may not visually work as expected; images may not fill grid cells properly.
+**Root cause identified:** `h-full` inside an `aspect-ratio` container is unreliable cross-browser. Fix was applied (use `absolute inset-0` for grid mode, `w-full block` for masonry) but not confirmed working due to ongoing hydration issues.
+**File:** `app/gallery/GalleryClient.tsx` — `GridItem` component (~line 256)
+**Status:** Code fix applied, needs visual verification after BUG-1 is resolved.
+
+### [ ] BUG-3 — Gallery layout/density buttons — unconfirmed
+**Symptom:** User reported view options "not functioning correctly" — unclear if this is the GridItem rendering bug (BUG-2) or a separate state issue.
+**To verify:** After BUG-1 and BUG-2 resolved, test grid/masonry/timeline buttons and 2/3/4 column density buttons in a clean browser session (no cached service worker).
+
+---
+
+## COMPLETED ITEMS REQUIRING USER RESPONSE
+
+### [x] R1 — prisma db push for Phase 14 — DONE
+### [x] R2 — Cloudinary credentials — DONE (diztvzzix cloud, pushed to Vercel)
 
 ### [ ] R3 — Phase 15 anonymous feedback + DM improvements require `prisma db push`
 > Schema changes: anonymous field on ClassFeedback, MessageRequest model, MessageRequestStatus enum

@@ -7,7 +7,7 @@ import prisma from '@/lib/database'
 export default async function AdminForumPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
-  if (session.user.role !== 'admin') redirect('/dashboard')
+  if (!session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const forums = await prisma.forum.findMany({
     include: {

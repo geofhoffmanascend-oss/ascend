@@ -8,7 +8,7 @@ import { PlanForm } from '../PlanForm'
 export default async function NewLessonPlanPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
-  if (session.user.role !== 'instructor' && session.user.role !== 'admin') redirect('/dashboard')
+  if (!session.user.roles?.includes('instructor') && !session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const classes = await prisma.class.findMany({
     where: { instructorId: session.user.id, isActive: true },

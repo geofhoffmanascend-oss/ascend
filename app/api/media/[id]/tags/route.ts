@@ -25,7 +25,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const isOwner = item.uploaderId === session.user.id
-  const isStaff = session.user.role === 'admin' || session.user.role === 'instructor'
+  const isStaff = session.user.roles?.includes('admin') || session.user.roles?.includes('instructor')
   if (!isOwner && !isStaff) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const tag = await prisma.mediaTag.upsert({

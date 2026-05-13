@@ -7,7 +7,7 @@ export async function requireInstructor() {
   if (!session?.user?.id) {
     return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }), session: null }
   }
-  if (session.user.role !== 'instructor' && session.user.role !== 'admin') {
+  if (!session.user.roles?.includes('instructor') && !session.user.roles?.includes('admin')) {
     return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }), session: null }
   }
   return { error: null, session }

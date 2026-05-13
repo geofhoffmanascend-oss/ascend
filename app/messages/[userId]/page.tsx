@@ -40,7 +40,7 @@ export default async function ConversationPage({ params }: { params: Promise<{ u
     readAt: m.readAt?.toISOString() ?? null,
   }))
 
-  const isRestricted = !other.allowDmsFromStudents && session.user.role === 'student'
+  const isRestricted = !other.allowDmsFromStudents && !session.user.roles?.includes('instructor') && !session.user.roles?.includes('admin')
 
   // Check for existing message request when DMs are restricted
   let requestStatus: 'pending' | 'approved' | null = null

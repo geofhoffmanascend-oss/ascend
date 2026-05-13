@@ -6,7 +6,7 @@ import prisma from '@/lib/database'
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (session.user.role !== 'instructor' && session.user.role !== 'admin') {
+  if (!session.user.roles?.includes('instructor') && !session.user.roles?.includes('admin')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -25,7 +25,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const post = await prisma.post.findUnique({ where: { id }, select: { authorId: true } })
   if (!post) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const canDelete = post.authorId === session.user.id || session.user.role === 'admin'
+  const canDelete = post.authorId === session.user.id || session.user.roles?.includes('admin')
   if (!canDelete) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await prisma.post.delete({ where: { id } })

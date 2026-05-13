@@ -39,7 +39,7 @@ type Props = {
   initialItems: MediaItem[]
   nextCursor: string | null
   currentUserId: string
-  currentUserRole: string
+  currentUserRoles: string[]
 }
 
 function gridStyle(density: Density) {
@@ -68,7 +68,7 @@ function serializeItem(item: MediaItem & { publicId?: string | null; forSale?: b
   }
 }
 
-export function GalleryClient({ initialItems, nextCursor: initialCursor, currentUserId, currentUserRole }: Props) {
+export function GalleryClient({ initialItems, nextCursor: initialCursor, currentUserId, currentUserRoles }: Props) {
   const [items,       setItems]       = useState<MediaItem[]>(initialItems)
   const [cursor,      setCursor]      = useState(initialCursor)
   const [loading,     setLoading]     = useState(false)
@@ -229,7 +229,7 @@ export function GalleryClient({ initialItems, nextCursor: initialCursor, current
         <MediaModal
           item={selected}
           currentUserId={currentUserId}
-          currentUserRole={currentUserRole}
+          currentUserRoles={currentUserRoles}
           onClose={() => setSelected(null)}
           onUpdated={onUpdated}
           onDeleted={onDeleted}
@@ -253,7 +253,7 @@ export function GalleryClient({ initialItems, nextCursor: initialCursor, current
 
 // ── Grid item ─────────────────────────────────────────────────────────────────
 
-function GridItem({ item, onOpen, onSlideshow, masonry, index: _index }: {
+function GridItem({ item, onOpen, onSlideshow, masonry }: {
   item: MediaItem
   onOpen: () => void
   onSlideshow: () => void
@@ -261,25 +261,34 @@ function GridItem({ item, onOpen, onSlideshow, masonry, index: _index }: {
   index: number
 }) {
   return (
-    <div className={`relative bg-mist border border-smoke hover:border-steel transition-colors overflow-hidden group cursor-pointer ${masonry ? '' : 'aspect-square'}`}>
-      <div onClick={onOpen} className="w-full h-full">
-        {item.type === 'photo' ? (
+    <div
+      className="relative bg-mist border border-smoke hover:border-steel transition-colors overflow-hidden group cursor-pointer"
+      style={masonry ? {} : { aspectRatio: '1 / 1' }}
+      onClick={onOpen}
+    >
+      {/* Media — fills container via absolute positioning in grid, natural height in masonry */}
+      {item.type === 'photo' ? (
+        masonry ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.displayUrl} alt={item.caption ?? ''} className={`w-full ${masonry ? '' : 'h-full object-cover'}`} loading="lazy" />
+          <img src={item.displayUrl} alt={item.caption ?? ''} className="w-full block" loading="lazy" />
         ) : (
-          <div className={`w-full relative ${masonry ? 'aspect-video' : 'h-full'} bg-ink flex items-center justify-center`}>
-            {item.thumbnailUrl
-              ? <img src={item.thumbnailUrl} alt={item.caption ?? ''} className="w-full h-full object-cover" loading="lazy" />
-              : <span className="text-paper/40 text-xs">Video</span>
-            }
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-10 h-10 bg-ink/60 rounded-full flex items-center justify-center">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
-              </div>
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={item.displayUrl} alt={item.caption ?? ''} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+        )
+      ) : (
+        <div className={`${masonry ? 'aspect-video' : 'absolute inset-0'} w-full bg-ink flex items-center justify-center`}>
+          {item.thumbnailUrl
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={item.thumbnailUrl} alt={item.caption ?? ''} className="w-full h-full object-cover" loading="lazy" />
+            : <span className="text-paper/40 text-xs">Video</span>
+          }
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-10 h-10 bg-ink/60 rounded-full flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Hover overlay */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-ink/20" />
@@ -287,7 +296,7 @@ function GridItem({ item, onOpen, onSlideshow, masonry, index: _index }: {
       {/* Slideshow button */}
       <button
         onClick={e => { e.stopPropagation(); onSlideshow() }}
-        className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity bg-ink/60 text-paper text-xs px-2 py-1 pointer-events-auto"
+        className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity bg-ink/60 text-paper text-xs px-2 py-1 pointer-events-auto z-10"
         title="Start slideshow"
       >
         ▶
@@ -295,17 +304,17 @@ function GridItem({ item, onOpen, onSlideshow, masonry, index: _index }: {
 
       {/* Badges */}
       {item.forSale && (
-        <span className="absolute top-2 right-2 bg-brand-red text-paper text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-wide">
+        <span className="absolute top-2 right-2 bg-brand-red text-paper text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-wide z-10">
           For Sale
         </span>
       )}
       {item.tags.length > 0 && (
-        <span className="absolute bottom-2 left-2 bg-ink/60 text-paper text-[10px] px-1.5 py-0.5">
+        <span className="absolute bottom-2 left-2 bg-ink/60 text-paper text-[10px] px-1.5 py-0.5 z-10">
           {item.tags.length} tagged
         </span>
       )}
       {item.hashtags.length > 0 && (
-        <span className="absolute bottom-2 right-2 bg-ink/60 text-brand-red text-[10px] px-1.5 py-0.5 font-medium">
+        <span className="absolute bottom-2 right-2 bg-ink/60 text-brand-red text-[10px] px-1.5 py-0.5 font-medium z-10">
           #{item.hashtags[0].hashtag.tag}{item.hashtags.length > 1 ? ` +${item.hashtags.length - 1}` : ''}
         </span>
       )}

@@ -31,6 +31,11 @@ export default async function ForumPage({ params }: { params: Promise<{ id: stri
 
   if (!forum) notFound()
 
+  // Instructor-only forum: restrict access
+  if ((forum.type as string) === 'instructor_only' && !session.user.roles?.includes('instructor') && !session.user.roles?.includes('admin')) {
+    redirect('/forum')
+  }
+
   const posts = forum.posts.map(p => ({
     ...p,
     createdAt: p.createdAt.toISOString(),
@@ -45,6 +50,7 @@ export default async function ForumPage({ params }: { params: Promise<{ id: stri
   const FORUM_LABELS: Record<string, string> = {
     general: 'General', announcement: 'Announcements',
     class_forum: 'Class Forum', private_lesson: 'Private Lessons',
+    instructor_only: 'Instructor Forum',
   }
 
   return (
@@ -66,7 +72,7 @@ export default async function ForumPage({ params }: { params: Promise<{ id: stri
         forumId={forum.id}
         posts={posts}
         userId={session.user.id}
-        userRole={session.user.role}
+        userRoles={session.user.roles}
         isSubscribed={isSubscribed}
         forumType={forum.type}
       />

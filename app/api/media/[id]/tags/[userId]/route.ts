@@ -14,7 +14,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   const isOwner    = item.uploaderId === session.user.id
   const isTaggedUser = session.user.id === userId
-  const isAdmin    = session.user.role === 'admin'
+  const isAdmin    = session.user.roles?.includes('admin')
   if (!isOwner && !isTaggedUser && !isAdmin) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }

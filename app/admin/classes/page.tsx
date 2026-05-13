@@ -16,7 +16,7 @@ const TYPE_LABELS: Record<string, string> = {
 export default async function AdminClassesPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
-  if (session.user.role !== 'admin') redirect('/dashboard')
+  if (!session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const classes = await prisma.class.findMany({
     include: { instructor: { select: { name: true } } },

@@ -64,7 +64,7 @@ export function ClassForm({ instructors, initial }: Props) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
     })
-    if (!res.ok) { setError('Failed to save.'); setSaving(false); return }
+    if (!res.ok) { const d = await res.json(); setError(d.error ?? 'Failed to save.'); setSaving(false); return }
     router.push('/admin/classes')
     router.refresh()
   }

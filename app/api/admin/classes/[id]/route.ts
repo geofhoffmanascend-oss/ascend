@@ -9,6 +9,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params
   const { title, type, dayOfWeek, startTime, endTime, location, instructorId, maxStudents, isActive } = await req.json()
 
+  if (title !== undefined) {
+    const existing = await prisma.class.findFirst({
+      where: { title: { equals: title.trim(), mode: 'insensitive' }, NOT: { id } },
+    })
+    if (existing) return NextResponse.json({ error: `A class named "${existing.title}" already exists.` }, { status: 409 })
+  }
+
   const cls = await prisma.class.update({
     where: { id },
     data: {

@@ -270,13 +270,13 @@ export default async function DashboardPage() {
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Private Lessons</p>
           <p className="text-slate text-sm">Request or view your lesson history</p>
         </Link>
-        {(session.user.role === 'instructor' || session.user.role === 'admin') && (
+        {(session.user.roles?.includes('instructor') || session.user.roles?.includes('admin')) && (
           <Link href="/instructor" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
             <p className="text-xs font-bold uppercase tracking-widest text-steel">Instructor</p>
             <p className="text-slate text-sm">Rosters, attendance, lesson plans</p>
           </Link>
         )}
-        {session.user.role === 'admin' && (
+        {session.user.roles?.includes('admin') && (
           <Link href="/admin" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
             <p className="text-xs font-bold uppercase tracking-widest text-steel">Admin</p>
             <p className="text-slate text-sm">Users, classes, attendance reports</p>

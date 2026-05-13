@@ -5,15 +5,24 @@ export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token
     const { pathname } = req.nextUrl
+    const roles: string[] = (token?.roles as string[]) ?? []
 
-    if (pathname.startsWith('/admin') && token?.role !== 'admin') {
+    if (pathname.startsWith('/admin') && !roles.includes('admin')) {
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }
 
     if (
       pathname.startsWith('/instructor') &&
-      token?.role !== 'instructor' &&
-      token?.role !== 'admin'
+      !roles.includes('instructor') &&
+      !roles.includes('admin')
+    ) {
+      return NextResponse.redirect(new URL('/dashboard', req.url))
+    }
+
+    if (
+      pathname.startsWith('/vendor') &&
+      !roles.includes('vendor') &&
+      !roles.includes('admin')
     ) {
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }

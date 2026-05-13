@@ -12,7 +12,7 @@ export default async function InstructorFeedbackPage() {
   if (!session?.user?.id) redirect('/login')
 
   const feedback = await prisma.classFeedback.findMany({
-    where: { classSession: { class: { instructorId: session.user.id } } },
+    where: { classSession: { class: { instructorId: session.user.id } }, anonymous: false },
     include: {
       user: { select: { name: true, belt: true } },
       classSession: { select: { date: true, class: { select: { title: true } } } },
@@ -38,6 +38,7 @@ export default async function InstructorFeedbackPage() {
           <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Instructor</span>
         </div>
         <h1 className="font-display text-2xl text-ink">Class Feedback</h1>
+        <p className="text-xs text-ash mt-1">Anonymous feedback is sent only to the admin and is not shown here.</p>
       </div>
 
       <div className="flex gap-3 flex-wrap mb-6">

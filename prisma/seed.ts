@@ -181,7 +181,18 @@ async function main() {
         })
       }
     }
-    console.log('  ✓ Forums (general, announcements, 3 class forums)')
+    await prisma.forum.upsert({
+      where: { id: 'seed-forum-instructors' },
+      update: {},
+      create: {
+        id: 'seed-forum-instructors',
+        type: 'instructor_only' as any,
+        title: 'Instructor Forum',
+        description: 'Private forum for instructors and admins only.',
+      },
+    })
+
+    console.log('  ✓ Forums (general, announcements, 3 class forums, instructor)')
 
     console.log('Seed complete.')
   } finally {

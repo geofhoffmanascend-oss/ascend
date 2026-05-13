@@ -6,7 +6,7 @@ import { AdminStoreClient } from './AdminStoreClient'
 
 export default async function AdminStorePage() {
   const session = await getServerSession(authOptions)
-  if (session?.user?.role !== 'admin') redirect('/dashboard')
+  if (!session?.user?.roles?.includes('admin')) redirect('/dashboard')
 
   const [products, orders] = await Promise.all([
     prisma.product.findMany({ orderBy: { createdAt: 'desc' } }),

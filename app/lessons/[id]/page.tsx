@@ -35,9 +35,9 @@ export default async function LessonDetailPage({ params }: { params: Promise<{ i
 
   if (!lesson) notFound()
   const isParticipant = lesson.requesterId === session.user.id || lesson.instructorId === session.user.id
-  if (!isParticipant && session.user.role !== 'admin') redirect('/lessons')
+  if (!isParticipant && !session.user.roles?.includes('admin')) redirect('/lessons')
 
-  const isInstructor = lesson.instructorId === session.user.id || session.user.role === 'admin'
+  const isInstructor = lesson.instructorId === session.user.id || session.user.roles?.includes('admin')
 
   // Map authorId → name from participants
   const nameMap: Record<string, string> = {

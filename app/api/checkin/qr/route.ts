@@ -7,7 +7,7 @@ import { isInCheckinWindow, recordCheckin } from '@/lib/checkin'
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (session.user.role === 'student') {
+  if (!session.user.roles?.includes('instructor') && !session.user.roles?.includes('admin')) {
     return NextResponse.json({ error: 'Instructor or admin required' }, { status: 403 })
   }
 

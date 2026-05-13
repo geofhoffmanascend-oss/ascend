@@ -20,7 +20,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!lesson) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const isParticipant = lesson.requesterId === session.user.id || lesson.instructorId === session.user.id
-  if (!isParticipant && session.user.role !== 'admin') {
+  if (!isParticipant && !session.user.roles?.includes('admin')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

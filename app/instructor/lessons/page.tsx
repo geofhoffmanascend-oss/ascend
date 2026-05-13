@@ -14,7 +14,7 @@ const STATUS_STYLES: Record<string, string> = {
 export default async function InstructorLessonsPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
-  if (session.user.role !== 'instructor' && session.user.role !== 'admin') redirect('/dashboard')
+  if (!session.user.roles?.includes('instructor') && !session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const lessons = await prisma.privateLesson.findMany({
     where: { instructorId: session.user.id },

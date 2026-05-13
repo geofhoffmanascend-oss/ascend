@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const isAdmin = session.user.role === 'admin' || session.user.role === 'instructor'
+  const isAdmin = session.user.roles?.includes('admin') || session.user.roles?.includes('instructor')
   const { searchParams } = new URL(req.url)
   const status = searchParams.get('status')
 

@@ -25,7 +25,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!item) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const isOwner = item.uploaderId === session.user.id
-  const isAdmin = session.user.role === 'admin'
+  const isAdmin = session.user.roles?.includes('admin')
   if (!isOwner && !isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { caption, forSale, price, hashtagsRaw } = await req.json()
@@ -61,7 +61,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (!item) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const isOwner = item.uploaderId === session.user.id
-  const isAdmin = session.user.role === 'admin'
+  const isAdmin = session.user.roles?.includes('admin')
   if (!isOwner && !isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   if (item.publicId) {

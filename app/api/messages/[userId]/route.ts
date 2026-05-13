@@ -51,7 +51,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
   const senderName = session.user.name ?? 'Someone'
 
   // If recipient has restricted DMs and sender is a student, route to message request
-  if (!recipient.allowDmsFromStudents && session.user.role === 'student') {
+  if (!recipient.allowDmsFromStudents && !session.user.roles?.includes('instructor') && !session.user.roles?.includes('admin')) {
     // Check for approved request — if approved, allow normal DM
     const existingRequest = await prisma.messageRequest.findUnique({
       where: { senderId_recipientId: { senderId, recipientId } },

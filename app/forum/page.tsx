@@ -7,15 +7,21 @@ import prisma from '@/lib/database'
 const FORUM_TYPE_LABELS: Record<string, string> = {
   general: 'General', announcement: 'Announcements',
   class_forum: 'Class', private_lesson: 'Private Lessons',
+  instructor_only: 'Instructor',
 }
 
 export default async function ForumListPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
 
+  const isInstructor = session.user.roles?.includes('instructor') || session.user.roles?.includes('admin')
+  const publicTypes = isInstructor
+    ? ['general', 'announcement', 'instructor_only']
+    : ['general', 'announcement']
+
   const [publicForums, subscriptions] = await Promise.all([
     prisma.forum.findMany({
-      where: { type: { in: ['general', 'announcement'] } },
+      where: { type: { in: publicTypes as any[] } },
       include: {
         _count: { select: { posts: true } },
         posts: { orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true, author: { select: { name: true } } } },

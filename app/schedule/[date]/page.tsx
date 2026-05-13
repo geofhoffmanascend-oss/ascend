@@ -5,7 +5,7 @@ import Link from 'next/link'
 import prisma from '@/lib/database'
 import { BeltBadge } from '@/app/components/BeltBadge'
 import { getMondayOfWeek } from '@/lib/generateSessions'
-import { ViewToggle } from '../ScheduleShell'
+import { ViewToggle, PeriodNav } from '../ScheduleShell'
 
 type Belt = 'white' | 'blue' | 'purple' | 'brown' | 'black' | 'coral' | 'red'
 
@@ -53,6 +53,12 @@ export default async function DayViewPage({ params }: { params: Promise<{ date: 
   const weekStr = getMondayOfWeek(day).toISOString().split('T')[0]
   const monthStr = date.slice(0, 7)
 
+  const prevDay = new Date(day); prevDay.setUTCDate(day.getUTCDate() - 1)
+  const nextDay = new Date(day); nextDay.setUTCDate(day.getUTCDate() + 1)
+  const prevDayStr = prevDay.toISOString().split('T')[0]
+  const nextDayStr = nextDay.toISOString().split('T')[0]
+  const dayLabel = day.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
       <div className="mb-6">
@@ -60,7 +66,10 @@ export default async function DayViewPage({ params }: { params: Promise<{ date: 
           <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Schedule</span>
         </div>
         <h1 className="font-display text-2xl text-ink mb-4">{formatted}</h1>
-        <ViewToggle active="day" todayStr={todayStr} weekStr={weekStr} monthStr={monthStr} />
+        <div className="flex items-center gap-4 flex-wrap">
+          <ViewToggle active="day" todayStr={todayStr} weekStr={weekStr} monthStr={monthStr} />
+          <PeriodNav prevUrl={`/schedule/${prevDayStr}`} nextUrl={`/schedule/${nextDayStr}`} label={dayLabel} />
+        </div>
       </div>
 
       {sessions.length === 0 && (
@@ -101,6 +110,12 @@ export default async function DayViewPage({ params }: { params: Promise<{ date: 
               )}
               {s.notes && (
                 <p className="text-sm text-slate mb-4">{s.notes}</p>
+              )}
+              {(s as any).notesPublic && (s as any).sessionNotes && myCommitment && (
+                <div className="mb-4 border-l-2 border-l-brand-red pl-3">
+                  <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Instructor Notes</p>
+                  <p className="text-sm text-ink whitespace-pre-wrap">{(s as any).sessionNotes}</p>
+                </div>
               )}
 
               <div className="border-t border-smoke pt-4">

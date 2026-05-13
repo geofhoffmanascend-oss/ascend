@@ -27,7 +27,7 @@ type Props = {
   forumId: string
   posts: Post[]
   userId: string
-  userRole: string
+  userRoles: string[]
   isSubscribed: boolean
   forumType: string
 }
@@ -49,7 +49,7 @@ function formatDate(iso: string, short = false) {
   })
 }
 
-export function ForumClient({ forumId, posts: initial, userId, userRole, isSubscribed: initSub, forumType }: Props) {
+export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubscribed: initSub, forumType }: Props) {
   const [posts, setPosts] = useState(initial)
   const [subscribed, setSubscribed] = useState(initSub)
   const [showForm, setShowForm] = useState(false)
@@ -58,8 +58,8 @@ export function ForumClient({ forumId, posts: initial, userId, userRole, isSubsc
   const [replyContent, setReplyContent] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const canAnnounce = userRole === 'instructor' || userRole === 'admin'
-  const canPin = userRole === 'instructor' || userRole === 'admin'
+  const canAnnounce = userRoles.includes('instructor') || userRoles.includes('admin')
+  const canPin = userRoles.includes('instructor') || userRoles.includes('admin')
 
   async function createPost(e: React.FormEvent) {
     e.preventDefault()
@@ -221,7 +221,7 @@ export function ForumClient({ forumId, posts: initial, userId, userRole, isSubsc
                     {post.pinned ? 'Unpin' : 'Pin'}
                   </button>
                 )}
-                {(post.author.role === userId || userRole === 'admin') && (
+                {(post.author.role === userId || userRoles.includes('admin')) && (
                   <button onClick={() => deletePost(post.id)} className="text-xs text-ash hover:text-brand-red transition-colors">✕</button>
                 )}
               </div>
@@ -253,7 +253,7 @@ export function ForumClient({ forumId, posts: initial, userId, userRole, isSubsc
                         </div>
                         <p className="text-sm text-ink leading-relaxed">{reply.content}</p>
                       </div>
-                      {(reply.author.role === userId || userRole === 'admin') && (
+                      {(reply.author.role === userId || userRoles.includes('admin')) && (
                         <button
                           onClick={() => deletePost(reply.id, true, post.id)}
                           className="text-xs text-ash hover:text-brand-red transition-colors flex-shrink-0 mt-0.5"

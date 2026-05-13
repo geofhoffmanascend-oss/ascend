@@ -7,7 +7,7 @@ import prisma from '@/lib/database'
 export default async function InstructorHomePage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
-  if (session.user.role !== 'instructor' && session.user.role !== 'admin') redirect('/dashboard')
+  if (!session.user.roles?.includes('instructor') && !session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const today = new Date()
   today.setUTCHours(0, 0, 0, 0)
@@ -19,7 +19,7 @@ export default async function InstructorHomePage() {
       date: { gte: today, lte: todayEnd },
       class: {
         isActive: true,
-        ...(session.user.role !== 'admin' && { instructorId: session.user.id }),
+        ...(!session.user.roles?.includes('admin') && { instructorId: session.user.id }),
       },
     },
     include: {
@@ -84,9 +84,21 @@ export default async function InstructorHomePage() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Link href="/instructor/schedule" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel">Schedule</p>
+          <p className="text-slate text-sm">Upcoming sessions — registered & checked in</p>
+        </Link>
         <Link href="/instructor/classes" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">My Classes</p>
           <p className="text-slate text-sm">Rosters and class settings</p>
+        </Link>
+        <Link href="/instructor/lessons/new" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel">Private Lessons</p>
+          <p className="text-slate text-sm">Schedule a lesson with students</p>
+        </Link>
+        <Link href="/instructor/sub-requests" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel">Sub Requests</p>
+          <p className="text-slate text-sm">Release a class or cover for a colleague</p>
         </Link>
         <Link href="/instructor/plans" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Lesson Plans</p>

@@ -42,7 +42,7 @@ export default function HomePage() {
           {[
             {
               label: 'Register for Class',
-              body: 'Declare attendance before class so instructors can plan training partners by division.',
+              body: 'Set goals and declare attendance before class so instructors can plan',
             },
             {
               label: 'Per-Class Forums',

@@ -9,7 +9,7 @@ type SearchParams = { classId?: string; from?: string; to?: string; view?: strin
 export default async function AttendanceReportPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
-  if (session.user.role !== 'admin') redirect('/dashboard')
+  if (!session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const { classId, from, to, view = 'records' } = await searchParams
 

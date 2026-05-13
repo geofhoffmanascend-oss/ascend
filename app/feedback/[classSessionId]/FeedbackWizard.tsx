@@ -157,7 +157,7 @@ export function FeedbackWizard({ classSessionId, reviewUrl }: { classSessionId: 
           </div>
           <div>
             <p className="text-sm text-ink font-medium">Submit anonymously</p>
-            <p className="text-xs text-ash">Your name and belt won't be shown to instructors.</p>
+            <p className="text-xs text-ash">Anonymous responses are sent only to the admin — your instructor will not see them.</p>
           </div>
         </label>
 

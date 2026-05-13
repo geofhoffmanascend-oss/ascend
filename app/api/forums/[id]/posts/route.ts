@@ -13,7 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (!content?.trim()) return NextResponse.json({ error: 'Content required' }, { status: 400 })
 
-  if (type === 'announcement' && session.user.role !== 'instructor' && session.user.role !== 'admin') {
+  if (type === 'announcement' && !session.user.roles?.includes('instructor') && !session.user.roles?.includes('admin')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

@@ -20,12 +20,20 @@ export default async function SchedulePage({
   const today = new Date()
   const todayStr = today.toISOString().split('T')[0]
 
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
+
   // ── Month view ──────────────────────────────────────────────────────────────
   if (viewMode === 'month') {
     const currentMonth = params.month
       ?? `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
 
     const [year, monthNum] = currentMonth.split('-').map(Number)
+    const prevMonthDate = new Date(Date.UTC(year, monthNum - 2, 1))
+    const nextMonthDate = new Date(Date.UTC(year, monthNum, 1))
+    const prevMonthStr = `${prevMonthDate.getUTCFullYear()}-${String(prevMonthDate.getUTCMonth() + 1).padStart(2, '0')}`
+    const nextMonthStr = `${nextMonthDate.getUTCFullYear()}-${String(nextMonthDate.getUTCMonth() + 1).padStart(2, '0')}`
+    const monthPeriodLabel = `${MONTH_NAMES[monthNum - 1]} ${year}`
+
     const firstDay = new Date(Date.UTC(year, monthNum - 1, 1))
     const lastDay = new Date(Date.UTC(year, monthNum, 0))
     lastDay.setUTCHours(23, 59, 59, 999)
@@ -65,6 +73,9 @@ export default async function SchedulePage({
           todayStr={todayStr}
           weekStr={weekStr}
           monthStr={currentMonth}
+          prevUrl={`/schedule?view=month&month=${prevMonthStr}`}
+          nextUrl={`/schedule?view=month&month=${nextMonthStr}`}
+          periodLabel={monthPeriodLabel}
           monthSessions={monthSessions}
           currentMonth={currentMonth}
         />
@@ -143,6 +154,17 @@ export default async function SchedulePage({
   const mondayStr = monday.toISOString().split('T')[0]
   const monthStr = `${monday.getUTCFullYear()}-${String(monday.getUTCMonth() + 1).padStart(2, '0')}`
 
+  const prevMonday = new Date(monday); prevMonday.setUTCDate(monday.getUTCDate() - 7)
+  const nextMonday = new Date(monday); nextMonday.setUTCDate(monday.getUTCDate() + 7)
+  const prevWeekStr = prevMonday.toISOString().split('T')[0]
+  const nextWeekStr = nextMonday.toISOString().split('T')[0]
+
+  const weekSunday = new Date(monday); weekSunday.setUTCDate(monday.getUTCDate() + 6)
+  const sameMonth = monday.getUTCMonth() === weekSunday.getUTCMonth()
+  const weekPeriodLabel = sameMonth
+    ? `${MONTH_NAMES[monday.getUTCMonth()].slice(0, 3)} ${monday.getUTCDate()}–${weekSunday.getUTCDate()}`
+    : `${monday.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })} – ${weekSunday.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}`
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
       <div className="mb-6">
@@ -157,6 +179,9 @@ export default async function SchedulePage({
         todayStr={todayStr}
         weekStr={mondayStr}
         monthStr={monthStr}
+        prevUrl={`/schedule?view=week&week=${prevWeekStr}`}
+        nextUrl={`/schedule?view=week&week=${nextWeekStr}`}
+        periodLabel={weekPeriodLabel}
         days={days}
         currentMonday={mondayStr}
       />

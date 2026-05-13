@@ -35,7 +35,7 @@ export default async function GalleryPage() {
       initialItems={serialized}
       nextCursor={nextCursor}
       currentUserId={session.user.id}
-      currentUserRole={session.user.role}
+      currentUserRoles={session.user.roles}
     />
   )
 }

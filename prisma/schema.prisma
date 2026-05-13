@@ -14,6 +14,18 @@ enum Role {
   admin
   instructor
   student
+  vendor
+}
+
+enum VendorType {
+  photographer
+  merchant
+}
+
+enum SubStatus {
+  open
+  filled
+  cancelled
 }
 
 enum ClassType {
@@ -68,6 +80,7 @@ enum ForumType {
   general
   announcement
   private_lesson
+  instructor_only
 }
 
 enum PostType {
@@ -127,6 +140,8 @@ model User {
   image            String?
   passwordHash     String?
   role             Role      @default(student)
+  roles            Role[]    @default([student])
+  vendorType       VendorType?
   onboardingDone   Boolean   @default(false)
 
   // Profile
@@ -190,6 +205,8 @@ model User {
   trainingLogs         TrainingLog[]
   classFeedback        ClassFeedback[]
   orders               Order[]
+  subRequestsMade      ClassSubRequest[] @relation("SubRequestedBy")
+  subRequestsClaimed   ClassSubRequest[] @relation("SubClaimedBy")
 }
 
 model Account {
@@ -248,22 +265,40 @@ model Class {
 }
 
 model ClassSession {
-  id          String    @id @default(cuid())
-  classId     String
-  date        DateTime  @db.Date
-  cancelled   Boolean   @default(false)
-  cancelNote  String?
-  notes       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  classId      String
+  date         DateTime  @db.Date
+  cancelled    Boolean   @default(false)
+  cancelNote   String?
+  notes        String?
+  sessionNotes String?
+  notesPublic  Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  class        Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
+  class        Class             @relation(fields: [classId], references: [id], onDelete: Cascade)
   commitments  Commitment[]
   attendance   Attendance[]
   trainingLogs TrainingLog[]
   feedback     ClassFeedback[]
+  subRequests  ClassSubRequest[]
 
   @@unique([classId, date])
+}
+
+model ClassSubRequest {
+  id             String    @id @default(cuid())
+  classSessionId String
+  requestedById  String
+  claimedById    String?
+  status         SubStatus @default(open)
+  note           String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  classSession ClassSession @relation(fields: [classSessionId], references: [id], onDelete: Cascade)
+  requestedBy  User         @relation("SubRequestedBy", fields: [requestedById], references: [id])
+  claimedBy    User?        @relation("SubClaimedBy", fields: [claimedById], references: [id])
 }
 
 model Commitment {

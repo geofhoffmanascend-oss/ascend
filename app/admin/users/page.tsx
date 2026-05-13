@@ -14,7 +14,7 @@ export default async function AdminUsersPage({
 }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
-  if (session.user.role !== 'admin') redirect('/dashboard')
+  if (!session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const { role, belt, q } = await searchParams
 

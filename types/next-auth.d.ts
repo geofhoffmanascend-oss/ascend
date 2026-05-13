@@ -1,6 +1,8 @@
 import 'next-auth'
 import 'next-auth/jwt'
 
+export type AppRole = 'admin' | 'instructor' | 'student' | 'vendor'
+
 declare module 'next-auth' {
   interface Session {
     user: {
@@ -8,18 +10,18 @@ declare module 'next-auth' {
       name?: string | null
       email?: string | null
       image?: string | null
-      role: 'admin' | 'instructor' | 'student'
+      roles: AppRole[]
     }
   }
 
   interface User {
-    role: 'admin' | 'instructor' | 'student'
+    roles: AppRole[]
   }
 }
 
 declare module 'next-auth/jwt' {
   interface JWT {
     id: string
-    role: 'admin' | 'instructor' | 'student'
+    roles: AppRole[]
   }
 }

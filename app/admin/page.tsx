@@ -8,7 +8,7 @@ import { getMondayOfWeek } from '@/lib/generateSessions'
 export default async function AdminHomePage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
-  if (session.user.role !== 'admin') redirect('/dashboard')
+  if (!session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const monday = getMondayOfWeek(new Date())
   const sunday = new Date(monday)

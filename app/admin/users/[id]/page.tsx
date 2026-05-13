@@ -4,13 +4,14 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
 import { BeltBadge } from '@/app/components/BeltBadge'
+import { RoleManager } from './RoleManager'
 
 type Belt = 'white' | 'blue' | 'purple' | 'brown' | 'black' | 'coral' | 'red'
 
 export default async function AdminUserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
-  if (session.user.role !== 'admin') redirect('/dashboard')
+  if (!session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const { id } = await params
 
@@ -46,7 +47,12 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
             <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Admin · User</span>
           </div>
           <h1 className="font-display text-2xl text-ink">{user.name ?? '(no name)'}</h1>
-          <p className="text-ash text-sm mt-1">{user.email} · <span className="capitalize">{user.role}</span></p>
+          <p className="text-ash text-sm mt-1">{user.email}</p>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {(user.roles as string[]).map((r: string) => (
+              <span key={r} className="text-xs px-2 py-0.5 bg-mist text-steel font-medium capitalize">{r}</span>
+            ))}
+          </div>
           <div className="mt-2"><BeltBadge belt={user.belt as Belt} stripes={user.stripes} /></div>
         </div>
         <Link
@@ -58,6 +64,9 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
       </div>
 
       <div className="flex flex-col gap-6">
+        {/* Role Management */}
+        <RoleManager userId={user.id} currentRoles={user.roles as string[]} />
+
         {/* Contact */}
         <div className="border border-smoke bg-paper p-6">
           <p className="text-xs font-bold uppercase tracking-widest text-steel mb-4">Contact</p>

@@ -6,7 +6,7 @@ import type { MediaItem } from './GalleryClient'
 type Props = {
   item: MediaItem
   currentUserId: string
-  currentUserRole: string
+  currentUserRoles: string[]
   onClose: () => void
   onUpdated: (item: MediaItem) => void
   onDeleted: (id: string) => void
@@ -15,7 +15,7 @@ type Props = {
   onSlideshow: () => void
 }
 
-export function MediaModal({ item: initial, currentUserId, currentUserRole, onClose, onUpdated, onDeleted, onFilterByHashtag, onFilterByUser, onSlideshow }: Props) {
+export function MediaModal({ item: initial, currentUserId, currentUserRoles, onClose, onUpdated, onDeleted, onFilterByHashtag, onFilterByUser, onSlideshow }: Props) {
   const [item, setItem]         = useState(initial)
   const [editing, setEditing]   = useState(false)
   const [caption, setCaption]   = useState(item.caption ?? '')
@@ -28,7 +28,7 @@ export function MediaModal({ item: initial, currentUserId, currentUserRole, onCl
   const [tagResults, setTagResults] = useState<{ id: string; name: string | null }[]>([])
   const [tagError, setTagError] = useState('')
 
-  const canEdit = item.uploader.id === currentUserId || currentUserRole === 'admin' || currentUserRole === 'instructor'
+  const canEdit = item.uploader.id === currentUserId || currentUserRoles.includes('admin') || currentUserRoles.includes('instructor')
 
   async function saveEdit() {
     setSaving(true)
@@ -161,7 +161,7 @@ export function MediaModal({ item: initial, currentUserId, currentUserRole, onCl
                   placeholder="#competition #seminar"
                   className="w-full px-4 py-2 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red" />
               </div>
-              {item.type === 'photo' && currentUserRole === 'admin' && (
+              {item.type === 'photo' && currentUserRoles.includes('admin') && (
                 <label className="flex items-center gap-3 cursor-pointer">
                   <div className="relative">
                     <input type="checkbox" className="sr-only" checked={forSale} onChange={() => setForSale(f => !f)} />
@@ -171,7 +171,7 @@ export function MediaModal({ item: initial, currentUserId, currentUserRole, onCl
                   <span className="text-sm text-ink">For sale (watermarked in gallery)</span>
                 </label>
               )}
-              {forSale && currentUserRole === 'admin' && (
+              {forSale && currentUserRoles.includes('admin') && (
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-bold uppercase tracking-widest text-steel">Price (USD)</label>
                   <input type="number" min="0" step="0.01" value={price} onChange={e => setPrice(e.target.value)}

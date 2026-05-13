@@ -18,7 +18,7 @@ const DAY_LABELS: Record<string, string> = {
 export default async function InstructorClassesPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
-  if (session.user.role !== 'instructor' && session.user.role !== 'admin') redirect('/dashboard')
+  if (!session.user.roles?.includes('instructor') && !session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const monday = getMondayOfWeek(new Date())
   const sunday = new Date(monday)
@@ -26,7 +26,7 @@ export default async function InstructorClassesPage() {
   sunday.setUTCHours(23, 59, 59, 999)
 
   const classes = await prisma.class.findMany({
-    where: session.user.role !== 'admin' ? { instructorId: session.user.id } : {},
+    where: !session.user.roles?.includes('admin') ? { instructorId: session.user.id } : {},
     include: {
       _count: { select: { sessions: true } },
       sessions: {

@@ -11,6 +11,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Required fields missing' }, { status: 400 })
   }
 
+  const existing = await prisma.class.findFirst({ where: { title: { equals: title.trim(), mode: 'insensitive' } } })
+  if (existing) return NextResponse.json({ error: `A class named "${existing.title}" already exists.` }, { status: 409 })
+
   // Auto-create a class forum
   const cls = await prisma.class.create({
     data: {

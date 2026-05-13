@@ -7,7 +7,7 @@ import prisma from '@/lib/database'
 export default async function LessonPlansPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
-  if (session.user.role !== 'instructor' && session.user.role !== 'admin') redirect('/dashboard')
+  if (!session.user.roles?.includes('instructor') && !session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const plans = await prisma.lessonPlan.findMany({
     where: { instructorId: session.user.id },

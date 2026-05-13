@@ -8,7 +8,7 @@ import { PromoteForm } from './PromoteForm'
 export default async function PromotePage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
-  if (session.user.role !== 'admin') redirect('/dashboard')
+  if (!session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const { id } = await params
   const user = await prisma.user.findUnique({

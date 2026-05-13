@@ -6,7 +6,7 @@ import { createNotification } from '@/lib/notify'
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
-  if (session?.user?.role !== 'admin' && session?.user?.role !== 'instructor')
+  if (!session?.user?.roles?.includes('admin') && !session?.user?.roles?.includes('instructor'))
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { id } = await params

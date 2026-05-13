@@ -9,16 +9,12 @@ export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
   session: { strategy: 'jwt', maxAge: 30 * 24 * 60 * 60 },
   jwt: { maxAge: 30 * 24 * 60 * 60 },
-  cookies: {
-    sessionToken: {
-      name: 'next-auth.session-token',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 30 * 24 * 60 * 60,
-      },
+  logger: {
+    error(code, metadata) {
+      console.error('[NextAuth]', code, metadata)
+    },
+    warn(code) {
+      console.warn('[NextAuth]', code)
     },
   },
   pages: {
@@ -34,15 +30,26 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        })
-        if (!user?.passwordHash) return null
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          })
+          if (!user?.passwordHash) {
+            console.log('[auth] credentials: no user or password hash for', credentials.email)
+            return null
+          }
 
-        const valid = await bcrypt.compare(credentials.password, user.passwordHash)
-        if (!valid) return null
+          const valid = await bcrypt.compare(credentials.password, user.passwordHash)
+          if (!valid) {
+            console.log('[auth] credentials: invalid password for', credentials.email)
+            return null
+          }
 
-        return { id: user.id, name: user.name, email: user.email, roles: user.roles as any }
+          return { id: user.id, name: user.name, email: user.email, roles: user.roles as any }
+        } catch (err) {
+          console.error('[auth] credentials authorize error:', err)
+          return null
+        }
       },
     }),
     GoogleProvider({
@@ -56,8 +63,12 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id
         token.roles = (user as any).roles ?? ['student']
       } else if (token.id) {
-        const dbUser = await prisma.user.findUnique({ where: { id: token.id }, select: { roles: true } })
-        if (dbUser) token.roles = dbUser.roles as any
+        try {
+          const dbUser = await prisma.user.findUnique({ where: { id: token.id }, select: { roles: true } })
+          if (dbUser) token.roles = dbUser.roles as any
+        } catch (err) {
+          console.error('[auth] jwt role refresh error for token.id', token.id, err)
+        }
       }
       return token
     },
@@ -71,15 +82,23 @@ export const authOptions: NextAuthOptions = {
   },
   events: {
     async signIn({ user, account }) {
+      console.log('[auth] signIn provider=%s userId=%s', account?.provider, user.id)
       if (account?.provider === 'google') {
-        const dbUser = await prisma.user.findUnique({ where: { id: user.id } })
-        if (dbUser && (!dbUser.roles || dbUser.roles.length === 0)) {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { roles: ['student'] },
-          }).catch(() => {})
+        try {
+          const dbUser = await prisma.user.findUnique({ where: { id: user.id } })
+          if (dbUser && (!dbUser.roles || dbUser.roles.length === 0)) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { roles: ['student'] },
+            })
+          }
+        } catch (err) {
+          console.error('[auth] google signIn role init error:', err)
         }
       }
+    },
+    async signOut({ token }) {
+      console.log('[auth] signOut userId=%s', token?.sub)
     },
   },
 }

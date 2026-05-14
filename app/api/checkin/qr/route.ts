@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/database'
 import { isInCheckinWindow, recordCheckin } from '@/lib/checkin'
+import { classTypeToGroup } from '@/lib/classGroups'
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
 
   const student = await prisma.user.findUnique({
     where: { qrToken },
-    select: { id: true, name: true },
+    select: { id: true, name: true, blockedClassGroups: true },
   })
   if (!student) return NextResponse.json({ error: 'Unknown QR code' }, { status: 404 })
 
@@ -40,9 +41,14 @@ export async function POST(req: NextRequest) {
 
   const classSession = await prisma.classSession.findUnique({
     where: { id: resolvedSessionId },
-    include: { class: { select: { startTime: true, title: true } } },
+    include: { class: { select: { startTime: true, title: true, type: true } } },
   })
   if (!classSession) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
+
+  const group = classTypeToGroup(classSession.class.type)
+  if (group && student.blockedClassGroups?.includes(group as any)) {
+    return NextResponse.json({ error: `${student.name} does not have access to this class type.` }, { status: 403 })
+  }
 
   if (!isInCheckinWindow(classSession.date)) {
     return NextResponse.json({ error: 'Check-in is only available on the day of the class.' }, { status: 400 })

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/database'
 import { isInCheckinWindow, recordCheckin } from '@/lib/checkin'
+import { classTypeToGroup } from '@/lib/classGroups'
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -13,9 +14,15 @@ export async function POST(req: NextRequest) {
 
   const classSession = await prisma.classSession.findUnique({
     where: { id: classSessionId },
-    include: { class: { select: { startTime: true } } },
+    include: { class: { select: { startTime: true, type: true } } },
   })
   if (!classSession) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
+
+  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedClassGroups: true } })
+  const group = classTypeToGroup(classSession.class.type)
+  if (group && user?.blockedClassGroups?.includes(group as any)) {
+    return NextResponse.json({ error: 'This class is not included in your membership.' }, { status: 403 })
+  }
 
   const commitment = await prisma.commitment.findUnique({
     where: { userId_classSessionId: { userId: session.user.id, classSessionId } },

@@ -4,6 +4,8 @@ import { useState, useCallback } from 'react'
 import { JOURNAL_PROMPTS } from '@/lib/journalPrompts'
 import { PushPermissionButton } from '@/app/components/PushPermissionButton'
 import { Toast } from '@/app/components/Toast'
+import { ALL_GROUPS, GROUP_LABELS, GROUP_DESCRIPTIONS } from '@/lib/classGroups'
+import type { ClassGroup } from '@prisma/client'
 
 type Prefs = {
   notifyClassUpdates:    boolean
@@ -17,14 +19,15 @@ type Prefs = {
   defaultJournalPrompts: string | null
 }
 
-type ForumRow = { id: string; title: string; type: string; subscribed: boolean }
+type ForumRow = { id: string; title: string; type: string; classGroup: string | null; subscribed: boolean }
 
-type Props = { userId: string; initial: Prefs; forums: ForumRow[] }
+type Props = { userId: string; initial: Prefs; forums: ForumRow[]; hiddenClassGroups: ClassGroup[] }
 
 const CATEGORY_LABELS = { wellness: 'Wellness', training: 'Training', reflection: 'Reflection' }
 
-export function SettingsForm({ userId, initial, forums: initialForums }: Props) {
+export function SettingsForm({ userId, initial, forums: initialForums, hiddenClassGroups: initialHidden }: Props) {
   const [prefs, setPrefs] = useState<Prefs>(initial)
+  const [hiddenGroups, setHiddenGroups] = useState<ClassGroup[]>(initialHidden)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
@@ -57,20 +60,34 @@ export function SettingsForm({ userId, initial, forums: initialForums }: Props) 
     setSaved(false)
   }
 
+  function toggleHiddenGroup(group: ClassGroup) {
+    setHiddenGroups(prev =>
+      prev.includes(group) ? prev.filter(g => g !== group) : [...prev, group]
+    )
+    setSaved(false)
+  }
+
   async function handleSave() {
     setSaving(true)
-    await fetch(`/api/users/${userId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(prefs),
-    })
+    await Promise.all([
+      fetch(`/api/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(prefs),
+      }),
+      fetch('/api/user/class-preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hiddenClassGroups: hiddenGroups }),
+      }),
+    ])
     setSaving(false)
     setSaved(true)
   }
 
-  // Group forums: general/announcement first, then class forums
-  const generalForums = initialForums.filter(f => f.type !== 'class_forum')
+  const generalForums = initialForums.filter(f => f.type !== 'class_forum' && f.type !== 'group_forum')
   const classForums   = initialForums.filter(f => f.type === 'class_forum')
+  const groupForums   = initialForums.filter(f => f.type === 'group_forum')
 
   return (
     <div className="flex flex-col gap-6">
@@ -117,8 +134,32 @@ export function SettingsForm({ userId, initial, forums: initialForums }: Props) 
         />
       </section>
 
+      {/* Schedule preferences */}
+      <section className="border border-smoke bg-paper p-6 flex flex-col gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-steel">Schedule Preferences</p>
+          <p className="text-xs text-ash mt-1">Hide class groups you don't attend — they won't appear on your schedule. This only affects your view; admins can independently restrict your registration access.</p>
+        </div>
+        <div className="flex flex-col gap-3">
+          {ALL_GROUPS.map(group => (
+            <label key={group} className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!hiddenGroups.includes(group)}
+                onChange={() => toggleHiddenGroup(group)}
+                className="mt-0.5 accent-brand-red"
+              />
+              <div>
+                <p className="text-sm text-ink font-medium">{GROUP_LABELS[group]}</p>
+                <p className="text-xs text-ash">{GROUP_DESCRIPTIONS[group]}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+      </section>
+
       {/* Forum subscriptions — saved immediately per toggle */}
-      <ForumSubscriptionsSection generalForums={generalForums} classForums={classForums} />
+      <ForumSubscriptionsSection generalForums={generalForums} classForums={classForums} groupForums={groupForums} />
 
       <section className="border border-smoke bg-paper p-6 flex flex-col gap-4">
         <p className="text-xs font-bold uppercase tracking-widest text-steel">Default Journal Prompts</p>
@@ -162,13 +203,15 @@ export function SettingsForm({ userId, initial, forums: initialForums }: Props) 
 function ForumSubscriptionsSection({
   generalForums,
   classForums,
+  groupForums,
 }: {
   generalForums: ForumRow[]
   classForums: ForumRow[]
+  groupForums: ForumRow[]
 }) {
   const [subs, setSubs] = useState<Record<string, boolean>>(() => {
     const map: Record<string, boolean> = {}
-    ;[...generalForums, ...classForums].forEach(f => { map[f.id] = f.subscribed })
+    ;[...generalForums, ...classForums, ...groupForums].forEach(f => { map[f.id] = f.subscribed })
     return map
   })
   const [pending, setPending] = useState<string | null>(null)
@@ -184,7 +227,7 @@ function ForumSubscriptionsSection({
     setPending(null)
   }
 
-  const hasAny = generalForums.length > 0 || classForums.length > 0
+  const hasAny = generalForums.length > 0 || classForums.length > 0 || groupForums.length > 0
   if (!hasAny) return null
 
   return (
@@ -213,6 +256,22 @@ function ForumSubscriptionsSection({
         <div className="flex flex-col gap-3">
           <p className="text-xs font-bold uppercase tracking-widest text-steel/60">Class Forums</p>
           {classForums.map(f => (
+            <ForumToggle
+              key={f.id}
+              forum={f}
+              subscribed={subs[f.id] ?? false}
+              loading={pending === f.id}
+              onToggle={() => toggleForum(f.id)}
+            />
+          ))}
+        </div>
+      )}
+
+      {groupForums.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel/60">Class Group Forums</p>
+          <p className="text-xs text-ash -mt-1">One forum per class group — subscribe to follow discussions across all classes in that group.</p>
+          {groupForums.map(f => (
             <ForumToggle
               key={f.id}
               forum={f}

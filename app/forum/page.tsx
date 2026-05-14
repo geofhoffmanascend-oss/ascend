@@ -3,25 +3,20 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
-
-const FORUM_TYPE_LABELS: Record<string, string> = {
-  general: 'General', announcement: 'Announcements',
-  class_forum: 'Class', private_lesson: 'Private Lessons',
-  instructor_only: 'Instructor',
-}
+import { ClassGroup } from '@prisma/client'
 
 export default async function ForumListPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
 
   const isInstructor = session.user.roles?.includes('instructor') || session.user.roles?.includes('admin')
-  const publicTypes = isInstructor
-    ? ['general', 'announcement', 'instructor_only']
-    : ['general', 'announcement']
 
-  const [publicForums, subscriptions] = await Promise.all([
+  const [user, allForums, subscriptions] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { blockedClassGroups: true },
+    }),
     prisma.forum.findMany({
-      where: { type: { in: publicTypes as any[] } },
       include: {
         _count: { select: { posts: true } },
         posts: { orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true, author: { select: { name: true } } } },
@@ -29,20 +24,28 @@ export default async function ForumListPage() {
     }),
     prisma.forumSubscription.findMany({
       where: { userId: session.user.id },
-      include: {
-        forum: {
-          include: {
-            _count: { select: { posts: true } },
-            posts: { orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true, author: { select: { name: true } } } },
-          },
-        },
-      },
+      select: { forumId: true },
     }),
   ])
 
-  const classForums = subscriptions
-    .map(s => s.forum)
-    .filter(f => f.type === 'class_forum')
+  const blocked = (user?.blockedClassGroups ?? []) as ClassGroup[]
+  const subscribedIds = new Set(subscriptions.map(s => s.forumId))
+
+  const publicTypes = isInstructor
+    ? ['general', 'announcement', 'instructor_only']
+    : ['general', 'announcement']
+
+  const publicForums = allForums.filter(f => publicTypes.includes(f.type as string))
+
+  const classForums = allForums.filter(f =>
+    f.type === 'class_forum' && subscribedIds.has(f.id)
+  )
+
+  const groupForums = allForums.filter(f =>
+    f.type === 'group_forum' &&
+    f.classGroup !== null &&
+    !blocked.includes(f.classGroup as ClassGroup)
+  )
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
@@ -63,6 +66,17 @@ export default async function ForumListPage() {
           </div>
         </section>
 
+        {groupForums.length > 0 && (
+          <section>
+            <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">Class Groups</p>
+            <div className="flex flex-col gap-2">
+              {groupForums.map(f => (
+                <ForumRow key={f.id} forum={f} />
+              ))}
+            </div>
+          </section>
+        )}
+
         {classForums.length > 0 && (
           <section>
             <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">My Classes</p>
@@ -76,7 +90,7 @@ export default async function ForumListPage() {
 
         {classForums.length === 0 && (
           <p className="text-ash text-sm italic">
-            Register for a class to join its forum. <Link href="/schedule" className="text-brand-red hover:text-brand-red-dark">View schedule →</Link>
+            Register for a class to join its forum. <Link href="/schedule" className="text-brand-red hover:underline">View schedule →</Link>
           </p>
         )}
       </div>

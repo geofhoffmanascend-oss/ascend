@@ -115,6 +115,7 @@ type Props = {
   prevUrl: string
   nextUrl: string
   periodLabel: string
+  blockedClassGroups?: string[]
   // week
   days?: Day[]
   currentMonday?: string
@@ -127,6 +128,7 @@ export function ScheduleShell({
   userId, view,
   todayStr, weekStr, monthStr,
   prevUrl, nextUrl, periodLabel,
+  blockedClassGroups = [],
   days, currentMonday,
   monthSessions, currentMonth,
 }: Props) {
@@ -157,7 +159,7 @@ export function ScheduleShell({
       </div>
 
       {view === 'week' && days && currentMonday && (
-        <WeeklySchedule days={days} currentMonday={currentMonday} filters={filters} />
+        <WeeklySchedule days={days} currentMonday={currentMonday} filters={filters} blockedClassGroups={blockedClassGroups} />
       )}
       {view === 'month' && monthSessions && currentMonth && (
         <MonthCalendar sessions={monthSessions} currentMonth={currentMonth} filters={filters} />

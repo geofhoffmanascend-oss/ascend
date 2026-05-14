@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { BeltBadge } from '@/app/components/BeltBadge'
 import { type Filters } from './ScheduleFilters'
+import { classTypeToGroup, GROUP_LABELS } from '@/lib/classGroups'
 
 type Belt = 'white' | 'blue' | 'purple' | 'brown' | 'black' | 'coral' | 'red'
 
@@ -57,7 +58,7 @@ function isToday(dateStr: string) {
 
 function timeBucket(time: string): 'am' | 'noon' | 'pm' {
   const h = parseInt(time.split(':')[0], 10)
-  if (h < 12) return 'am'
+  if (h < 10) return 'am'
   if (h < 14) return 'noon'
   return 'pm'
 }
@@ -69,7 +70,35 @@ function applyFilters(sessions: Session[], filters: Filters): Session[] {
   })
 }
 
-export function WeeklySchedule({ days, currentMonday, filters }: { days: Day[]; currentMonday: string; filters: Filters }) {
+type SlotGroup = { label: string; sessions: Session[] }
+
+function groupBySlot(sessions: Session[], isWeekend: boolean): SlotGroup[] {
+  if (isWeekend) {
+    const map = new Map<string, Session[]>()
+    sessions.forEach(s => {
+      const g = classTypeToGroup(s.class.type)
+      const label = g ? GROUP_LABELS[g] : 'Other'
+      if (!map.has(label)) map.set(label, [])
+      map.get(label)!.push(s)
+    })
+    return Array.from(map.entries()).map(([label, sessions]) => ({ label, sessions }))
+  }
+
+  const competition = sessions.filter(s => s.class.type === 'competition_prep')
+  const rest = sessions.filter(s => s.class.type !== 'competition_prep')
+  const am   = rest.filter(s => timeBucket(s.class.startTime) === 'am')
+  const noon = rest.filter(s => timeBucket(s.class.startTime) === 'noon')
+  const pm   = rest.filter(s => timeBucket(s.class.startTime) === 'pm')
+
+  const groups: SlotGroup[] = []
+  if (am.length)          groups.push({ label: '6am', sessions: am })
+  if (noon.length)        groups.push({ label: 'Noon', sessions: noon })
+  if (pm.length)          groups.push({ label: 'PM', sessions: pm })
+  if (competition.length) groups.push({ label: 'Comp', sessions: competition })
+  return groups
+}
+
+export function WeeklySchedule({ days, currentMonday, filters, blockedClassGroups = [] }: { days: Day[]; currentMonday: string; filters: Filters; blockedClassGroups?: string[] }) {
   const router = useRouter()
   const [sessions, setSessions] = useState<Record<string, Session>>(() => {
     const map: Record<string, Session> = {}
@@ -139,12 +168,15 @@ export function WeeklySchedule({ days, currentMonday, filters }: { days: Day[]; 
   function renderCard(s: Session) {
     const live = sessions[s.id] ?? s
     const committed = !!live.myCommitment
+    const group = classTypeToGroup(live.class.type)
+    const isBlocked = group !== null && blockedClassGroups.includes(group)
     return (
       <SessionCard
         key={s.id}
         session={live}
         committed={committed}
         expanded={expandedRoster === s.id}
+        isBlocked={isBlocked}
         onToggleCommit={() => toggleCommit(live)}
         onToggleRoster={() => setExpandedRoster(expandedRoster === s.id ? null : s.id)}
         onCheckin={() => handleCheckin(live)}
@@ -179,6 +211,8 @@ export function WeeklySchedule({ days, currentMonday, filters }: { days: Day[]; 
         {days.map((day, i) => {
           const today = isToday(day.date)
           const filtered = applyFilters(day.sessions, filters)
+          const isWeekend = i >= 5
+          const groups = groupBySlot(filtered, isWeekend)
           return (
             <div key={day.date}>
               <div className={`mb-2 pb-1 border-b ${today ? 'border-brand-red' : 'border-smoke'}`}>
@@ -187,11 +221,16 @@ export function WeeklySchedule({ days, currentMonday, filters }: { days: Day[]; 
                 </p>
                 <p className="text-xs text-ash">{formatDate(day.date)}</p>
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
                 {filtered.length === 0 && (
                   <p className="text-xs text-ash italic">—</p>
                 )}
-                {filtered.map(renderCard)}
+                {groups.map(group => (
+                  <div key={group.label}>
+                    <p className="text-xs text-ash uppercase tracking-wider mt-2 mb-1 leading-none">{group.label}</p>
+                    <div className="flex flex-col gap-1">{group.sessions.map(renderCard)}</div>
+                  </div>
+                ))}
               </div>
             </div>
           )
@@ -204,6 +243,8 @@ export function WeeklySchedule({ days, currentMonday, filters }: { days: Day[]; 
           const filtered = applyFilters(day.sessions, filters)
           if (filtered.length === 0) return null
           const today = isToday(day.date)
+          const isWeekend = i >= 5
+          const groups = groupBySlot(filtered, isWeekend)
           return (
             <div key={day.date}>
               <div className={`mb-2 pb-1 border-b ${today ? 'border-brand-red' : 'border-smoke'}`}>
@@ -211,8 +252,13 @@ export function WeeklySchedule({ days, currentMonday, filters }: { days: Day[]; 
                   {DAY_LABELS[i]} · {formatDate(day.date)}
                 </p>
               </div>
-              <div className="flex flex-col gap-2">
-                {filtered.map(renderCard)}
+              <div className="flex flex-col gap-1">
+                {groups.map(group => (
+                  <div key={group.label}>
+                    <p className="text-xs text-ash uppercase tracking-wider mt-2 mb-1">{group.label}</p>
+                    <div className="flex flex-col gap-2">{group.sessions.map(renderCard)}</div>
+                  </div>
+                ))}
               </div>
             </div>
           )
@@ -274,18 +320,19 @@ export function WeeklySchedule({ days, currentMonday, filters }: { days: Day[]; 
 }
 
 function SessionCard({
-  session, committed, expanded, onToggleCommit, onToggleRoster, onCheckin, inCheckinWindow,
+  session, committed, expanded, isBlocked, onToggleCommit, onToggleRoster, onCheckin, inCheckinWindow,
 }: {
   session: Session
   committed: boolean
   expanded: boolean
+  isBlocked: boolean
   onToggleCommit: () => void
   onToggleRoster: () => void
   onCheckin: () => void
   inCheckinWindow: boolean
 }) {
   return (
-    <div className={`border bg-paper p-3 flex flex-col gap-2 ${committed ? 'border-l-2 border-l-brand-red border-t-smoke border-r-smoke border-b-smoke' : 'border-smoke'} ${session.cancelled ? 'opacity-60' : ''}`}>
+    <div className={`border bg-paper p-3 flex flex-col gap-2 ${isBlocked ? 'opacity-40 border-smoke' : committed ? 'border-l-2 border-l-brand-red border-t-smoke border-r-smoke border-b-smoke' : 'border-smoke'} ${session.cancelled ? 'opacity-60' : ''}`}>
       <div>
         <p className="text-xs font-bold text-ink leading-tight">{session.class.title}</p>
         <p className="text-xs text-ash mt-0.5">{session.class.startTime}–{session.class.endTime}</p>
@@ -308,7 +355,11 @@ function SessionCard({
         <p className="text-xs text-ash">{session.class.location}</p>
       )}
 
-      {!session.cancelled && (
+      {isBlocked && (
+        <p className="text-xs text-ash italic pt-1 border-t border-smoke">Not included in your membership</p>
+      )}
+
+      {!session.cancelled && !isBlocked && (
         <div className="flex flex-col gap-1.5 pt-1 border-t border-smoke">
           <div className="flex items-center justify-between">
             <button

@@ -5,6 +5,8 @@ import Link from 'next/link'
 import prisma from '@/lib/database'
 import { BeltBadge } from '@/app/components/BeltBadge'
 import { RoleManager } from './RoleManager'
+import { ClassAccessManager } from './ClassAccessManager'
+import { ClassGroup } from '@prisma/client'
 
 type Belt = 'white' | 'blue' | 'purple' | 'brown' | 'black' | 'coral' | 'red'
 
@@ -66,6 +68,9 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
       <div className="flex flex-col gap-6">
         {/* Role Management */}
         <RoleManager userId={user.id} currentRoles={user.roles as string[]} />
+
+        {/* Class Access */}
+        <ClassAccessManager userId={user.id} blocked={user.blockedClassGroups as ClassGroup[]} />
 
         {/* Contact */}
         <div className="border border-smoke bg-paper p-6">

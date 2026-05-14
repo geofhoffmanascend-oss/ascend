@@ -263,13 +263,14 @@ Schema pushed: `ClassGroup` enum (`grappling | striking | kids | competition | s
 - Competition: competition_prep
 - Seminar: seminar
 
-### [ ] 17.1 — Admin class access UI: per-user toggles for each ClassGroup on admin user detail page; `PUT /api/admin/users/[id]/class-access`
-### [ ] 17.2 — User schedule preferences: "Show on schedule" section in /settings; `PUT /api/user/class-preferences`
-### [ ] 17.3 — Schedule enforcement: admin-blocked groups → class card grayed out + register button hidden; user-hidden groups → class not shown at all
-### [ ] 17.4 — Check-in enforcement: block self check-in and QR scan if class group is admin-blocked for that user
-### [ ] 17.5 — Schedule time-slot grouping headers
-  - Weekdays: 6am (before 10am) / Noon (10am–2pm) / PM (2pm+) / Competition (competition_prep any day)
-  - Weekends: by class type only (Grappling / Striking / etc.) — no time split
+### [x] 17.1 — Admin class access UI: per-user toggles for each ClassGroup on admin user detail page; `PUT /api/admin/users/[id]/class-access`
+### [x] 17.2 — User schedule preferences: "Show on schedule" section in /settings; `PUT /api/user/class-preferences`
+### [x] 17.3 — Schedule enforcement: admin-blocked groups → class card grayed out + register/check-in hidden; user-hidden groups → class not shown at all
+### [x] 17.4 — Check-in enforcement: self check-in, QR scan, and registration all blocked for admin-blocked groups
+### [x] 17.5 — Schedule time-slot grouping headers (6am/Noon/PM/Comp weekdays; by class type weekends)
+### [x] 17.6 — Group forums: `group_forum` ForumType, `classGroup` field on Forum; each group has a forum; shown on forum list + settings; blocked groups hidden; access-gated in forum detail
+
+**One-time setup required:** POST to `/api/admin/init-group-forums` (admin only) to seed the 5 group forums into the database.
 
 ---
 
@@ -293,6 +294,14 @@ Schema pushed: `ClassGroup` enum (`grappling | striking | kids | competition | s
 ### [ ] BUG-3 — Gallery layout/density buttons — unconfirmed
 **Symptom:** User reported view options "not functioning correctly" — unclear if this is the GridItem rendering bug (BUG-2) or a separate state issue.
 **To verify:** After BUG-1 and BUG-2 resolved, test grid/masonry/timeline buttons and 2/3/4 column density buttons in a clean browser session (no cached service worker).
+
+---
+
+## PHASE 18 — Email API Integration (future)
+
+### [ ] 18.1 — Integrate transactional email provider (e.g. Resend, SendGrid, Postmark) — required before items below
+### [ ] 18.2 — Admin can send a password reset email to any user from their admin user detail page
+### [ ] 18.3 — Admin can update the email address associated with a user account (with confirmation sent to the new address)
 
 ---
 

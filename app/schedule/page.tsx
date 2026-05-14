@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation'
 import prisma from '@/lib/database'
 import { generateSessionsForRange, getMondayOfWeek } from '@/lib/generateSessions'
 import { ScheduleShell } from './ScheduleShell'
+import { classTypeToGroup } from '@/lib/classGroups'
+import { ClassGroup } from '@prisma/client'
 
 export default async function SchedulePage({
   searchParams,
@@ -19,6 +21,18 @@ export default async function SchedulePage({
   const viewMode = params.view === 'month' ? 'month' : 'week'
   const today = new Date()
   const todayStr = today.toISOString().split('T')[0]
+
+  const userAccess = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { blockedClassGroups: true, hiddenClassGroups: true },
+  })
+  const blocked = (userAccess?.blockedClassGroups ?? []) as ClassGroup[]
+  const hidden  = (userAccess?.hiddenClassGroups  ?? []) as ClassGroup[]
+
+  function isHidden(classType: string) {
+    const g = classTypeToGroup(classType)
+    return g !== null && hidden.includes(g)
+  }
 
   const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
@@ -48,14 +62,16 @@ export default async function SchedulePage({
       orderBy: [{ date: 'asc' }, { class: { startTime: 'asc' } }],
     })
 
-    const monthSessions = rawSessions.map(s => ({
-      id: s.id,
-      date: s.date.toISOString().split('T')[0],
-      cancelled: s.cancelled,
-      myCommitment: s.commitments.length > 0,
-      myCheckedIn: s.attendance.length > 0 && s.attendance[0].checkedInAt !== null,
-      class: { title: s.class.title, startTime: s.class.startTime, type: s.class.type },
-    }))
+    const monthSessions = rawSessions
+      .filter(s => !isHidden(s.class.type))
+      .map(s => ({
+        id: s.id,
+        date: s.date.toISOString().split('T')[0],
+        cancelled: s.cancelled,
+        myCommitment: s.commitments.length > 0,
+        myCheckedIn: s.attendance.length > 0 && s.attendance[0].checkedInAt !== null,
+        class: { title: s.class.title, startTime: s.class.startTime, type: s.class.type },
+      }))
 
     const weekStr = getMondayOfWeek(today).toISOString().split('T')[0]
 
@@ -76,6 +92,7 @@ export default async function SchedulePage({
           prevUrl={`/schedule?view=month&month=${prevMonthStr}`}
           nextUrl={`/schedule?view=month&month=${nextMonthStr}`}
           periodLabel={monthPeriodLabel}
+          blockedClassGroups={blocked}
           monthSessions={monthSessions}
           currentMonth={currentMonth}
         />
@@ -121,7 +138,7 @@ export default async function SchedulePage({
     const dateStr = date.toISOString().split('T')[0]
 
     const daySessions = sessions
-      .filter(s => s.date.toISOString().split('T')[0] === dateStr)
+      .filter(s => s.date.toISOString().split('T')[0] === dateStr && !isHidden(s.class.type))
       .map(s => {
         const myCommitment = s.commitments.find(c => c.userId === session.user.id)
         return {
@@ -182,6 +199,7 @@ export default async function SchedulePage({
         prevUrl={`/schedule?view=week&week=${prevWeekStr}`}
         nextUrl={`/schedule?view=week&week=${nextWeekStr}`}
         periodLabel={weekPeriodLabel}
+        blockedClassGroups={blocked}
         days={days}
         currentMonday={mondayStr}
       />

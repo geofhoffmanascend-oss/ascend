@@ -36,6 +36,12 @@ export default async function ForumPage({ params }: { params: Promise<{ id: stri
     redirect('/forum')
   }
 
+  // Group forum: block if admin has restricted this group for the user
+  if ((forum.type as string) === 'group_forum' && forum.classGroup) {
+    const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedClassGroups: true } })
+    if (user?.blockedClassGroups?.includes(forum.classGroup as any)) redirect('/forum')
+  }
+
   const posts = forum.posts.map(p => ({
     ...p,
     createdAt: p.createdAt.toISOString(),

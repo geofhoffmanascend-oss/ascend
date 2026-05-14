@@ -81,6 +81,7 @@ enum ForumType {
   announcement
   private_lesson
   instructor_only
+  group_forum
 }
 
 enum PostType {
@@ -380,12 +381,13 @@ model LessonMessage {
 // ── Forums & Posts ─────────────────────────────────────────────────────────────
 
 model Forum {
-  id          String    @id @default(cuid())
+  id          String     @id @default(cuid())
   type        ForumType
-  classId     String?   @unique
+  classId     String?    @unique
+  classGroup  ClassGroup?
   title       String
   description String?
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime   @default(now())
 
   class         Class?             @relation(fields: [classId], references: [id], onDelete: Cascade)
   posts         Post[]

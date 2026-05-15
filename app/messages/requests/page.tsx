@@ -11,7 +11,7 @@ export default async function MessageRequestsPage() {
 
   const requests = await prisma.messageRequest.findMany({
     where: { recipientId: session.user.id, status: 'pending' },
-    include: { sender: { select: { id: true, name: true, avatarUrl: true, belt: true, role: true } } },
+    include: { sender: { select: { id: true, name: true, avatarUrl: true, belt: true } } },
     orderBy: { createdAt: 'desc' },
   })
 
@@ -52,7 +52,7 @@ export default async function MessageRequestsPage() {
                 </div>
                 <div>
                   <p className="text-sm text-ink font-medium">{req.sender.name ?? 'Unknown'}</p>
-                  <p className="text-xs text-ash capitalize">{req.sender.role} · {req.sender.belt} belt</p>
+                  <p className="text-xs text-ash capitalize">{req.sender.belt} belt</p>
                 </div>
                 <span className="ml-auto text-xs text-ash">
                   {new Date(req.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}

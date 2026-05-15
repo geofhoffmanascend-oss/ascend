@@ -37,7 +37,7 @@ export function Header() {
   return (
     <header className="bg-ink-soft border-b border-steel/30">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
+        <Link href={session ? '/dashboard' : '/'} className="flex items-center gap-2 shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icons/AJJ.webp" alt="Ascend" width={32} height={32} className="rounded-full" />
           <span className="hidden sm:block font-display font-bold text-paper text-lg tracking-tight">Ascend</span>

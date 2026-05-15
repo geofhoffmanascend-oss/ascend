@@ -1,9 +1,16 @@
+import type { Metadata } from 'next'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
 import { ForumClient } from './ForumClient'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const forum = await prisma.forum.findUnique({ where: { id }, select: { title: true } })
+  return { title: forum?.title ?? 'Forum' }
+}
 
 export default async function ForumPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
@@ -17,9 +24,9 @@ export default async function ForumPage({ params }: { params: Promise<{ id: stri
       posts: {
         where: { parentId: null },
         include: {
-          author: { select: { name: true, belt: true, role: true } },
+          author: { select: { name: true, belt: true } },
           replies: {
-            include: { author: { select: { name: true, belt: true, role: true } } },
+            include: { author: { select: { name: true, belt: true } } },
             orderBy: { createdAt: 'asc' },
           },
         },

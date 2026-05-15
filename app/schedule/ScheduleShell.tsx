@@ -11,7 +11,7 @@ import { ScheduleFilters, DEFAULT_FILTERS, type Filters } from './ScheduleFilter
 type Session = {
   id: string; date: string; cancelled: boolean; cancelNote: string | null
   notes: string | null; committedCount: number; myCommitment: { id: string } | null
-  myCheckedIn: boolean; otherCommitted: { name: string; belt: string }[]
+  myCheckedIn: boolean; otherCommitted: { id: string; name: string; belt: string }[]
   class: { id: string; title: string; type: string; startTime: string; endTime: string; location: string | null; instructorName: string }
 }
 type Day = { date: string; sessions: Session[] }

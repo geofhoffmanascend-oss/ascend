@@ -148,7 +148,6 @@ model User {
   emailVerified    DateTime?
   image            String?
   passwordHash     String?
-  role             Role      @default(student)
   roles            Role[]    @default([student])
   vendorType       VendorType?
   onboardingDone   Boolean   @default(false)
@@ -158,6 +157,7 @@ model User {
   phone            String?
   emergencyContact String?
   avatarUrl        String?
+  profilePrivacy   Json    @default("{}")
 
   // Rank
   belt             Belt      @default(white)

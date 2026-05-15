@@ -1,7 +1,11 @@
+import type { Metadata } from "next"
+
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+
+export const metadata = { title: 'Vendor Portal' }
 
 export default async function VendorDashboardPage() {
   const session = await getServerSession(authOptions)

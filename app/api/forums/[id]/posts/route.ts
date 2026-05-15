@@ -27,7 +27,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       parentId: parentId || null,
     },
     include: {
-      author: { select: { name: true, belt: true, role: true } },
+      author: { select: { name: true, belt: true } },
       forum: { select: { title: true } },
       parent: { select: { authorId: true } },
     },

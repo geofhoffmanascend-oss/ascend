@@ -17,6 +17,7 @@ export default async function EditProfilePage() {
       emergencyContact: true,
       avatarUrl: true,
       weightClass: true,
+      profilePrivacy: true,
     },
   })
 
@@ -43,6 +44,7 @@ export default async function EditProfilePage() {
           avatarUrl: user.avatarUrl ?? '',
           weightClass: user.weightClass ?? '',
         }}
+        profilePrivacy={(user.profilePrivacy as Record<string, string>) ?? {}}
       />
     </div>
   )

@@ -38,7 +38,7 @@ export default async function DayViewPage({ params }: { params: Promise<{ date: 
       commitments: {
         select: {
           id: true, userId: true,
-          user: { select: { name: true, belt: true } },
+          user: { select: { id: true, name: true, belt: true } },
         },
       },
     },
@@ -127,7 +127,7 @@ export default async function DayViewPage({ params }: { params: Promise<{ date: 
                 ) : (
                   <div className="flex flex-wrap gap-3">
                     {s.commitments.map(c => (
-                      <div key={c.id} className="flex items-center gap-2">
+                      <Link key={c.id} href={`/profile/${c.user.id}`} className="flex items-center gap-2 hover:text-brand-red transition-colors">
                         <div className="w-7 h-7 rounded-full bg-mist border border-smoke flex items-center justify-center flex-shrink-0">
                           <span className="text-xs font-bold text-steel">
                             {(c.user.name ?? '?')[0].toUpperCase()}
@@ -137,7 +137,7 @@ export default async function DayViewPage({ params }: { params: Promise<{ date: 
                           <p className="text-xs text-ink font-medium">{c.user.name}</p>
                           <BeltBadge belt={c.user.belt as Belt} stripes={0} />
                         </div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 )}

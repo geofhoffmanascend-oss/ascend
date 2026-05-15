@@ -1,8 +1,12 @@
+import type { Metadata } from "next"
+
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import prisma from '@/lib/database'
 import { NotificationList } from './NotificationList'
+
+export const metadata = { title: 'Notifications' }
 
 export default async function NotificationsPage() {
   const session = await getServerSession(authOptions)

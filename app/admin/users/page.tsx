@@ -29,8 +29,8 @@ export default async function AdminUsersPage({
         ],
       }),
     },
-    select: { id: true, name: true, email: true, role: true, belt: true, stripes: true, createdAt: true },
-    orderBy: [{ role: 'asc' }, { name: 'asc' }],
+    select: { id: true, name: true, email: true, roles: true, belt: true, stripes: true, createdAt: true },
+    orderBy: [{ name: 'asc' }],
   })
 
   return (
@@ -95,7 +95,7 @@ export default async function AdminUsersPage({
             </div>
             <div className="flex items-center gap-3">
               <BeltBadge belt={u.belt as Belt} stripes={u.stripes} />
-              <span className="text-xs text-ash capitalize">{u.role}</span>
+              <span className="text-xs text-ash capitalize">{u.roles.join(', ')}</span>
             </div>
           </Link>
         ))}

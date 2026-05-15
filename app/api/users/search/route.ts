@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
       id: { not: session.user.id },
       name: { contains: q, mode: 'insensitive' },
     },
-    select: { id: true, name: true, avatarUrl: true, role: true, belt: true },
+    select: { id: true, name: true, avatarUrl: true, roles: true, belt: true },
     take: 10,
   })
 

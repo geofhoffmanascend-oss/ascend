@@ -238,8 +238,7 @@ Not yet diagnosed. Error is caught and logged as `[register]` in Vercel function
 ### [x] 16.7 — `RoleManager` component on admin user detail page
 
 ### [x] R4 — DB push + data migration — DONE (Step 1: schema pushed, migration SQL run to populate roles[])
-### [ ] R4b — Phase 16 cleanup: remove old `role Role` field from User model + `prisma db push`
-> One-liner: delete the `role Role @default(student)` line from schema.prisma, then push. Confirm no remaining references to `session.user.role` (singular) before pushing.
+### [x] R4b — Phase 16 cleanup: remove old `role Role` field from User model + `prisma db push` — DONE
 
 ### [x] 16.8 — Instructor schedule view: upcoming sessions, registered/checked-in counts
 ### [x] 16.9 — Per-session notes editor with public/private toggle (visible to committed students on day view)
@@ -297,11 +296,20 @@ Schema pushed: `ClassGroup` enum (`grappling | striking | kids | competition | s
 
 ---
 
-## PHASE 18 — Email API Integration (future)
+## PHASE 18 — UX & Profile Polish
 
-### [ ] 18.1 — Integrate transactional email provider (e.g. Resend, SendGrid, Postmark) — required before items below
-### [ ] 18.2 — Admin can send a password reset email to any user from their admin user detail page
-### [ ] 18.3 — Admin can update the email address associated with a user account (with confirmation sent to the new address)
+### [x] 18.1 — Favicon + page titles — DONE (title template "%s | Ascend" + per-route metadata on all main pages)
+### [x] 18.2 — Logo nav behavior — DONE (logo links to /dashboard when logged in, / when logged out)
+### [x] 18.3 — User name links — DONE (forum posts, schedule roster, day view; public profile page at /profile/[userId])
+### [x] 18.4 — Profile field privacy controls — DONE (Members/Private toggles on bio, phone, emergency contact, weight class, competitions; enforced on public profile page; stored in profilePrivacy JSON column)
+
+---
+
+## PHASE 19 — Email API Integration (future)
+
+### [ ] 19.1 — Integrate transactional email provider (e.g. Resend, SendGrid, Postmark) — required before items below
+### [ ] 19.2 — Admin can send a password reset email to any user from their admin user detail page
+### [ ] 19.3 — Admin can update the email address associated with a user account (with confirmation sent to the new address)
 
 ---
 
@@ -310,5 +318,4 @@ Schema pushed: `ClassGroup` enum (`grappling | striking | kids | competition | s
 ### [x] R1 — prisma db push for Phase 14 — DONE
 ### [x] R2 — Cloudinary credentials — DONE (diztvzzix cloud, pushed to Vercel)
 
-### [ ] R3 — Phase 15 anonymous feedback + DM improvements require `prisma db push`
-> Schema changes: anonymous field on ClassFeedback, MessageRequest model, MessageRequestStatus enum
+### [x] R3 — Phase 15 anonymous feedback + DM improvements — DONE (already in sync)

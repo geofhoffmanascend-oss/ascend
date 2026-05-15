@@ -14,8 +14,8 @@ export async function GET() {
     where: { OR: [{ senderId: userId }, { recipientId: userId }] },
     orderBy: { createdAt: 'desc' },
     include: {
-      sender:    { select: { id: true, name: true, avatarUrl: true, role: true } },
-      recipient: { select: { id: true, name: true, avatarUrl: true, role: true } },
+      sender:    { select: { id: true, name: true, avatarUrl: true } },
+      recipient: { select: { id: true, name: true, avatarUrl: true } },
     },
   })
 

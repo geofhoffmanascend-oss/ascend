@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space-grotesk' })
 
 export const metadata: Metadata = {
-  title: 'Ascend',
+  title: { default: 'Ascend', template: '%s | Ascend' },
   description: 'Train. Register. Improve.',
   manifest: '/manifest.json',
   appleWebApp: {

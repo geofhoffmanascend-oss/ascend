@@ -1,3 +1,5 @@
+import type { Metadata } from "next"
+
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
@@ -6,6 +8,8 @@ import { generateSessionsForRange, getMondayOfWeek } from '@/lib/generateSession
 import { ScheduleShell } from './ScheduleShell'
 import { classTypeToGroup } from '@/lib/classGroups'
 import { ClassGroup } from '@prisma/client'
+
+export const metadata = { title: 'Schedule' }
 
 export default async function SchedulePage({
   searchParams,
@@ -121,7 +125,7 @@ export default async function SchedulePage({
       commitments: {
         select: {
           id: true, userId: true,
-          user: { select: { name: true, belt: true } },
+          user: { select: { id: true, name: true, belt: true } },
         },
       },
       attendance: {
@@ -152,7 +156,7 @@ export default async function SchedulePage({
           myCheckedIn: s.attendance.length > 0 && s.attendance[0].checkedInAt !== null,
           otherCommitted: s.commitments
             .filter(c => c.userId !== session.user.id)
-            .map(c => ({ name: c.user.name ?? 'Unknown', belt: c.user.belt as string })),
+            .map(c => ({ id: c.user.id, name: c.user.name ?? 'Unknown', belt: c.user.belt as string })),
           class: {
             id: s.class.id,
             title: s.class.title,

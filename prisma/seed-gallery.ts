@@ -16,7 +16,7 @@ const PHOTOS = [
 ]
 
 async function main() {
-  const admin = await prisma.user.findFirst({ where: { role: 'admin' }, select: { id: true, name: true } })
+  const admin = await prisma.user.findFirst({ where: { roles: { has: 'admin' } }, select: { id: true, name: true } })
   if (!admin) { console.error('No admin user found — run main seed first'); process.exit(1) }
 
   console.log(`Seeding gallery as ${admin.name}…`)

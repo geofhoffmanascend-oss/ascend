@@ -40,7 +40,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
 
   const recipient = await prisma.user.findUnique({
     where: { id: recipientId },
-    select: { allowDmsFromStudents: true, role: true, name: true },
+    select: { allowDmsFromStudents: true, roles: true, name: true },
   })
 
   if (!recipient) return NextResponse.json({ error: 'User not found' }, { status: 404 })

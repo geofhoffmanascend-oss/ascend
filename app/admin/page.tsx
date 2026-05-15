@@ -1,9 +1,13 @@
+import type { Metadata } from "next"
+
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
 import { getMondayOfWeek } from '@/lib/generateSessions'
+
+export const metadata = { title: 'Admin' }
 
 export default async function AdminHomePage() {
   const session = await getServerSession(authOptions)
@@ -24,8 +28,8 @@ export default async function AdminHomePage() {
   todayEnd.setUTCHours(23, 59, 59, 999)
 
   const [totalStudents, totalInstructors, todaySessions, newSignups] = await Promise.all([
-    prisma.user.count({ where: { role: 'student' } }),
-    prisma.user.count({ where: { role: { in: ['instructor', 'admin'] } } }),
+    prisma.user.count({ where: { roles: { has: 'student' } } }),
+    prisma.user.count({ where: { roles: { hasSome: ['instructor', 'admin'] } } }),
     prisma.classSession.count({ where: { date: { gte: today, lte: todayEnd }, class: { isActive: true } } }),
     prisma.user.count({ where: { createdAt: { gte: weekAgo } } }),
   ])

@@ -158,7 +158,7 @@ export default async function AttendanceReportPage({ searchParams }: { searchPar
           {records.map(r => (
             <div key={r.id} className="border border-smoke bg-paper px-5 py-3 flex items-center justify-between">
               <div>
-                <p className="text-sm text-ink">{r.user.name}</p>
+                <a href={`/admin/users/${r.user.id}`} className="text-sm text-ink hover:text-brand-red transition-colors">{r.user.name}</a>
                 <p className="text-xs text-ash">
                   {r.classSession.class.title} · {r.classSession.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
                   {r.checkedInAt && <span className="ml-2 text-green-600">• App check-in</span>}

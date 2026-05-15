@@ -1,9 +1,13 @@
+import type { Metadata } from "next"
+
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import prisma from '@/lib/database'
 import { GalleryClient } from './GalleryClient'
 import { getWatermarkedUrl } from '@/lib/cloudinary'
+
+export const metadata = { title: 'Gallery' }
 
 export default async function GalleryPage() {
   const session = await getServerSession(authOptions)

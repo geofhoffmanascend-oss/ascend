@@ -3,7 +3,7 @@ import prisma from '../lib/database'
 async function main() {
   // Use the first instructor for all classes — can be reassigned in the admin panel
   const instructor = await prisma.user.findFirst({
-    where: { role: 'instructor' },
+    where: { roles: { has: 'instructor' } },
     select: { id: true, name: true },
   })
   if (!instructor) throw new Error('No instructor found — run db:seed first')

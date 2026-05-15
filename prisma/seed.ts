@@ -41,7 +41,7 @@ async function main() {
         email: 'admin@gym.com',
         name: 'Admin User',
         passwordHash: adminHash,
-        role: 'admin',
+        roles: ['admin'],
         belt: 'black',
         stripes: 0,
         onboardingDone: true,
@@ -55,7 +55,7 @@ async function main() {
         email: 'instructor1@gym.com',
         name: 'Marcus Silva',
         passwordHash: instrHash,
-        role: 'instructor',
+        roles: ['instructor'],
         belt: 'black',
         stripes: 2,
         onboardingDone: true,
@@ -70,7 +70,7 @@ async function main() {
         email: 'instructor2@gym.com',
         name: 'Dana Lee',
         passwordHash: instrHash,
-        role: 'instructor',
+        roles: ['instructor'],
         belt: 'brown',
         stripes: 3,
         onboardingDone: true,
@@ -90,7 +90,7 @@ async function main() {
       await prisma.user.upsert({
         where: { email: s.email },
         update: {},
-        create: { ...s, passwordHash: studHash, role: 'student', onboardingDone: true },
+        create: { ...s, passwordHash: studHash, roles: ['student'], onboardingDone: true },
       })
     }
     console.log('  ✓ Users (1 admin, 2 instructors, 5 students)')

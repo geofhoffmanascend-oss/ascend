@@ -11,12 +11,12 @@ export default async function NewLessonPage() {
 
   const [instructors, students] = await Promise.all([
     prisma.user.findMany({
-      where: { role: { in: ['instructor', 'admin'] } },
+      where: { roles: { hasSome: ['instructor', 'admin'] } },
       select: { id: true, name: true },
       orderBy: { name: 'asc' },
     }),
     prisma.user.findMany({
-      where: { role: 'student', id: { not: session.user.id } },
+      where: { roles: { has: 'student' }, id: { not: session.user.id } },
       select: { id: true, name: true },
       orderBy: { name: 'asc' },
     }),

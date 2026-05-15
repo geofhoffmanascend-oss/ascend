@@ -1,8 +1,12 @@
+import type { Metadata } from "next"
+
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import prisma from '@/lib/database'
 import { StoreClient } from './StoreClient'
+
+export const metadata = { title: 'Store' }
 
 export default async function StorePage() {
   const session = await getServerSession(authOptions)

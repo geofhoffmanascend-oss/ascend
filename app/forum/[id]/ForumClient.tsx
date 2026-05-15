@@ -1,14 +1,16 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { BeltBadge } from '@/app/components/BeltBadge'
 
 type Belt = 'white' | 'blue' | 'purple' | 'brown' | 'black' | 'coral' | 'red'
 
-type Author = { name: string | null; belt: string; role: string }
+type Author = { name: string | null; belt: string }
 
 type Post = {
   id: string
+  authorId: string
   content: string
   type: string
   videoUrl: string | null
@@ -17,6 +19,7 @@ type Post = {
   author: Author
   replies: {
     id: string
+    authorId: string
     content: string
     createdAt: string
     author: Author
@@ -208,7 +211,7 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
             <div className="px-5 pt-4 pb-1 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <BeltBadge belt={post.author.belt as Belt} stripes={0} />
-                <span className="text-sm font-medium text-ink">{post.author.name ?? 'Unknown'}</span>
+                <Link href={`/profile/${post.authorId}`} className="text-sm font-medium text-ink hover:text-brand-red transition-colors">{post.author.name ?? 'Unknown'}</Link>
                 <span className="text-xs text-ash">{formatDate(post.createdAt)}</span>
                 <span className={`px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${POST_TYPE_STYLES[post.type] ?? POST_TYPE_STYLES.text}`}>
                   {POST_TYPE_LABELS[post.type] ?? post.type}
@@ -221,7 +224,7 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
                     {post.pinned ? 'Unpin' : 'Pin'}
                   </button>
                 )}
-                {(post.author.role === userId || userRoles.includes('admin')) && (
+                {(post.authorId === userId || userRoles.includes('admin')) && (
                   <button onClick={() => deletePost(post.id)} className="text-xs text-ash hover:text-brand-red transition-colors">✕</button>
                 )}
               </div>
@@ -248,12 +251,12 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           <BeltBadge belt={reply.author.belt as Belt} stripes={0} />
-                          <span className="text-xs font-medium text-ink">{reply.author.name ?? 'Unknown'}</span>
+                          <Link href={`/profile/${reply.authorId}`} className="text-xs font-medium text-ink hover:text-brand-red transition-colors">{reply.author.name ?? 'Unknown'}</Link>
                           <span className="text-xs text-ash">{formatDate(reply.createdAt, true)}</span>
                         </div>
                         <p className="text-sm text-ink leading-relaxed">{reply.content}</p>
                       </div>
-                      {(reply.author.role === userId || userRoles.includes('admin')) && (
+                      {(reply.authorId === userId || userRoles.includes('admin')) && (
                         <button
                           onClick={() => deletePost(reply.id, true, post.id)}
                           className="text-xs text-ash hover:text-brand-red transition-colors flex-shrink-0 mt-0.5"

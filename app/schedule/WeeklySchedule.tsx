@@ -18,7 +18,7 @@ type Session = {
   committedCount: number
   myCommitment: { id: string } | null
   myCheckedIn: boolean
-  otherCommitted: { name: string; belt: string }[]
+  otherCommitted: { id: string; name: string; belt: string }[]
   class: {
     id: string
     title: string
@@ -404,7 +404,7 @@ function SessionCard({
           {session.otherCommitted.map((s, i) => (
             <div key={i} className="flex items-center gap-2">
               <BeltBadge belt={s.belt as Belt} stripes={0} />
-              <span className="text-xs text-ink">{s.name}</span>
+              <Link href={`/profile/${s.id}`} className="text-xs text-ink hover:text-brand-red transition-colors">{s.name}</Link>
             </div>
           ))}
         </div>

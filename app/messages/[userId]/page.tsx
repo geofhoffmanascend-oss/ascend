@@ -13,7 +13,7 @@ export default async function ConversationPage({ params }: { params: Promise<{ u
 
   const other = await prisma.user.findUnique({
     where: { id: otherId },
-    select: { id: true, name: true, avatarUrl: true, role: true, allowDmsFromStudents: true },
+    select: { id: true, name: true, avatarUrl: true, roles: true, allowDmsFromStudents: true },
   })
   if (!other) notFound()
 

@@ -16,11 +16,11 @@ const prisma = new PrismaClient({ adapter } as any)
 
 async function main() {
   // Find any student-role user
-  const student = await prisma.user.findFirst({ where: { role: 'student' } })
+  const student = await prisma.user.findFirst({ where: { roles: { has: 'student' } } })
   if (!student) throw new Error('No student-role user found')
   console.log('Found student:', student.name, '| qrToken:', student.qrToken)
 
-  const instructor = await prisma.user.findFirst({ where: { role: { in: ['instructor', 'admin'] } } })
+  const instructor = await prisma.user.findFirst({ where: { roles: { hasSome: ['instructor', 'admin'] } } })
   if (!instructor) throw new Error('No instructor/admin found')
 
   // Create or find a test class

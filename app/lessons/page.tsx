@@ -1,3 +1,5 @@
+import type { Metadata } from "next"
+
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
@@ -10,6 +12,8 @@ const STATUS_STYLES: Record<string, string> = {
   completed: 'bg-mist text-steel',
   cancelled: 'bg-mist text-ash',
 }
+
+export const metadata = { title: 'Lessons' }
 
 export default async function LessonsPage() {
   const session = await getServerSession(authOptions)

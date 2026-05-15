@@ -1,9 +1,13 @@
+import type { Metadata } from "next"
+
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import prisma from '@/lib/database'
 import { SettingsForm } from './SettingsForm'
 import { ClassGroup } from '@prisma/client'
+
+export const metadata = { title: 'Settings' }
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions)

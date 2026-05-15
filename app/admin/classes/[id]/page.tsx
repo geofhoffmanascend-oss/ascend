@@ -15,7 +15,7 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
   if (!cls) notFound()
 
   const instructors = await prisma.user.findMany({
-    where: { role: { in: ['instructor', 'admin'] } },
+    where: { roles: { hasSome: ['instructor', 'admin'] } },
     select: { id: true, name: true },
     orderBy: { name: 'asc' },
   })

@@ -1,7 +1,11 @@
+import type { Metadata } from "next"
+
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import { OnboardingWizard } from './OnboardingWizard'
+
+export const metadata = { title: 'Get Started' }
 
 export default async function OnboardingPage() {
   const session = await getServerSession(authOptions)

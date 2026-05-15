@@ -1,3 +1,5 @@
+import type { Metadata } from "next"
+
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
@@ -7,6 +9,8 @@ import { BeltBadge } from '@/app/components/BeltBadge'
 import { QRCodeDisplay } from '@/app/components/QRCodeDisplay'
 import { GoalsSection } from './GoalsSection'
 import { CompetitionsSection } from './CompetitionsSection'
+
+export const metadata = { title: 'Profile' }
 
 export default async function ProfilePage() {
   const session = await getServerSession(authOptions)

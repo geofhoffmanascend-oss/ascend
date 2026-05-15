@@ -8,6 +8,21 @@ const WEIGHT_CLASSES = [
   'Medium-Heavy', 'Heavy', 'Super-Heavy', 'Ultra-Heavy',
 ]
 
+type Visibility = 'members' | 'private'
+
+const PRIVACY_OPTIONS: { value: Visibility; label: string }[] = [
+  { value: 'members', label: 'Members' },
+  { value: 'private', label: 'Private' },
+]
+
+const PRIVACY_DEFAULTS: Record<string, Visibility> = {
+  bio: 'members',
+  phone: 'private',
+  emergencyContact: 'private',
+  weightClass: 'members',
+  competitions: 'members',
+}
+
 type Props = {
   userId: string
   initial: {
@@ -18,16 +33,38 @@ type Props = {
     avatarUrl: string
     weightClass: string
   }
+  profilePrivacy: Record<string, string>
 }
 
-export function EditProfileForm({ userId, initial }: Props) {
+function PrivacySelect({ field, privacy, onChange }: { field: string; privacy: Record<string, string>; onChange: (field: string, value: string) => void }) {
+  const value = (privacy[field] as Visibility) ?? PRIVACY_DEFAULTS[field] ?? 'members'
+  return (
+    <select
+      value={value}
+      onChange={e => onChange(field, e.target.value)}
+      className="text-xs px-2 py-1 border border-smoke bg-paper text-steel focus:outline-none focus:border-brand-red transition-colors"
+      title="Who can see this field"
+    >
+      {PRIVACY_OPTIONS.map(o => (
+        <option key={o.value} value={o.value}>{o.label}</option>
+      ))}
+    </select>
+  )
+}
+
+export function EditProfileForm({ userId, initial, profilePrivacy: initialPrivacy }: Props) {
   const router = useRouter()
   const [form, setForm] = useState(initial)
+  const [privacy, setPrivacy] = useState<Record<string, string>>(initialPrivacy)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   function update(field: string, value: string) {
     setForm(f => ({ ...f, [field]: value }))
+  }
+
+  function updatePrivacy(field: string, value: string) {
+    setPrivacy(p => ({ ...p, [field]: value }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -38,7 +75,7 @@ export function EditProfileForm({ userId, initial }: Props) {
     const res = await fetch(`/api/users/${userId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, profilePrivacy: privacy }),
     })
 
     if (!res.ok) {
@@ -65,7 +102,10 @@ export function EditProfileForm({ userId, initial }: Props) {
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-bold uppercase tracking-widest text-steel">Weight Class</label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-bold uppercase tracking-widest text-steel">Weight Class</label>
+          <PrivacySelect field="weightClass" privacy={privacy} onChange={updatePrivacy} />
+        </div>
         <select
           value={form.weightClass}
           onChange={e => update('weightClass', e.target.value)}
@@ -74,11 +114,13 @@ export function EditProfileForm({ userId, initial }: Props) {
           <option value="">— Not specified —</option>
           {WEIGHT_CLASSES.map(w => <option key={w} value={w}>{w}</option>)}
         </select>
-        <p className="text-xs text-ash mt-0.5">Used to group students by division on instructor rosters.</p>
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-bold uppercase tracking-widest text-steel">Bio</label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-bold uppercase tracking-widest text-steel">Bio</label>
+          <PrivacySelect field="bio" privacy={privacy} onChange={updatePrivacy} />
+        </div>
         <textarea
           value={form.bio}
           onChange={e => update('bio', e.target.value)}
@@ -89,7 +131,10 @@ export function EditProfileForm({ userId, initial }: Props) {
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-bold uppercase tracking-widest text-steel">Phone</label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-bold uppercase tracking-widest text-steel">Phone</label>
+          <PrivacySelect field="phone" privacy={privacy} onChange={updatePrivacy} />
+        </div>
         <input
           type="tel"
           value={form.phone}
@@ -100,7 +145,10 @@ export function EditProfileForm({ userId, initial }: Props) {
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-bold uppercase tracking-widest text-steel">Emergency Contact</label>
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-bold uppercase tracking-widest text-steel">Emergency Contact</label>
+          <PrivacySelect field="emergencyContact" privacy={privacy} onChange={updatePrivacy} />
+        </div>
         <input
           type="text"
           value={form.emergencyContact}
@@ -120,6 +168,11 @@ export function EditProfileForm({ userId, initial }: Props) {
           placeholder="https://…"
         />
       </div>
+
+      <p className="text-xs text-ash -mt-2">
+        Fields marked <span className="font-medium">Members</span> are visible to logged-in members.{' '}
+        <span className="font-medium">Private</span> fields are visible only to you and admins.
+      </p>
 
       {error && <p className="text-sm text-brand-red">{error}</p>}
 

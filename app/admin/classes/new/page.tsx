@@ -11,7 +11,7 @@ export default async function NewClassPage() {
   if (!session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const instructors = await prisma.user.findMany({
-    where: { role: { in: ['instructor', 'admin'] } },
+    where: { roles: { hasSome: ['instructor', 'admin'] } },
     select: { id: true, name: true },
     orderBy: { name: 'asc' },
   })

@@ -61,7 +61,7 @@ export async function POST(req: Request) {
   })
 
   // Notify admins
-  const admins = await prisma.user.findMany({ where: { role: 'admin' }, select: { id: true } })
+  const admins = await prisma.user.findMany({ where: { roles: { has: 'admin' } }, select: { id: true } })
   await Promise.all(admins.map(a =>
     createNotification(a.id, 'general', `New store order from ${session.user.name ?? 'a student'}`, { link: '/admin/store' })
   ))

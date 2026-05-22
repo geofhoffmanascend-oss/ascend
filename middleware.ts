@@ -36,8 +36,15 @@ export default withAuth(
         const publicPaths = ['/', '/about', '/login', '/register']
         if (publicPaths.some(p => pathname === p)) return true
         if (pathname.startsWith('/checkin')) return true
+        if (pathname.startsWith('/tour')) return true
+        if (pathname.startsWith('/profile/')) return true
         if (pathname.startsWith('/api/auth')) return true
         if (pathname.startsWith('/api/checkin/public')) return true
+        if (pathname.startsWith('/api/profile')) return true
+        if (pathname === '/reset-password') return true
+        if (pathname === '/confirm-email') return true
+        if (pathname.startsWith('/api/auth/reset-password')) return true
+        if (pathname.startsWith('/api/auth/confirm-email')) return true
         return !!token
       },
     },

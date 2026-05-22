@@ -273,26 +273,28 @@ Schema pushed: `ClassGroup` enum (`grappling | striking | kids | competition | s
 
 ---
 
-## ACTIVE BUGS — Fix at start of next session
+## PENDING USER ACTION
 
-### [ ] BUG-1 — Header hydration mismatch (PRIORITY)
-**Symptom:** Console error: "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties." Nav links disappear or are inconsistent.
-**Cause:** Turbopack dev server is caching old compiled Header HTML. Multiple edits to Header.tsx during the session left the compiled server output stale. Clearing `.next` and restarting dev server did not fully resolve it.
-**What to try:** 
-- Read the current `app/components/Header.tsx` as ground truth (it has the correct `md:` breakpoint code)
-- Check for any other cached build artifacts (`.next`, `node_modules/.cache`)
-- Consider if `useSession()` causes server/client mismatch (session is null on server, populated on client — this is expected but could compound with class mismatch)
-- The real fix may be to suppress hydration warnings on the Header using `suppressHydrationWarning` or restructure so session-dependent nav renders client-only
+These items are code-complete but require manual steps to fully activate:
 
-### [ ] BUG-2 — Gallery grid images not displaying correctly
+- **Vercel env vars (Phase 19):** Add `RESEND_API_KEY` and `EMAIL_FROM=onboarding@resend.dev` to Vercel dashboard → Project → Settings → Environment Variables (Production + Preview). Without this, password reset emails won't send in production.
+- **Group forum seeding (Phase 17):** One-time setup — while logged in as admin, POST to `/api/admin/init-group-forums` (e.g. from browser devtools or a REST client) to create the 5 group forums in the database.
+- **Production email domain:** Sandbox sender only delivers to your verified Resend email. To send to any user, verify a domain at resend.com and update `EMAIL_FROM` to `noreply@yourdomain.com`.
+
+---
+
+## ACTIVE BUGS
+
+### [x] BUG-1 — Header hydration mismatch — FIXED
+Root cause: `SessionProvider` had no initial session, causing server/client mismatch. Fix: `RootLayout` now fetches server session and passes it to `SessionProvider` via the `session` prop in `providers.tsx`. Additional fix: `suppressHydrationWarning` added to `<body>` to suppress browser-extension-injected attribute mismatches (Grammarly, password managers, etc.).
+
+### [ ] BUG-2 — Gallery grid images not displaying correctly — NEEDS VISUAL VERIFICATION
 **Symptom:** Gallery view layout/density options may not visually work as expected; images may not fill grid cells properly.
-**Root cause identified:** `h-full` inside an `aspect-ratio` container is unreliable cross-browser. Fix was applied (use `absolute inset-0` for grid mode, `w-full block` for masonry) but not confirmed working due to ongoing hydration issues.
-**File:** `app/gallery/GalleryClient.tsx` — `GridItem` component (~line 256)
-**Status:** Code fix applied, needs visual verification after BUG-1 is resolved.
+**Root cause identified:** `h-full` inside an `aspect-ratio` container is unreliable cross-browser. Fix applied (use `absolute inset-0` for grid mode, `w-full block` for masonry) in `app/gallery/GalleryClient.tsx` — `GridItem` component.
+**Status:** Code fix is in place. Needs browser testing to confirm.
 
-### [ ] BUG-3 — Gallery layout/density buttons — unconfirmed
-**Symptom:** User reported view options "not functioning correctly" — unclear if this is the GridItem rendering bug (BUG-2) or a separate state issue.
-**To verify:** After BUG-1 and BUG-2 resolved, test grid/masonry/timeline buttons and 2/3/4 column density buttons in a clean browser session (no cached service worker).
+### [ ] BUG-3 — Gallery layout/density buttons — NEEDS VISUAL VERIFICATION
+**Status:** Verify after BUG-2 confirmed. Test grid/masonry/timeline and 2/3/4 column density buttons in a clean browser session.
 
 ---
 
@@ -302,14 +304,63 @@ Schema pushed: `ClassGroup` enum (`grappling | striking | kids | competition | s
 ### [x] 18.2 — Logo nav behavior — DONE (logo links to /dashboard when logged in, / when logged out)
 ### [x] 18.3 — User name links — DONE (forum posts, schedule roster, day view; public profile page at /profile/[userId])
 ### [x] 18.4 — Profile field privacy controls — DONE (Members/Private toggles on bio, phone, emergency contact, weight class, competitions; enforced on public profile page; stored in profilePrivacy JSON column)
+### [x] 18.5 — Profile nav link — DONE (person icon added to desktop header icon row; "Profile" added to mobile dropdown)
+### [x] 18.6 — Help icon confirmed — DONE (`?` circle icon in desktop header icon row, only visible when logged in; "Help" in mobile dropdown)
 
 ---
 
-## PHASE 19 — Email API Integration (future)
+## PHASE 20 — Help & Documentation
 
-### [ ] 19.1 — Integrate transactional email provider (e.g. Resend, SendGrid, Postmark) — required before items below
-### [ ] 19.2 — Admin can send a password reset email to any user from their admin user detail page
-### [ ] 19.3 — Admin can update the email address associated with a user account (with confirmation sent to the new address)
+### [x] 20.1 — Help icon in header — DONE (`?` circle SVG icon in desktop icon row + Help link in mobile menu)
+### [x] 20.2 — Help page (`/help`) — DONE (role-aware accordion sections; student always shown; instructor/admin/vendor gated)
+### [x] 20.3 — Help content — DONE (full copy for all student, instructor, admin, vendor sections)
+### [x] 20.4 — About page (`/about`) — DONE (public page with gym description, features, CTAs)
+
+---
+
+## PHASE 21 — Onboarding Workflows
+
+### [x] 21.1 — Student onboarding wizard — DONE (5-step: profile, contact, schedule prefs, reflection, completion; step progress dots; independent save per step)
+### [x] 21.2 — Instructor onboarding — DONE (`/onboarding/instructor` 3-step wizard; chains to admin onboarding if user is also admin)
+### [x] 21.3 — Admin onboarding — DONE (`/onboarding/admin` 2-step wizard; completion calls `POST /api/user/complete-onboarding`)
+### [x] 21.4 — Starter reflection journal — DONE (optional step 4 in student onboarding; TrainingReflection upsert via `POST /api/reflection`)
+### [x] 21.5 — TrainingReflection schema — DONE (pushed to DB; `id`, `userId`, `whyStarted`, `challenges`, `goals`, `privacy`, timestamps)
+### [x] 21.6 — Reflection display on profile — DONE (own profile shows "My Reflection"; edit button links to `/reflection/edit`; public profiles enforce privacy tier)
+
+---
+
+## PHASE 22 — Public Profiles & Privacy Expansion
+
+### [x] 22.1 — Third privacy tier — DONE (Public/Members/Private in EditProfileForm; stored in profilePrivacy JSON)
+### [x] 22.2 — Public profile access — DONE (/profile/[userId] works without auth; three-tier visibility; ShareButton copies URL)
+### [x] 22.3 — Public reflection — DONE (TrainingReflection rendered on public profile when privacy=public or members+authenticated)
+### [x] 22.4 — Middleware updated — DONE (/profile/ and /tour/ added to public paths)
+
+---
+
+## PHASE 23 — App Tours (Marketing)
+
+Two separate tours: one for prospective students (`/tour`), one for prospective gym owners/admins (`/tour/admin`). Both use fully static mock data — no DB queries. Both are public routes. Both use CSS keyframe animations (no external animation library needed — keep bundle lean).
+
+### [x] 23.1 — Landing page CTAs — DONE ("See how it works →" and "Managing a gym?" links added to `app/page.tsx`)
+### [x] 23.2 — Student tour (`/tour`) — DONE (6 animated sections: Schedule, Check-in, Forum, DMs, Journal, Profile; full-width CTA at end)
+### [x] 23.3 — Tour CTAs — DONE (contextual prompts per section; final sign-up CTA with gym branding)
+### [x] 23.4 — Mock data (`lib/tourData.ts`) — DONE (personas: Marcus black belt, Jordan blue belt, Sam white belt; messages, schedule, journal, forum content)
+### [x] 23.5 — Admin tour entry point — DONE ("Managing a gym?" secondary CTA on landing page links to `/tour/admin`)
+### [x] 23.6 — Admin tour (`/tour/admin`) — DONE (6 sections: Student Onboarding, Schedule/Instructors, Attendance/Roster, Feedback, Forums/DMs, Dashboard counters)
+### [x] 23.7 — Admin tour CTA — DONE (business-focused copy; final CTA placeholder for Phase 19 email)
+### [x] 23.8 — Shared tour infrastructure — DONE (`TourHeader`, `MockBelt`, `AnimatedChat`, `AnimatedCounter` in `app/components/tour/`; CSS keyframes in `app/globals.css`)
+
+---
+
+## PHASE 19 — Email API Integration
+
+### [x] 19.1 — Resend integrated (`lib/email.ts`); sandbox sender `onboarding@resend.dev`; `RESEND_API_KEY` + `EMAIL_FROM` in .env.local. Add both to Vercel env (Production + Preview) via dashboard.
+### [x] 19.2 — Admin password reset email — DONE (`POST /api/admin/send-password-reset`; `EmailActions` component on admin user detail page; user-facing `/reset-password?token=` page)
+### [x] 19.3 — Admin email address update — DONE (`POST /api/admin/update-email`; confirmation sent to new address; user confirms at `/confirm-email?token=`; token expires 24h)
+
+**Schema:** `PasswordResetToken` and `EmailChangeToken` tables pushed to DB.
+**To upgrade to production email:** verify a domain in Resend dashboard, then update `EMAIL_FROM` to `noreply@yourdomain.com` in both `.env.local` and Vercel env.
 
 ---
 

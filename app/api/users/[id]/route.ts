@@ -21,6 +21,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     notifyClassUpdates, notifyInstructorNotes, notifyPrivateMessages,
     notifyCheckinPrompts, notifyFeedbackPrompts, notifyByEmail, allowDmsFromStudents,
     allowMediaTagging, defaultJournalPrompts, profilePrivacy,
+    hiddenClassGroups, onboardedRoles,
   } = body
 
   const user = await prisma.user.update({
@@ -45,6 +46,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(allowMediaTagging    !== undefined && { allowMediaTagging }),
       ...(defaultJournalPrompts !== undefined && { defaultJournalPrompts }),
       ...(profilePrivacy !== undefined && { profilePrivacy }),
+      ...(hiddenClassGroups !== undefined && { hiddenClassGroups }),
+      ...(onboardedRoles !== undefined && { onboardedRoles }),
     },
     select: {
       id: true,

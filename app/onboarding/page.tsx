@@ -1,15 +1,33 @@
-import type { Metadata } from "next"
-
+import type { Metadata } from 'next'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
+import prisma from '@/lib/database'
 import { OnboardingWizard } from './OnboardingWizard'
 
-export const metadata = { title: 'Get Started' }
+export const metadata: Metadata = { title: 'Get Started' }
 
 export default async function OnboardingPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true, name: true, belt: true, stripes: true, roles: true, onboardedRoles: true, onboardingDone: true },
+  })
+
+  if (!user) redirect('/login')
+
+  // After student onboarding, instructor goes to instructor onboarding
+  const roles = user.roles ?? []
+  const onboardedRoles = user.onboardedRoles ?? []
+
+  let redirectAfter = '/dashboard'
+  if (roles.includes('instructor') && !onboardedRoles.includes('instructor')) {
+    redirectAfter = '/onboarding/instructor'
+  }
+  // If also admin, instructor onboarding will redirect to admin onboarding
+  // (handled in instructor onboarding page)
 
   return (
     <div className="min-h-full bg-paper flex items-center justify-center px-4 py-16">
@@ -17,13 +35,19 @@ export default async function OnboardingPage() {
         <div className="mb-8">
           <div className="inline-block bg-brand-red px-3 py-1 mb-4">
             <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">
-              Welcome
+              Welcome to Ascend
             </span>
           </div>
-          <h1 className="font-display text-2xl text-ink">Set up your profile</h1>
-          <p className="text-slate text-sm mt-2">Tell us a bit about yourself. You can edit this later.</p>
+          <h1 className="font-display text-2xl text-ink">Let's get you set up</h1>
+          <p className="text-slate text-sm mt-2">Quick setup — takes about 2 minutes. Everything is optional.</p>
         </div>
-        <OnboardingWizard userId={session.user.id} />
+        <OnboardingWizard
+          userId={user.id}
+          userName={user.name ?? ''}
+          userBelt={(user.belt as 'white' | 'blue' | 'purple' | 'brown' | 'black') ?? 'white'}
+          userStripes={user.stripes ?? 0}
+          redirectAfter={redirectAfter}
+        />
       </div>
     </div>
   )

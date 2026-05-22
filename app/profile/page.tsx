@@ -38,6 +38,9 @@ export default async function ProfilePage() {
         orderBy: { date: 'desc' },
         select: { id: true, name: true, date: true, location: true, division: true, weightClass: true, result: true, notes: true },
       },
+      trainingReflection: {
+        select: { whyStarted: true, challenges: true, goals: true, privacy: true },
+      },
       lessonsRequested: {
         where: { status: 'completed' },
         orderBy: { scheduledAt: 'desc' },
@@ -145,6 +148,49 @@ export default async function ProfilePage() {
 
         <GoalsSection goals={goals} />
         <CompetitionsSection competitions={competitions} />
+
+        {/* Training Reflection */}
+        <div className="border border-smoke bg-paper p-6">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-steel">Training Reflection</p>
+            <Link
+              href="/reflection/edit"
+              className="text-xs text-brand-red hover:text-red-700 transition-colors"
+            >
+              {user.trainingReflection ? 'Edit' : 'Add'}
+            </Link>
+          </div>
+          {user.trainingReflection ? (
+            <div className="flex flex-col gap-4">
+              {user.trainingReflection.whyStarted && (
+                <div>
+                  <p className="text-xs text-ash mb-1">Why I started training</p>
+                  <p className="text-sm text-ink leading-relaxed">{user.trainingReflection.whyStarted}</p>
+                </div>
+              )}
+              {user.trainingReflection.challenges && (
+                <div>
+                  <p className="text-xs text-ash mb-1">Challenges &amp; how I overcome them</p>
+                  <p className="text-sm text-ink leading-relaxed">{user.trainingReflection.challenges}</p>
+                </div>
+              )}
+              {user.trainingReflection.goals && (
+                <div>
+                  <p className="text-xs text-ash mb-1">Goals</p>
+                  <p className="text-sm text-ink leading-relaxed">{user.trainingReflection.goals}</p>
+                </div>
+              )}
+              <p className="text-xs text-ash">
+                Visible to: <span className="capitalize">{user.trainingReflection.privacy}</span>
+              </p>
+            </div>
+          ) : (
+            <p className="text-ash text-sm italic">
+              No reflection yet.{' '}
+              <Link href="/reflection/edit" className="underline hover:text-ink">Add one →</Link>
+            </p>
+          )}
+        </div>
 
         {/* Lesson history */}
         {user.lessonsRequested.length > 0 && (

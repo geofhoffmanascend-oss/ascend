@@ -34,6 +34,12 @@ export default function HomePage() {
             Sign In
           </Link>
         </div>
+        <Link href="/tour" className="text-paper/70 hover:text-paper text-sm transition-colors">
+          See how it works →
+        </Link>
+        <Link href="/tour/admin" className="text-paper/50 hover:text-paper/80 text-xs transition-colors">
+          Managing a gym? See the owner tour →
+        </Link>
       </section>
 
       {/* Features */}

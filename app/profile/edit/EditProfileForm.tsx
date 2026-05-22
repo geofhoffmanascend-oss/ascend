@@ -8,9 +8,10 @@ const WEIGHT_CLASSES = [
   'Medium-Heavy', 'Heavy', 'Super-Heavy', 'Ultra-Heavy',
 ]
 
-type Visibility = 'members' | 'private'
+type Visibility = 'public' | 'members' | 'private'
 
 const PRIVACY_OPTIONS: { value: Visibility; label: string }[] = [
+  { value: 'public', label: 'Public' },
   { value: 'members', label: 'Members' },
   { value: 'private', label: 'Private' },
 ]
@@ -170,7 +171,8 @@ export function EditProfileForm({ userId, initial, profilePrivacy: initialPrivac
       </div>
 
       <p className="text-xs text-ash -mt-2">
-        Fields marked <span className="font-medium">Members</span> are visible to logged-in members.{' '}
+        <span className="font-medium">Public</span> fields are visible to anyone.{' '}
+        <span className="font-medium">Members</span> fields are visible to logged-in users.{' '}
         <span className="font-medium">Private</span> fields are visible only to you and admins.
       </p>
 

@@ -6,6 +6,7 @@ import prisma from '@/lib/database'
 import { BeltBadge } from '@/app/components/BeltBadge'
 import { RoleManager } from './RoleManager'
 import { ClassAccessManager } from './ClassAccessManager'
+import { EmailActions } from './EmailActions'
 import { ClassGroup } from '@prisma/client'
 
 type Belt = 'white' | 'blue' | 'purple' | 'brown' | 'black' | 'coral' | 'red'
@@ -71,6 +72,9 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
 
         {/* Class Access */}
         <ClassAccessManager userId={user.id} blocked={user.blockedClassGroups as ClassGroup[]} />
+
+        {/* Email / Account Actions */}
+        <EmailActions userId={user.id} currentEmail={user.email ?? ''} />
 
         {/* Contact */}
         <div className="border border-smoke bg-paper p-6">

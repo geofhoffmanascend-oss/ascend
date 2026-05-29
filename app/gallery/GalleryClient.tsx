@@ -20,6 +20,7 @@ export type MediaItem = {
   forSale: boolean
   price: number | null
   createdAt: string
+  visibility: string
   uploader: { id: string; name: string | null }
   tags: TagRef[]
   hashtags: { hashtag: HashtagRef }[]
@@ -40,6 +41,7 @@ type Props = {
   nextCursor: string | null
   currentUserId: string
   currentUserRoles: string[]
+  currentUserGymId: string | null
 }
 
 function gridStyle(density: Density) {
@@ -68,7 +70,7 @@ function serializeItem(item: MediaItem & { publicId?: string | null; forSale?: b
   }
 }
 
-export function GalleryClient({ initialItems, nextCursor: initialCursor, currentUserId, currentUserRoles }: Props) {
+export function GalleryClient({ initialItems, nextCursor: initialCursor, currentUserId, currentUserRoles, currentUserGymId }: Props) {
   const [items,       setItems]       = useState<MediaItem[]>(initialItems)
   const [cursor,      setCursor]      = useState(initialCursor)
   const [loading,     setLoading]     = useState(false)
@@ -173,7 +175,7 @@ export function GalleryClient({ initialItems, nextCursor: initialCursor, current
       {layout === 'grid' && items.length > 0 && (
         <div className="grid gap-2" style={gridStyle(density)}>
           {items.map((item, i) => (
-            <GridItem key={item.id} item={item} onOpen={() => setSelected(item)} onSlideshow={() => openSlideshow(item)} index={i} />
+            <GridItem key={item.id} item={item} onOpen={() => setSelected(item)} onSlideshow={() => openSlideshow(item)} index={i} currentUserId={currentUserId} />
           ))}
         </div>
       )}
@@ -183,7 +185,7 @@ export function GalleryClient({ initialItems, nextCursor: initialCursor, current
         <div style={masonryStyle(density)}>
           {items.map((item, i) => (
             <div key={item.id} style={{ breakInside: 'avoid', marginBottom: '0.5rem' }}>
-              <GridItem item={item} onOpen={() => setSelected(item)} onSlideshow={() => openSlideshow(item)} masonry index={i} />
+              <GridItem item={item} onOpen={() => setSelected(item)} onSlideshow={() => openSlideshow(item)} masonry index={i} currentUserId={currentUserId} />
             </div>
           ))}
         </div>
@@ -202,7 +204,7 @@ export function GalleryClient({ initialItems, nextCursor: initialCursor, current
               </div>
               <div className="grid gap-2" style={gridStyle(density)}>
                 {group.map((item, i) => (
-                  <GridItem key={item.id} item={item} onOpen={() => setSelected(item)} onSlideshow={() => openSlideshow(item)} index={i} />
+                  <GridItem key={item.id} item={item} onOpen={() => setSelected(item)} onSlideshow={() => openSlideshow(item)} index={i} currentUserId={currentUserId} />
                 ))}
               </div>
             </div>
@@ -223,7 +225,7 @@ export function GalleryClient({ initialItems, nextCursor: initialCursor, current
         </div>
       )}
 
-      {showUpload && <UploadModal onClose={() => setShowUpload(false)} onUploaded={onUploaded} />}
+      {showUpload && <UploadModal onClose={() => setShowUpload(false)} onUploaded={onUploaded} userGymId={currentUserGymId} />}
 
       {selected && (
         <MediaModal
@@ -253,13 +255,22 @@ export function GalleryClient({ initialItems, nextCursor: initialCursor, current
 
 // ── Grid item ─────────────────────────────────────────────────────────────────
 
-function GridItem({ item, onOpen, onSlideshow, masonry }: {
+const VISIBILITY_ICONS: Record<string, string> = {
+  gym_only: '🏠',
+  private: '🔒',
+  custom: '👥',
+}
+
+function GridItem({ item, onOpen, onSlideshow, masonry, currentUserId }: {
   item: MediaItem
   onOpen: () => void
   onSlideshow: () => void
   masonry?: boolean
   index: number
+  currentUserId: string
 }) {
+  const isOwner = item.uploader.id === currentUserId
+  const privacyIcon = item.visibility !== 'public' ? VISIBILITY_ICONS[item.visibility] : null
   return (
     <div
       className="relative bg-mist border border-smoke hover:border-steel transition-colors overflow-hidden group cursor-pointer"
@@ -303,7 +314,17 @@ function GridItem({ item, onOpen, onSlideshow, masonry }: {
       </button>
 
       {/* Badges */}
-      {item.forSale && (
+      {isOwner && privacyIcon && (
+        <span className="absolute top-2 right-2 bg-ink/70 text-paper text-[11px] px-1.5 py-0.5 z-10" title={item.visibility}>
+          {privacyIcon}
+        </span>
+      )}
+      {!isOwner && item.forSale && (
+        <span className="absolute top-2 right-2 bg-brand-red text-paper text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-wide z-10">
+          For Sale
+        </span>
+      )}
+      {isOwner && item.forSale && !privacyIcon && (
         <span className="absolute top-2 right-2 bg-brand-red text-paper text-[10px] font-bold px-1.5 py-0.5 uppercase tracking-wide z-10">
           For Sale
         </span>

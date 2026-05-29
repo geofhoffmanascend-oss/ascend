@@ -5,6 +5,7 @@ import Link from 'next/link'
 import prisma from '@/lib/database'
 import { GalleryClient } from '../../GalleryClient'
 import { getWatermarkedUrl } from '@/lib/cloudinary'
+import { visibilityFilter } from '@/lib/mediaAccess'
 
 export default async function HashtagAlbumPage({ params }: { params: Promise<{ tag: string }> }) {
   const session = await getServerSession(authOptions)
@@ -19,8 +20,9 @@ export default async function HashtagAlbumPage({ params }: { params: Promise<{ t
   })
   if (!hashtag) notFound()
 
+  const visFilter = visibilityFilter(session.user.id, session.user.gymId ?? null)
   const items = await prisma.mediaItem.findMany({
-    where: { hashtags: { some: { hashtagId: hashtag.id } } },
+    where: { hashtags: { some: { hashtagId: hashtag.id } }, ...visFilter },
     include: {
       uploader: { select: { id: true, name: true } },
       tags:     { include: { user: { select: { id: true, name: true, avatarUrl: true } } } },
@@ -37,6 +39,7 @@ export default async function HashtagAlbumPage({ params }: { params: Promise<{ t
       ? getWatermarkedUrl(item.publicId)
       : item.url,
     thumbnailUrl: item.thumbnailUrl ?? null,
+    visibility: item.visibility as string,
   }))
 
   const nextCursor = items.length === 25 ? items[items.length - 1].id : null
@@ -55,6 +58,7 @@ export default async function HashtagAlbumPage({ params }: { params: Promise<{ t
         nextCursor={nextCursor}
         currentUserId={session.user.id}
         currentUserRoles={session.user.roles}
+        currentUserGymId={session.user.gymId ?? null}
       />
     </div>
   )

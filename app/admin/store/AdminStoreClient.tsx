@@ -11,6 +11,7 @@ type Product = {
   stock: number
   available: boolean
   category: string | null
+  gymId: string | null
   createdAt: string
   updatedAt: string
 }
@@ -140,6 +141,7 @@ export function AdminStoreClient({ products: initialProducts, orders: initialOrd
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="text-sm font-medium text-ink">{product.name}</p>
+                      {product.gymId === null && <span className="text-[10px] text-ash italic">Platform Product</span>}
                       {product.category && <p className="text-xs text-ash">{product.category}</p>}
                     </div>
                     {!product.available && (
@@ -333,7 +335,7 @@ function ProductFormModal({ product, onClose, onSaved }: {
         </div>
         <div className="p-5 flex flex-col gap-4">
           {[
-            { label: 'Name', value: name, set: setName, placeholder: 'e.g. Ascend BJJ Gi', required: true },
+            { label: 'Name', value: name, set: setName, placeholder: 'e.g. AscendIt Gi', required: true },
             { label: 'Category', value: category, set: setCategory, placeholder: 'e.g. Gi, No-Gi, Accessories' },
             { label: 'Image URL', value: imageUrl, set: setImageUrl, placeholder: 'https://…' },
           ].map(f => (

@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { GymPicker } from '@/app/components/GymPicker'
+import { GymForumPrompt } from '@/app/components/GymForumPrompt'
 
 const BELTS = ['white', 'blue', 'purple', 'brown', 'black'] as const
 type Belt = typeof BELTS[number]
@@ -23,9 +25,11 @@ interface Props {
   userBelt: Belt
   userStripes: number
   redirectAfter: string
+  initialGymId?: string | null
+  initialGymName?: string | null
 }
 
-const TOTAL_STEPS = 5
+const TOTAL_STEPS = 6
 
 function StepDots({ current }: { current: number }) {
   return (
@@ -46,7 +50,7 @@ function StepDots({ current }: { current: number }) {
   )
 }
 
-export function OnboardingWizard({ userId, userName, userBelt, userStripes, redirectAfter }: Props) {
+export function OnboardingWizard({ userId, userName, userBelt, userStripes, redirectAfter, initialGymId, initialGymName }: Props) {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)
@@ -58,16 +62,22 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
   const [belt, setBelt] = useState<Belt>(userBelt || 'white')
   const [stripes, setStripes] = useState(userStripes || 0)
 
-  // Step 2
+  // Step 2 — gym
+  const [selectedGym, setSelectedGym] = useState<{ id: string; name: string } | null>(
+    initialGymId && initialGymName ? { id: initialGymId, name: initialGymName } : null
+  )
+  const [showGymForumPrompt, setShowGymForumPrompt] = useState(false)
+
+  // Step 3
   const [phone, setPhone] = useState('')
   const [emergencyContact, setEmergencyContact] = useState('')
 
-  // Step 3 — checked = shown on schedule; unchecked = hidden
+  // Step 4 — checked = shown on schedule; unchecked = hidden
   const [checkedGroups, setCheckedGroups] = useState<Set<ClassGroupKey>>(
     new Set(CLASS_GROUPS.map(g => g.key))
   )
 
-  // Step 4
+  // Step 5
   const [whyStarted, setWhyStarted] = useState('')
   const [challenges, setChallenges] = useState('')
   const [goals, setGoals] = useState('')
@@ -94,17 +104,22 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
   }
 
   async function saveStep2() {
-    await patch({ phone: phone || undefined, emergencyContact: emergencyContact || undefined })
+    if (!selectedGym) return
+    await fetch(`/api/gyms/${selectedGym.id}/membership`, { method: 'PUT' })
   }
 
   async function saveStep3() {
+    await patch({ phone: phone || undefined, emergencyContact: emergencyContact || undefined })
+  }
+
+  async function saveStep4() {
     const hiddenClassGroups = CLASS_GROUPS
       .map(g => g.key)
       .filter(k => !checkedGroups.has(k))
     await patch({ hiddenClassGroups })
   }
 
-  async function saveStep4() {
+  async function saveStep5() {
     if (!whyStarted && !challenges && !goals) return
     const res = await fetch('/api/reflection', {
       method: 'POST',
@@ -205,6 +220,10 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
               </div>
             </div>
 
+            <p className="text-xs text-ash border border-smoke bg-mist px-3 py-2">
+              Your belt is self-reported. A gym admin can verify it once you join a gym — verified belts show a checkmark on your profile and forum posts.
+            </p>
+
             {error && <p className="text-sm text-brand-red">{error}</p>}
 
             <div className="flex justify-end">
@@ -219,11 +238,88 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
           </div>
         )}
 
-        {/* ── Step 2: Contact Info ── */}
-        {step === 2 && (
+        {/* ── Step 2: Your Gym ── */}
+        {step === 2 && !showGymForumPrompt && (
           <div className="flex flex-col gap-5">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 2 of {TOTAL_STEPS}</p>
+              <h2 className="font-display text-xl text-ink mb-1">Which gym do you train at?</h2>
+              <p className="text-sm text-slate">Search by name, city, or instructor. You can change this later.</p>
+            </div>
+
+            <GymPicker
+              value={selectedGym}
+              onChange={setSelectedGym}
+              onCreateNew={gymName => {
+                router.push(`/gyms/register?returnTo=onboarding&name=${encodeURIComponent(gymName)}`)
+              }}
+            />
+
+            {selectedGym && (
+              <div className="flex items-center gap-2 px-4 py-3 bg-mist border border-smoke text-sm text-ink">
+                <svg className="w-4 h-4 text-brand-red flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>{selectedGym.name}</span>
+              </div>
+            )}
+
+            {error && <p className="text-sm text-brand-red">{error}</p>}
+
+            <div className="flex justify-between">
+              <button onClick={() => setStep(s => s - 1)} className={secondaryBtn}>← Back</button>
+              <div className="flex gap-3">
+                <button onClick={() => setStep(s => s + 1)} className={secondaryBtn}>I train independently</button>
+                <button
+                  onClick={async () => {
+                    if (selectedGym) {
+                      setSaving(true)
+                      setError('')
+                      try {
+                        await saveStep2()
+                        setShowGymForumPrompt(true)
+                      } catch {
+                        setError('Failed to save. Please try again.')
+                      } finally {
+                        setSaving(false)
+                      }
+                    } else {
+                      setStep(s => s + 1)
+                    }
+                  }}
+                  disabled={saving}
+                  className={primaryBtn}
+                >
+                  {saving ? 'Saving…' : 'Next →'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Step 2 sub-step: Gym Forum ── */}
+        {step === 2 && showGymForumPrompt && selectedGym && (
+          <div className="flex flex-col gap-5">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 2 of {TOTAL_STEPS}</p>
+              <h2 className="font-display text-xl text-ink mb-1">Connect with your training partners</h2>
+            </div>
+            <GymForumPrompt
+              gymId={selectedGym.id}
+              gymName={selectedGym.name}
+              onDone={() => {
+                setShowGymForumPrompt(false)
+                setStep(s => s + 1)
+              }}
+            />
+          </div>
+        )}
+
+        {/* ── Step 3: Contact Info ── */}
+        {step === 3 && (
+          <div className="flex flex-col gap-5">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 3 of {TOTAL_STEPS}</p>
               <h2 className="font-display text-xl text-ink mb-1">Contact info</h2>
               <p className="text-sm text-slate">Used for emergency situations and gym communication. Both optional.</p>
             </div>
@@ -257,7 +353,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
               <div className="flex gap-3">
                 <button onClick={handleSkip} className={secondaryBtn}>Skip</button>
                 <button
-                  onClick={() => handleNext(saveStep2)}
+                  onClick={() => handleNext(saveStep3)}
                   disabled={saving}
                   className={primaryBtn}
                 >
@@ -268,11 +364,11 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
           </div>
         )}
 
-        {/* ── Step 3: Schedule Preferences ── */}
-        {step === 3 && (
+        {/* ── Step 4: Schedule Preferences ── */}
+        {step === 4 && (
           <div className="flex flex-col gap-5">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 3 of {TOTAL_STEPS}</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 4 of {TOTAL_STEPS}</p>
               <h2 className="font-display text-xl text-ink mb-1">Which classes do you normally attend?</h2>
               <p className="text-sm text-slate">Classes from unchecked groups will be hidden from your schedule. You can change this in Settings.</p>
             </div>
@@ -301,7 +397,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
               <div className="flex gap-3">
                 <button onClick={handleSkip} className={secondaryBtn}>Skip</button>
                 <button
-                  onClick={() => handleNext(saveStep3)}
+                  onClick={() => handleNext(saveStep4)}
                   disabled={saving}
                   className={primaryBtn}
                 >
@@ -312,11 +408,11 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
           </div>
         )}
 
-        {/* ── Step 4: Training Reflection ── */}
-        {step === 4 && (
+        {/* ── Step 5: Training Reflection ── */}
+        {step === 5 && (
           <div className="flex flex-col gap-5">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 4 of {TOTAL_STEPS}</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 5 of {TOTAL_STEPS}</p>
               <h2 className="font-display text-xl text-ink mb-1">A few questions to help you get the most from your training</h2>
               <p className="text-sm text-slate">Your answers are private by default — only you can see them. You can share them later from your profile.</p>
             </div>
@@ -366,7 +462,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
                   Skip for now
                 </button>
                 <button
-                  onClick={() => handleNext(saveStep4)}
+                  onClick={() => handleNext(saveStep5)}
                   disabled={saving}
                   className={primaryBtn}
                 >
@@ -377,13 +473,13 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
           </div>
         )}
 
-        {/* ── Step 5: Completion ── */}
-        {step === 5 && (
+        {/* ── Step 6: Completion ── */}
+        {step === 6 && (
           <div className="flex flex-col gap-6">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 5 of {TOTAL_STEPS}</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 6 of {TOTAL_STEPS}</p>
               <h2 className="font-display text-2xl text-ink mb-2">You're all set!</h2>
-              <p className="text-sm text-slate">Welcome to Ascend BJJ. Here are a few places to start.</p>
+              <p className="text-sm text-slate">Welcome to AscendIt. Here are a few places to start.</p>
             </div>
 
             <div className="flex flex-col gap-3 border-t border-smoke pt-5">

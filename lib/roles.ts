@@ -1,6 +1,6 @@
 import type { Session } from 'next-auth'
 
-export type AppRole = 'admin' | 'instructor' | 'student' | 'vendor'
+export type AppRole = 'admin' | 'instructor' | 'student' | 'vendor' | 'site_admin'
 
 export function hasRole(session: Session | null, role: AppRole): boolean {
   return session?.user?.roles?.includes(role) ?? false
@@ -20,4 +20,8 @@ export function isInstructor(session: Session | null): boolean {
 
 export function isVendor(session: Session | null): boolean {
   return hasAnyRole(session, ['vendor', 'admin'])
+}
+
+export function isSiteAdmin(session: Session | null): boolean {
+  return hasRole(session, 'site_admin')
 }

@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import prisma from '@/lib/database'
 import { SettingsForm } from './SettingsForm'
 import { ClassGroup } from '@prisma/client'
+import Image from 'next/image'
 
 export const metadata = { title: 'Settings' }
 
@@ -62,10 +63,13 @@ export default async function SettingsPage() {
   return (
     <div className="max-w-lg mx-auto px-4 py-10">
       <div className="mb-8">
-        <div className="inline-block bg-brand-red px-3 py-1 mb-3">
-          <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">
-            Settings
-          </span>
+        <div className="flex items-center gap-3 mb-4">
+          <Image src="/logo.png" alt="AscendIt" width={40} height={40} className="object-contain" />
+          <div className="inline-block bg-brand-red px-3 py-1">
+            <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">
+              Settings
+            </span>
+          </div>
         </div>
         <h1 className="font-display text-2xl text-ink">Settings</h1>
       </div>

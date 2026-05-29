@@ -67,7 +67,7 @@ export default function AdminTourPage() {
           </span>
           <h1 className="font-display text-paper max-w-2xl">Run a smarter academy</h1>
           <p className="text-ash text-lg max-w-xl leading-relaxed">
-            Ascend gives you full visibility into your students, schedule, and community — without the spreadsheets.
+            AscendIt gives you full visibility into your students, schedule, and community — without the spreadsheets.
           </p>
           <a href="mailto:hello@ascendbjj.com" className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors">
             Request a Demo
@@ -188,7 +188,7 @@ export default function AdminTourPage() {
         <div className="max-w-2xl mx-auto px-4 py-24 text-center flex flex-col items-center gap-6">
           <h2 className="font-display text-paper">Run a smarter gym.</h2>
           <p className="text-ash text-lg leading-relaxed">
-            Ascend gives your instructors the tools and your students the experience they expect from a world-class academy.
+            AscendIt gives your instructors the tools and your students the experience they expect from a world-class academy.
           </p>
           <div className="flex gap-3 flex-wrap justify-center">
             <a href="mailto:hello@ascendbjj.com" className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors">

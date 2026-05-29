@@ -19,6 +19,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const body = await req.json()
   const { name, description, price, imageUrl, stock, available, category } = body
 
+  // Verify admin has rights to edit this product
+  const existing = await prisma.product.findUnique({ where: { id }, select: { gymId: true } })
+  if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  const isSiteAdmin = session.user.roles?.includes('site_admin')
+  if (!isSiteAdmin && existing.gymId !== null && existing.gymId !== session.user.gymId) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const product = await prisma.product.update({
     where: { id },
     data: {

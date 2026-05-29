@@ -73,7 +73,7 @@ export default function TourPage() {
           </span>
           <h1 className="font-display text-paper max-w-2xl">Everything a serious BJJ student needs</h1>
           <p className="text-ash text-lg max-w-xl leading-relaxed">
-            From your first class to your black belt — Ascend is built for the whole journey.
+            From your first class to your black belt — AscendIt is built for the whole journey.
           </p>
           <Link href="/register" className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors">
             Start for Free
@@ -187,7 +187,7 @@ export default function TourPage() {
       <section className="bg-ink-soft border-t border-steel/30">
         <div className="max-w-2xl mx-auto px-4 py-24 text-center flex flex-col items-center gap-6">
           <h2 className="font-display text-paper">Ready to level up your training?</h2>
-          <p className="text-ash text-lg">Join Ascend and take control of your BJJ journey.</p>
+          <p className="text-ash text-lg">Join AscendIt and take control of your BJJ journey.</p>
           <div className="flex gap-3 flex-wrap justify-center">
             <Link href="/register" className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors">
               Create Free Account

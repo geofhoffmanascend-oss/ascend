@@ -65,10 +65,23 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id
         token.roles = (user as any).roles ?? ['student']
+        try {
+          const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { gymId: true, belt: true } })
+          token.gymId = dbUser?.gymId ?? null
+          token.belt = dbUser?.belt ?? null
+        } catch (err) {
+          console.error('[auth] jwt gymId fetch error for user.id', user.id, err)
+          token.gymId = null
+          token.belt = null
+        }
       } else if (token.id) {
         try {
-          const dbUser = await prisma.user.findUnique({ where: { id: token.id }, select: { roles: true } })
-          if (dbUser) token.roles = dbUser.roles as any
+          const dbUser = await prisma.user.findUnique({ where: { id: token.id }, select: { roles: true, gymId: true, belt: true } })
+          if (dbUser) {
+            token.roles = dbUser.roles as any
+            token.gymId = dbUser.gymId ?? null
+            token.belt = dbUser.belt ?? null
+          }
         } catch (err) {
           console.error('[auth] jwt role refresh error for token.id', token.id, err)
         }
@@ -79,6 +92,8 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id
         session.user.roles = token.roles ?? ['student']
+        session.user.gymId = token.gymId ?? null
+        session.user.belt = token.belt ?? null
       }
       return session
     },

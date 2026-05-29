@@ -10,14 +10,14 @@ export default function AboutPage() {
         <span className="inline-block bg-brand-red px-3 py-1 font-display text-xs font-bold tracking-widest uppercase text-paper mb-3">
           About
         </span>
-        <h1 className="font-display text-2xl text-ink">Ascend BJJ</h1>
-        <p className="mt-2 text-base text-slate font-medium">Train. Register. Improve.</p>
+        <h1 className="font-display text-2xl text-ink">AscendIt</h1>
+        <p className="mt-2 text-base text-slate font-medium">The Journey. The Art. The Community.</p>
       </div>
 
       {/* Description */}
       <div className="border border-smoke bg-paper p-6 mb-6">
         <p className="text-sm text-slate leading-relaxed">
-          Ascend is a platform built for serious practitioners — designed to streamline training,
+          AscendIt is a platform built for serious practitioners — designed to streamline training,
           deepen coach-student relationships, and help every athlete track their progress from white
           belt to black belt.
         </p>

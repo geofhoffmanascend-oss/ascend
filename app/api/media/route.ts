@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/database'
 import { uploadFromBuffer, getYouTubeThumbnail } from '@/lib/cloudinary'
+import { visibilityFilter } from '@/lib/mediaAccess'
 
 function parseHashtags(raw: string): string[] {
   return [...(raw.matchAll(/#([a-zA-Z0-9_]+)/g))]
@@ -40,7 +41,10 @@ export async function GET(req: NextRequest) {
   const cursor       = sp.get('cursor')
   const take         = 24
 
+  const visFilter = visibilityFilter(session.user.id, session.user.gymId ?? null)
+
   const where = {
+    ...visFilter,
     ...(taggedUserId && { tags:     { some: { userId: taggedUserId } } }),
     ...(myTags       && { tags:     { some: { userId: session.user.id } } }),
     ...(hashtag      && { hashtags: { some: { hashtag: { tag: hashtag } } } }),
@@ -68,37 +72,51 @@ export async function POST(req: NextRequest) {
 
   const contentType = req.headers.get('content-type') ?? ''
 
+  async function applyAccessGrants(itemId: string, visibility: string, userIds?: string[]) {
+    if (visibility === 'custom' && userIds?.length) {
+      await prisma.mediaAccess.createMany({
+        data: userIds.map(uid => ({ mediaItemId: itemId, userId: uid })),
+        skipDuplicates: true,
+      })
+    }
+  }
+
   if (contentType.includes('multipart/form-data')) {
-    const formData     = await req.formData()
-    const file         = formData.get('file') as File | null
-    const caption      = (formData.get('caption') as string | null)?.trim() || null
-    const hashtagsRaw  = (formData.get('hashtags') as string | null) ?? ''
+    const formData    = await req.formData()
+    const file        = formData.get('file') as File | null
+    const caption     = (formData.get('caption') as string | null)?.trim() || null
+    const hashtagsRaw = (formData.get('hashtags') as string | null) ?? ''
+    const visibility  = (formData.get('visibility') as string | null) ?? 'public'
+    const userIdsRaw  = formData.get('userIds') as string | null
+    const userIds     = userIdsRaw ? JSON.parse(userIdsRaw) : []
 
     if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'Only image files are supported' }, { status: 400 })
-    }
+    if (!file.type.startsWith('image/')) return NextResponse.json({ error: 'Only image files are supported' }, { status: 400 })
 
     const bytes  = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
     const { url, publicId } = await uploadFromBuffer(buffer)
 
+    const gymId = visibility === 'gym_only' ? (session.user.gymId ?? null) : null
+
     const item = await prisma.mediaItem.create({
-      data: { uploaderId: session.user.id, url, publicId, type: 'photo', caption },
+      data: { uploaderId: session.user.id, url, publicId, type: 'photo', caption, visibility: visibility as any, gymId },
       include: INCLUDE,
     })
 
     const tags = parseHashtags(hashtagsRaw)
     if (tags.length) await upsertHashtags(item.id, tags)
+    await applyAccessGrants(item.id, visibility, userIds)
 
     const fresh = await prisma.mediaItem.findUnique({ where: { id: item.id }, include: INCLUDE })
     return NextResponse.json(fresh, { status: 201 })
   }
 
-  const { url, caption, hashtagsRaw } = await req.json()
+  const { url, caption, hashtagsRaw, visibility = 'public', userIds = [] } = await req.json()
   if (!url?.trim()) return NextResponse.json({ error: 'URL required' }, { status: 400 })
 
   const thumbnailUrl = getYouTubeThumbnail(url.trim())
+  const gymId = visibility === 'gym_only' ? (session.user.gymId ?? null) : null
 
   const item = await prisma.mediaItem.create({
     data: {
@@ -107,12 +125,15 @@ export async function POST(req: NextRequest) {
       thumbnailUrl: thumbnailUrl ?? undefined,
       type:         'video_link',
       caption:      caption?.trim() || null,
+      visibility:   visibility as any,
+      gymId,
     },
     include: INCLUDE,
   })
 
   const tags = parseHashtags(hashtagsRaw ?? '')
   if (tags.length) await upsertHashtags(item.id, tags)
+  await applyAccessGrants(item.id, visibility, userIds)
 
   const fresh = await prisma.mediaItem.findUnique({ where: { id: item.id }, include: INCLUDE })
   return NextResponse.json(fresh, { status: 201 })

@@ -6,18 +6,22 @@ import type { MediaItem } from './GalleryClient'
 type Props = {
   onClose: () => void
   onUploaded: (item: MediaItem) => void
+  userGymId: string | null
 }
 
-export function UploadModal({ onClose, onUploaded }: Props) {
-  const [tab, setTab]         = useState<'photo' | 'video'>('photo')
+type Visibility = 'public' | 'gym_only' | 'private' | 'custom'
+
+export function UploadModal({ onClose, onUploaded, userGymId }: Props) {
+  const [tab, setTab]           = useState<'photo' | 'video'>('photo')
   const [caption, setCaption]   = useState('')
   const [hashtags, setHashtags] = useState('')
   const [videoUrl, setVideoUrl] = useState('')
-  const [file, setFile]       = useState<File | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
+  const [file, setFile]         = useState<File | null>(null)
+  const [preview, setPreview]   = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [error, setError]     = useState('')
-  const fileRef               = useRef<HTMLInputElement>(null)
+  const [error, setError]       = useState('')
+  const [visibility, setVisibility] = useState<Visibility>('public')
+  const fileRef                 = useRef<HTMLInputElement>(null)
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
@@ -40,13 +44,14 @@ export function UploadModal({ onClose, onUploaded }: Props) {
         fd.append('file', file)
         if (caption.trim())  fd.append('caption',  caption.trim())
         if (hashtags.trim()) fd.append('hashtags', hashtags.trim())
+        fd.append('visibility', visibility)
         res = await fetch('/api/media', { method: 'POST', body: fd })
       } else {
         if (!videoUrl.trim()) { setError('Please enter a video URL.'); setUploading(false); return }
         res = await fetch('/api/media', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: videoUrl.trim(), caption: caption.trim() || null, hashtagsRaw: hashtags.trim() }),
+          body: JSON.stringify({ url: videoUrl.trim(), caption: caption.trim() || null, hashtagsRaw: hashtags.trim(), visibility }),
         })
       }
 
@@ -145,6 +150,27 @@ export function UploadModal({ onClose, onUploaded }: Props) {
               placeholder="#competition #seminar #bjj"
               className="w-full px-4 py-3 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors"
             />
+          </div>
+
+          {/* Privacy */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold uppercase tracking-widest text-steel">Who can see this?</label>
+            <div className="flex flex-wrap gap-2">
+              {([
+                { key: 'public', label: 'Everyone' },
+                ...(userGymId ? [{ key: 'gym_only', label: 'My Gym Only' }] : []),
+                { key: 'private', label: 'Only Me' },
+              ] as { key: Visibility; label: string }[]).map(opt => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setVisibility(opt.key)}
+                  className={`px-3 py-1.5 text-sm transition-colors ${visibility === opt.key ? 'bg-brand-red text-paper font-bold' : 'border border-smoke text-steel hover:border-steel hover:text-ink'}`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {error && <p className="text-sm text-brand-red">{error}</p>}

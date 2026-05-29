@@ -15,6 +15,18 @@ enum Role {
   instructor
   student
   vendor
+  site_admin
+}
+
+enum GymTier {
+  free
+  participating
+  inactive
+}
+
+enum MembershipStatus {
+  active
+  pending
 }
 
 enum VendorType {
@@ -82,6 +94,8 @@ enum ForumType {
   private_lesson
   instructor_only
   group_forum
+  gym_forum
+  belt_forum
 }
 
 enum PostType {
@@ -188,12 +202,21 @@ model User {
   // Onboarding tracking — roles for which the onboarding wizard has been completed
   onboardedRoles        Role[]       @default([])
 
+  // Gym affiliation
+  gymId          String?   // home gym (nullable for unaffiliated users)
+  beltVerified   Boolean   @default(false)
+  beltVerifiedBy String?   // userId of the admin who verified
+
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
   // NextAuth relations
   accounts         Account[]
   sessions         Session[]
+
+  // Gym relations
+  gym            Gym?           @relation(fields: [gymId], references: [id], onDelete: SetNull)
+  gymMemberships GymMembership[]
 
   // App relations
   taughtClasses        Class[]           @relation("ClassInstructor")
@@ -219,12 +242,15 @@ model User {
   receivedMessageRequests MessageRequest[] @relation("ReceivedRequests")
   uploadedMedia           MediaItem[]      @relation("UploaderMedia")
   mediaTags               MediaTag[]       @relation("TaggedInMedia")
+  mediaAccessGrants       MediaAccess[]
   trainingLogs         TrainingLog[]
   classFeedback        ClassFeedback[]
   orders               Order[]
   subRequestsMade      ClassSubRequest[] @relation("SubRequestedBy")
   subRequestsClaimed   ClassSubRequest[] @relation("SubClaimedBy")
   trainingReflection   TrainingReflection?
+  eventsSubmitted      PublicEvent[]  @relation("EventSubmitter")
+  eventsApproved       PublicEvent[]  @relation("EventApprover")
 }
 
 model Account {
@@ -273,10 +299,12 @@ model Class {
   location     String?
   isActive     Boolean     @default(true)
   maxStudents  Int?
+  gymId        String?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
   instructor   User        @relation("ClassInstructor", fields: [instructorId], references: [id])
+  gym          Gym?        @relation(fields: [gymId], references: [id], onDelete: SetNull)
   sessions     ClassSession[]
   forum        Forum?
   lessonPlans  LessonPlan[]
@@ -389,11 +417,14 @@ model Forum {
   type        ForumType
   classId     String?    @unique
   classGroup  ClassGroup?
+  gymId       String?
+  beltLevel   Belt?
   title       String
   description String?
   createdAt   DateTime   @default(now())
 
   class         Class?             @relation(fields: [classId], references: [id], onDelete: Cascade)
+  gym           Gym?               @relation(fields: [gymId], references: [id], onDelete: SetNull)
   posts         Post[]
   subscriptions ForumSubscription[]
 }
@@ -582,19 +613,35 @@ model ClassFeedback {
 // ── Media Archive ─────────────────────────────────────────────────────────────
 
 model MediaItem {
-  id           String         @id @default(cuid())
+  id           String          @id @default(cuid())
   uploaderId   String
-  uploader     User           @relation("UploaderMedia", fields: [uploaderId], references: [id], onDelete: Cascade)
+  uploader     User            @relation("UploaderMedia", fields: [uploaderId], references: [id], onDelete: Cascade)
   url          String
   publicId     String?
   thumbnailUrl String?
   type         MediaType
   caption      String?
-  forSale      Boolean        @default(false)
+  forSale      Boolean         @default(false)
   price        Int?
-  createdAt    DateTime       @default(now())
+  gymId        String?
+  visibility   MediaVisibility @default(public)
+  createdAt    DateTime        @default(now())
+  gym          Gym?            @relation(fields: [gymId], references: [id], onDelete: SetNull)
   tags         MediaTag[]
   hashtags     MediaHashtag[]
+  accessGrants MediaAccess[]
+}
+
+model MediaAccess {
+  id          String    @id @default(cuid())
+  mediaItemId String
+  userId      String
+  createdAt   DateTime  @default(now())
+
+  mediaItem   MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([mediaItemId, userId])
 }
 
 model Hashtag {
@@ -636,10 +683,56 @@ model PushSubscription {
   createdAt DateTime @default(now())
 }
 
+// ── Gym ────────────────────────────────────────────────────────────────────────
+
+model Gym {
+  id                  String    @id @default(cuid())
+  name                String
+  slug                String    @unique
+  address             String?
+  city                String?
+  state               String?
+  zip                 String?
+  phone               String?
+  website             String?
+  logoUrl             String?
+  headInstructorName  String?
+  description         String?
+  participatingStatus GymTier   @default(free)
+  paymentTerms        Json?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  members      GymMembership[]
+  users        User[]
+  classes      Class[]
+  forums       Forum[]
+  media        MediaItem[]
+  products     Product[]
+  orders       Order[]
+  settings     GymSettings[]
+  publicEvents PublicEvent[]
+}
+
+model GymMembership {
+  id       String           @id @default(cuid())
+  userId   String
+  gymId    String
+  status   MembershipStatus @default(active)
+  joinedAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gym  Gym  @relation(fields: [gymId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gymId])
+}
+
 // ── Gym Settings ───────────────────────────────────────────────────────────────
 
 model GymSettings {
   id        String   @id @default(cuid())
+  gymId     String?  @unique
+  gym       Gym?     @relation(fields: [gymId], references: [id], onDelete: Cascade)
   reviewUrl String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -656,8 +749,10 @@ model Product {
   stock         Int         @default(0)
   available     Boolean     @default(true)
   category      String?
+  gymId         String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  gym           Gym?        @relation(fields: [gymId], references: [id], onDelete: SetNull)
   orderItems    OrderItem[]
 }
 
@@ -668,6 +763,8 @@ model Order {
   items     OrderItem[]
   status    OrderStatus @default(pending)
   notes     String?
+  gymId     String?
+  gym       Gym?        @relation(fields: [gymId], references: [id], onDelete: SetNull)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 }
@@ -715,4 +812,49 @@ model EmailChangeToken {
   token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
+}
+
+enum MediaVisibility {
+  public
+  gym_only
+  private
+  custom
+}
+
+enum PublicEventType {
+  open_mat
+  competition
+  seminar
+  other
+}
+
+enum PublicEventStatus {
+  pending
+  approved
+  rejected
+}
+
+model PublicEvent {
+  id            String            @id @default(cuid())
+  title         String
+  type          PublicEventType
+  description   String?
+  location      String?
+  address       String?
+  city          String?
+  state         String?
+  zip           String?
+  startDate     DateTime
+  endDate       DateTime?
+  submittedById String
+  gymId         String?
+  status        PublicEventStatus @default(pending)
+  rejectionNote String?
+  approvedById  String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  submittedBy  User  @relation("EventSubmitter", fields: [submittedById], references: [id], onDelete: Cascade)
+  approvedBy   User? @relation("EventApprover",  fields: [approvedById],  references: [id], onDelete: SetNull)
+  gym          Gym?  @relation(fields: [gymId], references: [id], onDelete: SetNull)
 }

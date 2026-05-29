@@ -21,7 +21,7 @@ export default async function HelpPage() {
         <span className="inline-block bg-brand-red px-3 py-1 font-display text-xs font-bold tracking-widest uppercase text-paper mb-3">
           Help
         </span>
-        <h1 className="font-display text-2xl text-ink">Using Ascend BJJ</h1>
+        <h1 className="font-display text-2xl text-ink">Using AscendIt</h1>
         <p className="mt-2 text-sm text-slate">Click any section to expand it.</p>
       </div>
 

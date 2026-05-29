@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/database'
 import { createNotification } from '@/lib/notify'
+import { canPostInBeltForum } from '@/lib/belt'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
@@ -15,6 +16,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (type === 'announcement' && !session.user.roles?.includes('instructor') && !session.user.roles?.includes('admin')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const forum = await prisma.forum.findUnique({ where: { id: forumId }, select: { type: true, gymId: true, beltLevel: true } })
+
+  // Gym forum: verify caller belongs to this gym
+  if (forum && (forum.type as string) === 'gym_forum') {
+    const isSiteAdmin = session.user.roles?.includes('site_admin')
+    if (!isSiteAdmin && session.user.gymId !== forum.gymId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  }
+
+  // Belt forum: verify caller's belt is high enough
+  if (forum && forum.type === 'belt_forum' && forum.beltLevel) {
+    const userBelt = session.user.belt ?? 'white'
+    if (!canPostInBeltForum(userBelt, forum.beltLevel)) {
+      return NextResponse.json({ error: 'Your belt level does not allow posting in this forum' }, { status: 403 })
+    }
   }
 
   const post = await prisma.post.create({

@@ -7,6 +7,7 @@ import { BeltBadge } from '@/app/components/BeltBadge'
 import { RoleManager } from './RoleManager'
 import { ClassAccessManager } from './ClassAccessManager'
 import { EmailActions } from './EmailActions'
+import { BeltVerification } from './BeltVerification'
 import { ClassGroup } from '@prisma/client'
 
 type Belt = 'white' | 'blue' | 'purple' | 'brown' | 'black' | 'coral' | 'red'
@@ -38,6 +39,10 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
   })
 
   if (!user) notFound()
+
+  const verifier = user.beltVerifiedBy
+    ? await prisma.user.findUnique({ where: { id: user.beltVerifiedBy }, select: { name: true } })
+    : null
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
@@ -75,6 +80,15 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
 
         {/* Email / Account Actions */}
         <EmailActions userId={user.id} currentEmail={user.email ?? ''} />
+
+        {/* Belt Verification */}
+        <BeltVerification
+          userId={user.id}
+          userName={user.name ?? 'this user'}
+          belt={user.belt}
+          initialVerified={user.beltVerified}
+          verifierName={verifier?.name ?? null}
+        />
 
         {/* Contact */}
         <div className="border border-smoke bg-paper p-6">

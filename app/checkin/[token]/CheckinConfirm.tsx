@@ -60,7 +60,7 @@ export function CheckinConfirm({
         <div className="text-center max-w-sm">
           <div className="inline-block bg-brand-red px-3 py-1 mb-4">
             <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">
-              Ascend BJJ
+              AscendIt
             </span>
           </div>
           <h1 className="font-display text-2xl text-ink mb-2">{studentName}</h1>
@@ -78,7 +78,7 @@ export function CheckinConfirm({
         <div className="text-center mb-8">
           <div className="inline-block bg-brand-red px-3 py-1 mb-4">
             <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">
-              Ascend BJJ
+              AscendIt
             </span>
           </div>
           <h1 className="font-display text-2xl text-ink">Check In</h1>

@@ -52,7 +52,7 @@ export default function RegisterPage() {
               New Account
             </span>
           </div>
-          <h1 className="font-display text-2xl text-ink">Join Ascend</h1>
+          <h1 className="font-display text-2xl text-ink">Join AscendIt</h1>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

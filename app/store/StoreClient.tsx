@@ -120,7 +120,7 @@ export function StoreClient({ products, myOrders: initialOrders }: Props) {
           <div className="inline-block bg-brand-red px-3 py-1 mb-3">
             <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Gear</span>
           </div>
-          <h1 className="font-display text-2xl text-ink">Ascend Store</h1>
+          <h1 className="font-display text-2xl text-ink">AscendIt Store</h1>
         </div>
         <div className="flex gap-2 items-center">
           {cart.length > 0 && (

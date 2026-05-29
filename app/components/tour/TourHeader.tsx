@@ -7,8 +7,8 @@ export function TourHeader({ variant = 'student' }: { variant?: 'student' | 'adm
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/AJJ.webp" alt="Ascend" width={28} height={28} className="rounded-full" />
-          <span className="font-display font-bold text-paper text-lg tracking-tight">Ascend</span>
+          <img src="/logo.png" alt="AscendIt" width={28} height={28} className="object-contain" />
+          <span className="font-display font-bold text-paper text-lg tracking-tight">AscendIt</span>
           {variant === 'admin' && (
             <span className="ml-2 px-2 py-0.5 bg-brand-red text-paper text-xs font-bold uppercase tracking-wide">For Gyms</span>
           )}

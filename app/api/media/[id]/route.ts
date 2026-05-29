@@ -28,14 +28,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const isAdmin = session.user.roles?.includes('admin')
   if (!isOwner && !isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { caption, forSale, price, hashtagsRaw } = await req.json()
+  const { caption, forSale, price, hashtagsRaw, visibility, gymId: newGymId } = await req.json()
 
   await prisma.mediaItem.update({
     where: { id },
     data: {
-      ...(caption !== undefined            ? { caption: caption?.trim() || null } : {}),
-      ...(forSale !== undefined && isAdmin ? { forSale: !!forSale }               : {}),
-      ...(price   !== undefined && isAdmin ? { price:   price ?? null }            : {}),
+      ...(caption     !== undefined            ? { caption: caption?.trim() || null } : {}),
+      ...(forSale     !== undefined && isAdmin ? { forSale: !!forSale }               : {}),
+      ...(price       !== undefined && isAdmin ? { price:   price ?? null }            : {}),
+      ...(visibility  !== undefined && isOwner ? { visibility: visibility as any }    : {}),
+      ...(newGymId    !== undefined && isOwner ? { gymId: newGymId || null }           : {}),
     },
   })
 

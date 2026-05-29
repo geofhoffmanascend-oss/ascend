@@ -1,49 +1,61 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function HomePage() {
   return (
-    <div className="bg-ink min-h-full">
-      {/* Hero */}
-      <section className="max-w-6xl mx-auto px-4 pt-24 pb-20 flex flex-col items-start gap-8">
-        <div className="inline-block bg-brand-red px-3 py-1">
-          <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">
-            Now Training
-          </span>
+    <div className="min-h-full">
+      {/* Hero — light background to complement the banner */}
+      <section className="bg-paper border-b border-smoke">
+        <div className="max-w-6xl mx-auto px-4 pt-14 pb-12 flex flex-col items-center gap-6">
+          <p className="font-display text-sm font-bold uppercase tracking-widest text-steel text-center">
+            same journey, different paths, one goal...
+          </p>
+
+          <Image
+            src="/heroBanner.png"
+            alt="AscendIt — The Journey. The Art. The Community."
+            width={340}
+            height={340}
+            className="object-contain"
+            priority
+          />
+
+          <p className="font-display text-xl text-ink max-w-md text-center leading-snug">
+            Connecting people with the shared pursuit of one day being good at jiu jitsu.
+          </p>
+
+          <p className="text-slate text-sm max-w-md leading-relaxed text-center">
+            Schedule classes, declare your attendance, connect with training partners,
+            and track your progress from white belt to black.
+          </p>
+
+          <div className="flex gap-3 flex-wrap justify-center">
+            <Link
+              href="/register"
+              className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors"
+            >
+              Join AscendIt
+            </Link>
+            <Link
+              href="/login"
+              className="px-6 py-3 border border-smoke text-steel text-sm font-medium hover:border-steel hover:text-ink transition-colors"
+            >
+              Sign In
+            </Link>
+          </div>
+          <div className="flex flex-col items-center gap-1.5">
+            <Link href="/tour" className="text-slate hover:text-ink text-sm transition-colors">
+              See how it works →
+            </Link>
+            <Link href="/tour/admin" className="text-ash hover:text-slate text-xs transition-colors">
+              Managing a gym? See the owner tour →
+            </Link>
+          </div>
         </div>
-
-        <h1 className="font-display text-paper max-w-2xl">
-          Where Commitment<br />Meets the Mat
-        </h1>
-
-        <p className="text-ash text-lg max-w-xl leading-relaxed">
-          Schedule classes, declare your attendance, connect with training partners,
-          and track your progress from white belt to black.
-        </p>
-
-        <div className="flex gap-3 flex-wrap">
-          <Link
-            href="/register"
-            className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors"
-          >
-            Join Ascend
-          </Link>
-          <Link
-            href="/login"
-            className="px-6 py-3 border border-steel text-ash text-sm font-medium hover:border-paper hover:text-paper transition-colors"
-          >
-            Sign In
-          </Link>
-        </div>
-        <Link href="/tour" className="text-paper/70 hover:text-paper text-sm transition-colors">
-          See how it works →
-        </Link>
-        <Link href="/tour/admin" className="text-paper/50 hover:text-paper/80 text-xs transition-colors">
-          Managing a gym? See the owner tour →
-        </Link>
       </section>
 
       {/* Features */}
-      <section className="border-t border-steel/30 bg-ink-soft">
+      <section className="bg-ink-soft">
         <div className="max-w-6xl mx-auto px-4 py-20 grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
             {

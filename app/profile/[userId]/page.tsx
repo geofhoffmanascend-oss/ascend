@@ -26,6 +26,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       name: true,
       belt: true,
       stripes: true,
+      beltVerified: true,
       weightClass: true,
       bio: true,
       avatarUrl: true,
@@ -83,7 +84,13 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
             </div>
           )}
           <div className="flex flex-col gap-2">
-            <BeltBadge belt={user.belt} stripes={user.stripes} />
+            <div className="flex items-center gap-2">
+              <BeltBadge belt={user.belt} stripes={user.stripes} />
+              {user.beltVerified
+                ? <span className="text-xs text-green-600 font-medium">✓ Verified</span>
+                : <span className="text-xs text-ash italic">Unverified</span>
+              }
+            </div>
             {user.weightClass && visible('weightClass') && <p className="text-xs text-steel font-medium">{user.weightClass}</p>}
             <p className="text-xs text-ash">
               Member since {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}

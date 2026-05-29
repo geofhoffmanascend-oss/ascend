@@ -23,6 +23,7 @@ export default async function ProfilePage() {
       email: true,
       belt: true,
       stripes: true,
+      beltVerified: true,
       weightClass: true,
       qrToken: true,
       bio: true,
@@ -98,7 +99,13 @@ export default async function ProfilePage() {
             </div>
           )}
           <div className="flex flex-col gap-2">
-            <BeltBadge belt={user.belt} stripes={user.stripes} />
+            <div className="flex items-center gap-2">
+              <BeltBadge belt={user.belt} stripes={user.stripes} />
+              {user.beltVerified
+                ? <span className="text-xs text-green-600 font-medium">✓ Verified</span>
+                : <span className="text-xs text-ash italic">Unverified</span>
+              }
+            </div>
             {user.weightClass && (
               <p className="text-xs text-steel font-medium">{user.weightClass}</p>
             )}

@@ -6,7 +6,7 @@ import { BeltBadge } from '@/app/components/BeltBadge'
 
 type Belt = 'white' | 'blue' | 'purple' | 'brown' | 'black' | 'coral' | 'red'
 
-type Author = { name: string | null; belt: string }
+type Author = { name: string | null; belt: string; beltVerified?: boolean; beltVerifiedBy?: string | null }
 
 type Post = {
   id: string
@@ -33,6 +33,8 @@ type Props = {
   userRoles: string[]
   isSubscribed: boolean
   forumType: string
+  canPost?: boolean
+  isBeltForum?: boolean
 }
 
 const POST_TYPE_STYLES: Record<string, string> = {
@@ -52,7 +54,7 @@ function formatDate(iso: string, short = false) {
   })
 }
 
-export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubscribed: initSub, forumType }: Props) {
+export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubscribed: initSub, forumType, canPost = true, isBeltForum = false }: Props) {
   const [posts, setPosts] = useState(initial)
   const [subscribed, setSubscribed] = useState(initSub)
   const [showForm, setShowForm] = useState(false)
@@ -139,12 +141,14 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
     <div>
       {/* Toolbar */}
       <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={() => setShowForm(s => !s)}
-          className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors"
-        >
-          {showForm ? 'Cancel' : '+ New Post'}
-        </button>
+        {canPost && (
+          <button
+            onClick={() => setShowForm(s => !s)}
+            className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors"
+          >
+            {showForm ? 'Cancel' : '+ New Post'}
+          </button>
+        )}
         {forumType === 'class_forum' && (
           <button
             onClick={toggleSubscribe}
@@ -212,6 +216,11 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
               <div className="flex items-center gap-2 flex-wrap">
                 <BeltBadge belt={post.author.belt as Belt} stripes={0} />
                 <Link href={`/profile/${post.authorId}`} className="text-sm font-medium text-ink hover:text-brand-red transition-colors">{post.author.name ?? 'Unknown'}</Link>
+                {isBeltForum && (
+                  post.author.beltVerified
+                    ? <span className="text-xs text-green-600 font-medium">✓ Verified</span>
+                    : <span className="text-xs text-ash italic">(Unverified)</span>
+                )}
                 <span className="text-xs text-ash">{formatDate(post.createdAt)}</span>
                 <span className={`px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${POST_TYPE_STYLES[post.type] ?? POST_TYPE_STYLES.text}`}>
                   {POST_TYPE_LABELS[post.type] ?? post.type}

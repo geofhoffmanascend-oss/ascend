@@ -3,13 +3,22 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import prisma from '@/lib/database'
+import Image from 'next/image'
 import { OnboardingWizard } from './OnboardingWizard'
 
 export const metadata: Metadata = { title: 'Get Started' }
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string>>
+}) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
+
+  const params = await searchParams
+  const initialGymId = params.gymId ?? null
+  const initialGymName = params.gymName ?? null
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -33,9 +42,12 @@ export default async function OnboardingPage() {
     <div className="min-h-full bg-paper flex items-center justify-center px-4 py-16">
       <div className="w-full max-w-lg">
         <div className="mb-8">
+          <div className="flex justify-center mb-6">
+            <Image src="/logo.png" alt="AscendIt" width={72} height={72} className="object-contain" />
+          </div>
           <div className="inline-block bg-brand-red px-3 py-1 mb-4">
             <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">
-              Welcome to Ascend
+              Welcome to AscendIt
             </span>
           </div>
           <h1 className="font-display text-2xl text-ink">Let's get you set up</h1>
@@ -47,6 +59,8 @@ export default async function OnboardingPage() {
           userBelt={(user.belt as 'white' | 'blue' | 'purple' | 'brown' | 'black') ?? 'white'}
           userStripes={user.stripes ?? 0}
           redirectAfter={redirectAfter}
+          initialGymId={initialGymId}
+          initialGymName={initialGymName}
         />
       </div>
     </div>

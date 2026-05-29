@@ -39,8 +39,8 @@ export function Header() {
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
         <Link href={session ? '/dashboard' : '/'} className="flex items-center gap-2 shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/AJJ.webp" alt="Ascend" width={32} height={32} className="rounded-full" />
-          <span className="hidden sm:block font-display font-bold text-paper text-lg tracking-tight">Ascend</span>
+          <img src="/logo.png" alt="AscendIt" width={36} height={36} className="object-contain" />
+          <span className="hidden sm:block font-display font-bold text-paper text-lg tracking-tight">AscendIt</span>
         </Link>
 
         {/* Desktop nav — visible at md+ */}
@@ -50,6 +50,7 @@ export function Header() {
               <NavLink href="/dashboard">Dashboard</NavLink>
               <NavLink href="/schedule">Schedule</NavLink>
               <NavLink href="/forum">Forum</NavLink>
+              <NavLink href="/events">Events</NavLink>
               <NavLink href="/lessons">Lessons</NavLink>
               <NavLink href="/journal">Journal</NavLink>
               <NavLink href="/gallery">Gallery</NavLink>
@@ -66,6 +67,9 @@ export function Header() {
               )}
               {session.user.roles?.includes('admin') && (
                 <NavLink href="/admin" highlight>Admin</NavLink>
+              )}
+              {session.user.roles?.includes('site_admin') && (
+                <NavLink href="/site-admin" highlight>Site Admin</NavLink>
               )}
 
               <span className="w-px h-4 bg-steel/50 mx-1.5 shrink-0" />
@@ -153,6 +157,7 @@ export function Header() {
               <NavLink href="/dashboard" onClick={close}>Dashboard</NavLink>
               <NavLink href="/schedule" onClick={close}>Schedule</NavLink>
               <NavLink href="/forum" onClick={close}>Forum</NavLink>
+              <NavLink href="/events" onClick={close}>Events</NavLink>
               <NavLink href="/lessons" onClick={close}>Lessons</NavLink>
               <NavLink href="/journal" onClick={close}>Journal</NavLink>
               <NavLink href="/gallery" onClick={close}>Gallery</NavLink>
@@ -169,6 +174,9 @@ export function Header() {
               )}
               {session.user.roles?.includes('admin') && (
                 <NavLink href="/admin" highlight onClick={close}>Admin</NavLink>
+              )}
+              {session.user.roles?.includes('site_admin') && (
+                <NavLink href="/site-admin" highlight onClick={close}>Site Admin</NavLink>
               )}
 
               <div className="h-px bg-steel/30 my-2" />

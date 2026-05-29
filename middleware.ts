@@ -11,6 +11,10 @@ export default withAuth(
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }
 
+    if (pathname.startsWith('/site-admin') && !roles.includes('site_admin')) {
+      return NextResponse.redirect(new URL('/dashboard', req.url))
+    }
+
     if (
       pathname.startsWith('/instructor') &&
       !roles.includes('instructor') &&
@@ -38,9 +42,13 @@ export default withAuth(
         if (pathname.startsWith('/checkin')) return true
         if (pathname.startsWith('/tour')) return true
         if (pathname.startsWith('/profile/')) return true
+        if (pathname.startsWith('/gyms/') && !pathname.startsWith('/gyms/register')) return true
+        if (pathname === '/events' || pathname.startsWith('/events/') && !pathname.startsWith('/events/new')) return true
+        if (pathname.startsWith('/api/events') && req.method === 'GET') return true
         if (pathname.startsWith('/api/auth')) return true
         if (pathname.startsWith('/api/checkin/public')) return true
         if (pathname.startsWith('/api/profile')) return true
+        if (pathname.startsWith('/api/gyms')) return true
         if (pathname === '/reset-password') return true
         if (pathname === '/confirm-email') return true
         if (pathname.startsWith('/api/auth/reset-password')) return true
@@ -52,5 +60,5 @@ export default withAuth(
 )
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|sw\\.js|manifest\\.json|icons/).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|sw\\.js|manifest\\.json|icons/|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.svg$|.*\\.webp$|.*\\.ico$).*)'],
 }

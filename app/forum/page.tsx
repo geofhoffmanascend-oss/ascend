@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
 import { ClassGroup } from '@prisma/client'
+import { canPostInBeltForum, BELT_COLORS, BELT_LABELS } from '@/lib/belt'
 
 export const metadata = { title: 'Forums' }
 
@@ -14,8 +15,11 @@ export default async function ForumListPage() {
   if (!session?.user?.id) redirect('/login')
 
   const isInstructor = session.user.roles?.includes('instructor') || session.user.roles?.includes('admin')
+  const gymId = session.user.gymId ?? null
 
-  const [user, allForums, subscriptions] = await Promise.all([
+  const userBelt = session.user.belt ?? 'white'
+
+  const [user, allForums, subscriptions, gymForum, gym] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
       select: { blockedClassGroups: true },
@@ -30,10 +34,25 @@ export default async function ForumListPage() {
       where: { userId: session.user.id },
       select: { forumId: true },
     }),
+    gymId
+      ? prisma.forum.findFirst({
+          where: { gymId, type: 'gym_forum' },
+          include: { _count: { select: { posts: true, subscriptions: true } } },
+        })
+      : Promise.resolve(null),
+    gymId
+      ? prisma.gym.findUnique({ where: { id: gymId }, select: { name: true, slug: true, participatingStatus: true } })
+      : Promise.resolve(null),
   ])
 
   const blocked = (user?.blockedClassGroups ?? []) as ClassGroup[]
   const subscribedIds = new Set(subscriptions.map(s => s.forumId))
+  const gymForumWithCount = gymForum as typeof gymForum & { _count: { posts: number; subscriptions: number } } | null
+
+  const beltOrder = ['white', 'blue', 'purple', 'brown', 'black'] as const
+  const beltForums = beltOrder
+    .map(belt => allForums.find(f => f.type === 'belt_forum' && f.beltLevel === belt))
+    .filter(Boolean) as typeof allForums
 
   const publicTypes = isInstructor
     ? ['general', 'announcement', 'instructor_only']
@@ -61,6 +80,37 @@ export default async function ForumListPage() {
       </div>
 
       <div className="flex flex-col gap-6">
+        {/* Gym Forum */}
+        {gymId && gym && (
+          <section>
+            <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">Your Gym</p>
+            {gymForumWithCount ? (
+              <Link
+                href={`/forum/${gymForumWithCount.id}`}
+                className="border border-smoke bg-paper p-4 hover:border-steel transition-colors flex items-center justify-between"
+              >
+                <div>
+                  <p className="text-sm font-medium text-ink">{gymForumWithCount.title ?? `${gym.name} Community`}</p>
+                  <p className="text-xs text-ash mt-0.5">
+                    {gymForumWithCount._count.subscriptions} {gymForumWithCount._count.subscriptions === 1 ? 'member' : 'members'}
+                    {gym.participatingStatus === 'participating'
+                      ? ' · Official Forum'
+                      : ' · Community forum'}
+                  </p>
+                </div>
+                <p className="text-xs text-ash flex-shrink-0 ml-4">{gymForumWithCount._count.posts} posts</p>
+              </Link>
+            ) : (
+              <div className="border border-smoke bg-paper p-4 flex items-center justify-between">
+                <p className="text-sm text-ash">No forum for {gym.name} yet.</p>
+                <Link href={`/gyms/${gym.slug}`} className="text-sm text-brand-red hover:underline">
+                  Create one →
+                </Link>
+              </div>
+            )}
+          </section>
+        )}
+
         <section>
           <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">General</p>
           <div className="flex flex-col gap-2">
@@ -69,6 +119,44 @@ export default async function ForumListPage() {
             ))}
           </div>
         </section>
+
+        {beltForums.length > 0 && (
+          <section>
+            <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">Belt Forums</p>
+            <div className="flex flex-col gap-2">
+              {beltForums.map(f => {
+                const beltKey = f.beltLevel as string
+                const canPost = canPostInBeltForum(userBelt, beltKey)
+                const isUserBelt = beltKey === userBelt
+                return (
+                  <Link
+                    key={f.id}
+                    href={`/forum/${f.id}`}
+                    className={`border bg-paper p-4 hover:border-steel transition-colors flex items-center justify-between ${isUserBelt ? 'border-steel' : 'border-smoke'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`w-3 h-3 rounded-full flex-shrink-0 ${BELT_COLORS[beltKey]}`} />
+                      <div>
+                        <p className={`text-sm font-medium ${isUserBelt ? 'text-ink font-bold' : 'text-ink'}`}>
+                          {BELT_LABELS[beltKey]}
+                        </p>
+                        <p className="text-xs text-ash mt-0.5">{f._count.posts} posts</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                      <span className="text-xs text-ash">Read</span>
+                      {canPost ? (
+                        <span className="text-xs text-ash">· Post</span>
+                      ) : (
+                        <span className="text-xs text-ash" title={`Requires ${BELT_LABELS[beltKey]} or higher`}>· 🔒 Post</span>
+                      )}
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </section>
+        )}
 
         {groupForums.length > 0 && (
           <section>

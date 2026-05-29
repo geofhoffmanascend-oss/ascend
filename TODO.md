@@ -279,7 +279,9 @@ These items are code-complete but require manual steps to fully activate:
 
 - **Vercel env vars (Phase 19):** Add `RESEND_API_KEY` and `EMAIL_FROM=onboarding@resend.dev` to Vercel dashboard → Project → Settings → Environment Variables (Production + Preview). Without this, password reset emails won't send in production.
 - **Group forum seeding (Phase 17):** One-time setup — while logged in as admin, POST to `/api/admin/init-group-forums` (e.g. from browser devtools or a REST client) to create the 5 group forums in the database.
+- **Belt forum seeding (Phase 27):** One-time setup — while logged in as site_admin, POST to `/api/site-admin/belt-forums/init` to create the 5 belt forums. Safe to run multiple times (idempotent).
 - **Production email domain:** Sandbox sender only delivers to your verified Resend email. To send to any user, verify a domain at resend.com and update `EMAIL_FROM` to `noreply@yourdomain.com`.
+- **Admin login after server restart:** If login fails with a stale session, clear the `next-auth.session-token` cookie in browser DevTools → Application → Cookies → `localhost:3002`, then log in fresh. This is a one-time JWT decryption error from an old cookie.
 
 ---
 
@@ -288,13 +290,12 @@ These items are code-complete but require manual steps to fully activate:
 ### [x] BUG-1 — Header hydration mismatch — FIXED
 Root cause: `SessionProvider` had no initial session, causing server/client mismatch. Fix: `RootLayout` now fetches server session and passes it to `SessionProvider` via the `session` prop in `providers.tsx`. Additional fix: `suppressHydrationWarning` added to `<body>` to suppress browser-extension-injected attribute mismatches (Grammarly, password managers, etc.).
 
-### [ ] BUG-2 — Gallery grid images not displaying correctly — NEEDS VISUAL VERIFICATION
+### [x] BUG-2 — Gallery grid images not displaying correctly — FIXED (user confirmed)
 **Symptom:** Gallery view layout/density options may not visually work as expected; images may not fill grid cells properly.
 **Root cause identified:** `h-full` inside an `aspect-ratio` container is unreliable cross-browser. Fix applied (use `absolute inset-0` for grid mode, `w-full block` for masonry) in `app/gallery/GalleryClient.tsx` — `GridItem` component.
 **Status:** Code fix is in place. Needs browser testing to confirm.
 
-### [ ] BUG-3 — Gallery layout/density buttons — NEEDS VISUAL VERIFICATION
-**Status:** Verify after BUG-2 confirmed. Test grid/masonry/timeline and 2/3/4 column density buttons in a clean browser session.
+### [x] BUG-3 — Gallery layout/density buttons — FIXED (user confirmed)
 
 ---
 
@@ -370,3 +371,129 @@ Two separate tours: one for prospective students (`/tour`), one for prospective 
 ### [x] R2 — Cloudinary credentials — DONE (diztvzzix cloud, pushed to Vercel)
 
 ### [x] R3 — Phase 15 anonymous feedback + DM improvements — DONE (already in sync)
+
+---
+
+## PHASE 24 — Multi-Gym Architecture (Foundation)
+
+### [x] 24.1 — `Gym` model with all fields including `participatingStatus (GymTier)` and `paymentTerms Json?`
+### [x] 24.2 — `GymMembership` join model with `status (MembershipStatus)`
+### [x] 24.3 — `site_admin` added to `Role` enum; `isSiteAdmin` helper in `lib/roles.ts`; `lib/siteAdminAuth.ts`
+### [x] 24.4 — `gymId` FK added to Class, Forum, MediaItem, Product, Order, GymSettings; GymSettings now per-gym
+### [x] 24.5 — `User.gymId`, `beltVerified`, `beltVerifiedBy` added; `GymMembership` relation on User
+### [x] 24.6 — Middleware updated for `/site-admin` protection; `types/next-auth.d.ts` includes `gymId`
+### [x] 24.7 — `prisma db push` complete; data migration script run (`scripts/migrate-to-multigym.ts`) — Ascend BJJ Test Gym created, all existing data scoped, admin granted `site_admin`
+
+---
+
+## PHASE 25 — Gym Registration & Discovery
+
+### [x] 25.1 — Searchable gym picker component (`app/components/GymPicker.tsx`): debounced search by name/instructor/city/state/zip; dropdown with participating badge; "Add my gym" fallback
+### [x] 25.2 — "Add my gym" flow: `POST /api/gyms` auto-generates slug, creates gym at `free` tier, notifies site_admin users
+### [x] 25.3 — Gym self-registration page (`/gyms/register`): form with all fields, confirmation with member count, `?returnTo=onboarding` redirect flow
+### [x] 25.4 — Site admin upgrade API: `PUT /api/site-admin/gyms/[id]` — updates tier/info, notifies gym admins on upgrade to participating
+### [x] 25.5 — Gym profile page (`/gyms/[slug]`): public server component; name, location, head instructor, participating badge, member count, join button
+### [x] 25.6 — Gym membership APIs: `PUT` join (active for free, pending for participating), `DELETE` leave, `GET /api/gyms/[id]/members`, `PUT /api/gyms/[id]/members/[userId]` approve/reject
+### [x] 25.7 — Onboarding wizard: gym step inserted as step 2 (6 steps total); GymPicker + "Add my gym" redirect + "I train independently" skip; pre-selects gym if returning from /gyms/register
+### [x] 25.8 — Middleware: `/gyms/*` public (except `/gyms/register`); `/api/gyms` routes public
+
+---
+
+## PHASE 26 — Gym Forums (General, Non-participating & Participating)
+
+### [x] 26.1 — `gym_forum` ForumType scoped to a gymId; visible to gym members only
+### [x] 26.2 — During onboarding gym selection: if gym forum exists → offer to join; if no forum → show count of existing users from that gym → offer to create forum
+### [x] 26.3 — When a gym forum is created: notify all existing users affiliated with that gym
+### [x] 26.4 — When a gym upgrades to participating: notify gym admin of existing forum and allow them to claim/take control (assign as moderator, rename, set rules)
+### [x] 26.5 — Clear UI messaging for non-participating gym forums: "This is a community forum — not managed by your gym"
+
+---
+
+## PHASE 27 — Public Belt Forums
+
+### [x] 27.1 — Belt forum model: five forums (White / Blue / Purple / Brown / Black), created by site admin, permanent public forums
+### [x] 27.2 — Belt access rules: read access = any authenticated user reads any belt forum; post access = user can post in their belt level and all levels below, cannot post in forums above their belt
+### [x] 27.3 — Belt verification display: self-reported belt shows "Unverified" badge on posts; gym-confirmed belt shows "Verified" indicator
+### [x] 27.4 — Gym admin belt management UI: BeltVerification component on admin user detail page; verify/revoke buttons with inline confirm
+### [x] 27.5 — Belt rank on profile: shows verification status; self-reported users see explanatory note during onboarding
+### [x] 27.6 — Site admin can remove posts from belt forums via DELETE /api/site-admin/forums/posts/[id]
+
+---
+
+## PHASE 28 — Public Events Calendar
+
+### [x] 28.1 — `PublicEvent` model: type (`open_mat | competition | seminar | other`), title, description, location, address, date, endDate, submittedBy, gymId, status, approvedBy
+### [x] 28.2 — Public event submission form (`/events/new`): any authenticated user can submit; GymPicker for optional gym affiliation
+### [x] 28.3 — Site admin event moderation: `/site-admin/events` review queue; approve/reject with inline rejection note; submitter notified
+### [x] 28.4 — Public events calendar page (`/events`): public (no login required); filter chips by type; chronological order
+### [x] 28.5 — Approved events on public calendar; submitter notified on approve/reject; my submissions at `/events/my`
+### [x] 28.6 — Gym-affiliated events show gym name; link to gym profile on event detail page
+
+---
+
+## PHASE 29 — Site Admin Dashboard
+
+### [x] 29.1 — Site admin home (`/site-admin`): metric cards (gyms, users, pending events, new gyms 7d); recent gyms + pending events panels
+### [x] 29.2 — Gym management: `/site-admin/gyms` paginated list with search/filter; `/site-admin/gyms/[id]` edit all fields, tier, payment terms, member list, forum link; danger zone
+### [x] 29.3 — Belt forum moderation: `/site-admin/forums` with forum tabs; view/delete posts; verified badge on authors
+### [x] 29.4 — Event approval queue: `/site-admin/events` — approve/reject with inline rejection note; submitter notified
+### [x] 29.5 — New gym review queue: `/site-admin/gyms/new-review` — free-tier gyms from last 30 days with member counts
+### [ ] 29.6 — Platform payment dashboard: payment terms editable on gym detail page; transaction summaries placeholder (Phase 30)
+### [ ] 29.7 — Site admin role assignment: only existing site admins can grant site admin role
+
+---
+
+## PHASE 30 — Payment System ⚠️ FLAGGED — Details TBD
+**Do not build until payment terms are decided. Create a guide when ready.**
+**Guide needed:** `guides/phase30-payment-system.md`
+
+Payment layers under consideration:
+- Student membership dues paid to gym through app (Stripe)
+- Gym platform subscription paid to site (negotiated flat fee or tiered)
+- Per-gym negotiated revenue share:
+  - % of merch/store sales (e.g. 10%)
+  - % of photo print sales (e.g. 25%)
+  - % of membership payments (e.g. 2.5%)
+- Free tier gyms: no payment, limited features
+- Participating tier: custom terms negotiated with site admin
+
+### [ ] 30.1 — [BLOCKED] Define payment terms schema: per-gym `PaymentTerms` model with negotiated rates per category
+### [ ] 30.2 — [BLOCKED] Stripe integration for student→gym dues collection
+### [ ] 30.3 — [BLOCKED] Platform fee collection from gyms (flat or revenue-share)
+### [ ] 30.4 — [BLOCKED] Per-gym revenue dashboard for gym admins
+### [ ] 30.5 — [BLOCKED] Platform revenue dashboard for site admin
+
+---
+
+## PHASE 31 — Gallery & Store: Gym Scoping + Privacy Expansion
+
+### [x] 31.1 — Gallery visibility filter: all queries use compound OR (public | gym_only | private | custom); tag album page also scoped
+### [x] 31.2 — MediaVisibility enum + `visibility` field on MediaItem; MediaAccess model for custom per-user grants
+### [x] 31.3 — Upload modal: privacy selector (Everyone / My Gym Only / Only Me); visibility sent with upload
+### [x] 31.4 — Store scoped: GET products returns platform-wide + user's gym products; POST enforces gym ownership; PUT validates edit rights
+### [x] 31.5 — Admin store: platform products labeled "(Platform Product)"; gym-scoped filtering active
+
+---
+
+## PHASE 32 — In-App Tournament / Scrimmage System (Future)
+**⚠️ Complex feature — requires a guide before building.**
+**Guide needed:** `guides/phase32-tournament-system.md`
+
+For participating gyms to host scrimmage-style in-house tournaments run through the app.
+
+### [ ] 32.1 — Tournament model: name, date, gymId, format (`round_robin | single_elim | double_elim`), status (`draft | open | in_progress | complete`)
+### [ ] 32.2 — Division model: weight class, belt range, age group; linked to tournament
+### [ ] 32.3 — Registration: students register for divisions; gym admin approves/seeds brackets
+### [ ] 32.4 — Bracket generation: auto-generate brackets from registered participants
+### [ ] 32.5 — Match result entry: gym admin or designated scorer enters results; bracket updates in real time
+### [ ] 32.6 — Tournament results page: public or gym-only visibility toggle; shows placements
+### [ ] 32.7 — Tournament history on student profile: competitions entered, placements
+### [ ] 32.8 — Future: open the tournament system to public events so external competitions can use the bracket tool
+
+---
+
+## GUIDES NEEDED (before building the above phases)
+
+- [ ] `guides/phase24-multi-gym-architecture.md` — schema redesign, model changes, migration plan
+- [ ] `guides/phase30-payment-system.md` — payment terms, Stripe integration, revenue share logic (create when payment terms are decided)
+- [ ] `guides/phase32-tournament-system.md` — bracket formats, scoring, real-time updates

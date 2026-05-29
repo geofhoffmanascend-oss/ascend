@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import prisma from '@/lib/database'
 import { GalleryClient } from './GalleryClient'
 import { getWatermarkedUrl } from '@/lib/cloudinary'
+import { visibilityFilter } from '@/lib/mediaAccess'
 
 export const metadata = { title: 'Gallery' }
 
@@ -14,6 +15,7 @@ export default async function GalleryPage() {
   if (!session?.user?.id) redirect('/login')
 
   const items = await prisma.mediaItem.findMany({
+    where: visibilityFilter(session.user.id, session.user.gymId ?? null),
     include: {
       uploader: { select: { id: true, name: true } },
       tags:     { include: { user: { select: { id: true, name: true, avatarUrl: true } } } },
@@ -30,6 +32,7 @@ export default async function GalleryPage() {
                     ? getWatermarkedUrl(item.publicId)
                     : item.url,
     thumbnailUrl: item.thumbnailUrl ?? null,
+    visibility:   item.visibility as string,
   }))
 
   const nextCursor = items.length === 25 ? items[items.length - 1].id : null
@@ -40,6 +43,7 @@ export default async function GalleryPage() {
       nextCursor={nextCursor}
       currentUserId={session.user.id}
       currentUserRoles={session.user.roles}
+      currentUserGymId={session.user.gymId ?? null}
     />
   )
 }

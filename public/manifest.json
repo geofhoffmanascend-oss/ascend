@@ -1,7 +1,7 @@
 {
-  "name": "Ascend BJJ",
-  "short_name": "Ascend",
-  "description": "Train. Register. Improve.",
+  "name": "AscendIt",
+  "short_name": "AscendIt",
+  "description": "The Journey. The Art. The Community.",
   "start_url": "/dashboard",
   "display": "standalone",
   "orientation": "portrait",

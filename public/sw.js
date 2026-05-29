@@ -1,4 +1,4 @@
-const CACHE = 'ascend-v4'
+const CACHE = 'ascendit-v1'
 
 const STATIC_PATTERNS = [
   /^\/_next\/static\//,
@@ -64,9 +64,9 @@ self.addEventListener('push', e => {
   if (!e.data) return
 
   let payload
-  try { payload = e.data.json() } catch { payload = { title: 'Ascend', body: e.data.text() } }
+  try { payload = e.data.json() } catch { payload = { title: 'AscendIt', body: e.data.text() } }
 
-  const { title = 'Ascend', body = '', link = '/' } = payload
+  const { title = 'AscendIt', body = '', link = '/' } = payload
 
   e.waitUntil(
     self.registration.showNotification(title, {

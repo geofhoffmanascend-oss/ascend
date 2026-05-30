@@ -42,7 +42,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body suppressHydrationWarning>
         <Providers session={session}>
           <div className="min-h-screen flex flex-col">
-            <Header />
+            <Header initialSession={session} />
             <main className="flex-1">{children}</main>
             <Footer />
           </div>

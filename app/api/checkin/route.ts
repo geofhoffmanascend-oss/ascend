@@ -4,10 +4,18 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/database'
 import { isInCheckinWindow, recordCheckin } from '@/lib/checkin'
 import { classTypeToGroup } from '@/lib/classGroups'
+import { getPlatformSettings } from '@/lib/platformSettings'
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const isSiteAdmin = session.user.roles?.includes('site_admin')
+  const isAdmin = session.user.roles?.includes('admin')
+  if (!isSiteAdmin && !isAdmin) {
+    const { scheduleReadOnly } = await getPlatformSettings()
+    if (scheduleReadOnly) return NextResponse.json({ error: 'Check-in is currently unavailable.' }, { status: 403 })
+  }
 
   const { classSessionId } = await req.json()
   if (!classSessionId) return NextResponse.json({ error: 'classSessionId required' }, { status: 400 })

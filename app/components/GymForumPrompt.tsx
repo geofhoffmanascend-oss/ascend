@@ -11,10 +11,10 @@ interface Forum {
 interface Props {
   gymId: string
   gymName: string
-  onDone: () => void
+  onDone?: () => void
 }
 
-export function GymForumPrompt({ gymId, gymName, onDone }: Props) {
+export function GymForumPrompt({ gymId, gymName, onDone = () => {} }: Props) {
   const [loading, setLoading] = useState(true)
   const [forum, setForum] = useState<Forum | null>(null)
   const [memberCount, setMemberCount] = useState(0)

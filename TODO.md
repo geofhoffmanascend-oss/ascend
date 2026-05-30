@@ -502,6 +502,26 @@ For participating gyms to host scrimmage-style in-house tournaments run through 
 
 ---
 
+## PHASE 33 — Platform Feature Toggles (Site Admin)
+
+Global on/off switches so the site admin can stage/launch features without a deploy. Settings stored in a single-row `PlatformSettings` table (`id = "singleton"`); `lib/platformSettings.ts` reads with safe `DEFAULTS` fallback. Site admins and gym admins bypass all toggles.
+
+Schema pushed: `PlatformSettings` model (7 boolean flags + `updatedAt`).
+
+### [x] 33.1 — `PlatformSettings` model + `lib/platformSettings.ts` (`getPlatformSettings`, `upsertPlatformSettings`)
+### [x] 33.2 — Site admin UI: `/site-admin/settings` (Feature Toggles); per-toggle save via `PUT /api/site-admin/platform-settings`; sidebar nav link
+### [x] 33.3 — Public read route `GET /api/platform-settings` (for future server-component UI gating)
+### [x] 33.4 — Enforcement wired into all 7 gated actions (site_admin/admin bypass):
+  - `scheduleReadOnly` → check-in (`/api/checkin`) + class commit (`/api/commitments`)
+  - `allowGymForumCreation` → `POST /api/gyms/[id]/forum`
+  - `allowEventSubmission` → `POST /api/events`
+  - `allowTournamentRegistration` → tournament division register
+  - `allowBeltForumPosting` → belt-forum branch of `POST /api/forums/[id]/posts`
+  - `galleryUploadEnabled` → `POST /api/media`
+  - `storeEnabled` → `POST /api/store/orders`
+
+---
+
 ## GUIDES NEEDED (before building the above phases)
 
 - [ ] `guides/phase24-multi-gym-architecture.md` — schema redesign, model changes, migration plan

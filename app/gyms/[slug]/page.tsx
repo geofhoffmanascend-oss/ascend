@@ -138,7 +138,6 @@ export default async function GymProfilePage(
                 <GymForumPrompt
                   gymId={gym.id}
                   gymName={gym.name}
-                  onDone={() => {}}
                 />
               )}
             </div>

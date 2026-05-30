@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/database'
 import { uploadFromBuffer, getYouTubeThumbnail } from '@/lib/cloudinary'
 import { visibilityFilter } from '@/lib/mediaAccess'
+import { getPlatformSettings } from '@/lib/platformSettings'
 
 function parseHashtags(raw: string): string[] {
   return [...(raw.matchAll(/#([a-zA-Z0-9_]+)/g))]
@@ -69,6 +70,13 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const isSiteAdmin = session.user.roles?.includes('site_admin')
+  const isAdmin = session.user.roles?.includes('admin')
+  if (!isSiteAdmin && !isAdmin) {
+    const { galleryUploadEnabled } = await getPlatformSettings()
+    if (!galleryUploadEnabled) return NextResponse.json({ error: 'Gallery uploads are not available yet.' }, { status: 403 })
+  }
 
   const contentType = req.headers.get('content-type') ?? ''
 

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { NavBadges } from './NavBadges'
+import type { Session } from 'next-auth'
 
 function NavLink({
   href,
@@ -29,8 +30,11 @@ function NavLink({
   )
 }
 
-export function Header() {
-  const { data: session } = useSession()
+export function Header({ initialSession }: { initialSession?: Session | null }) {
+  // useSession provides reactive updates (e.g. after sign-out); initialSession
+  // ensures the server and initial client render match, eliminating hydration mismatches.
+  const { data: liveSession } = useSession()
+  const session = liveSession ?? initialSession
   const [open, setOpen] = useState(false)
   const close = () => setOpen(false)
 

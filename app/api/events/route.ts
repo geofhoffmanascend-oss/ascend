@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/database'
 import { createNotification } from '@/lib/notify'
 import { PublicEventType } from '@prisma/client'
+import { getPlatformSettings } from '@/lib/platformSettings'
 
 // GET /api/events — public, list approved upcoming events
 export async function GET(req: NextRequest) {
@@ -46,6 +47,11 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  if (!session.user.roles?.includes('site_admin')) {
+    const { allowEventSubmission } = await getPlatformSettings()
+    if (!allowEventSubmission) return NextResponse.json({ error: 'Event submission is not available yet.' }, { status: 403 })
+  }
 
   const body = await req.json()
   const { title, type, description, location, address, city, state, zip, startDate, endDate, gymId } = body

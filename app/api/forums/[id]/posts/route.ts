@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/database'
 import { createNotification } from '@/lib/notify'
 import { canPostInBeltForum } from '@/lib/belt'
+import { getPlatformSettings } from '@/lib/platformSettings'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
@@ -30,6 +31,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // Belt forum: verify caller's belt is high enough
   if (forum && forum.type === 'belt_forum' && forum.beltLevel) {
+    const isSiteAdmin = session.user.roles?.includes('site_admin')
+    const isAdmin = session.user.roles?.includes('admin')
+    if (!isSiteAdmin && !isAdmin) {
+      const { allowBeltForumPosting } = await getPlatformSettings()
+      if (!allowBeltForumPosting) return NextResponse.json({ error: 'Belt forum posting is not available yet.' }, { status: 403 })
+    }
     const userBelt = session.user.belt ?? 'white'
     if (!canPostInBeltForum(userBelt, forum.beltLevel)) {
       return NextResponse.json({ error: 'Your belt level does not allow posting in this forum' }, { status: 403 })

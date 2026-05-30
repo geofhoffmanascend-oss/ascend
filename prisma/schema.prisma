@@ -944,3 +944,16 @@ model TournamentMatch {
 
   division      Division    @relation(fields: [divisionId], references: [id], onDelete: Cascade)
 }
+
+model PlatformSettings {
+  id                        String   @id @default("singleton")
+  // Feature toggles — all default to true (on). Set false to disable before launch.
+  allowGymForumCreation     Boolean  @default(true)
+  allowBeltForumPosting     Boolean  @default(true)
+  allowEventSubmission      Boolean  @default(true)
+  allowTournamentRegistration Boolean @default(true)
+  scheduleReadOnly          Boolean  @default(false)
+  galleryUploadEnabled      Boolean  @default(true)
+  storeEnabled              Boolean  @default(true)
+  updatedAt                 DateTime @updatedAt
+}

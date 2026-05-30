@@ -21,3 +21,20 @@ Example:
 ```
 
 Files fixed in this incident: EventsClient.tsx, EventApprovalClient.tsx, ForumModerationClient.tsx, GymListClient.tsx, my/page.tsx (events), StoreClient.tsx, AdminStoreClient.tsx, ForumClient.tsx.
+
+## Pattern 2 — Session-dependent nav mismatch
+
+Client components using `useSession()` can produce different output on the initial client render vs. server render, because `useSession()` may return a stale/undefined value while the session is being reconciled from `SessionProvider`.
+
+**Fix:** Pass the server-resolved session as a prop (`initialSession`) from the layout server component to the Header client component. Use it as a fallback: `const session = liveSession ?? initialSession`. This guarantees the SSR and initial CSR renders are identical.
+
+```tsx
+// layout.tsx (server component)
+const session = await getServerSession(authOptions)
+<Header initialSession={session} />
+
+// Header.tsx (client component)
+export function Header({ initialSession }) {
+  const { data: liveSession } = useSession()
+  const session = liveSession ?? initialSession  // liveSession takes over after hydration
+```

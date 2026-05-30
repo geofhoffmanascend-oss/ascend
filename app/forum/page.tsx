@@ -22,7 +22,7 @@ export default async function ForumListPage() {
   const [user, allForums, subscriptions, gymForum, gym] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { blockedClassGroups: true },
+      select: { blockedClassGroups: true, hiddenClassGroups: true },
     }),
     prisma.forum.findMany({
       include: {
@@ -46,6 +46,7 @@ export default async function ForumListPage() {
   ])
 
   const blocked = (user?.blockedClassGroups ?? []) as ClassGroup[]
+  const hidden = (user?.hiddenClassGroups ?? []) as ClassGroup[]
   const subscribedIds = new Set(subscriptions.map(s => s.forumId))
   const gymForumWithCount = gymForum as typeof gymForum & { _count: { posts: number; subscriptions: number } } | null
 
@@ -67,7 +68,8 @@ export default async function ForumListPage() {
   const groupForums = allForums.filter(f =>
     f.type === 'group_forum' &&
     f.classGroup !== null &&
-    !blocked.includes(f.classGroup as ClassGroup)
+    !blocked.includes(f.classGroup as ClassGroup) &&
+    !hidden.includes(f.classGroup as ClassGroup)
   )
 
   return (

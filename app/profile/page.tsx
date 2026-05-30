@@ -16,7 +16,8 @@ export default async function ProfilePage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
 
-  const user = await prisma.user.findUnique({
+  const [user, tournamentRegistrations] = await Promise.all([
+  prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
       name: true,
@@ -48,7 +49,29 @@ export default async function ProfilePage() {
         select: { id: true, scheduledAt: true, durationMins: true, instructor: { select: { name: true } } },
       },
     },
-  })
+  }),
+  prisma.registration.findMany({
+    where: { userId: session.user.id },
+    include: {
+      division: {
+        select: {
+          name: true,
+          matches: {
+            where: {
+              OR: [
+                { participantA: session.user.id },
+                { participantB: session.user.id },
+              ],
+            },
+            select: { result: true, participantA: true, participantB: true },
+          },
+          tournament: { select: { id: true, title: true, date: true, status: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  }),
+])
 
   if (!user) redirect('/login')
 
@@ -155,6 +178,50 @@ export default async function ProfilePage() {
 
         <GoalsSection goals={goals} />
         <CompetitionsSection competitions={competitions} />
+
+        {/* Tournament History */}
+        {tournamentRegistrations.length > 0 && (
+          <div className="border border-smoke bg-paper p-6">
+            <p className="text-xs font-bold uppercase tracking-widest text-steel mb-4">Tournament History</p>
+            <div className="flex flex-col gap-4">
+              {tournamentRegistrations.map(reg => {
+                const t = reg.division.tournament
+                const wins = reg.division.matches.filter(m =>
+                  (m.participantA === session.user.id && m.result === 'participant_a_wins') ||
+                  (m.participantB === session.user.id && m.result === 'participant_b_wins')
+                ).length
+                const losses = reg.division.matches.filter(m =>
+                  (m.participantA === session.user.id && m.result === 'participant_b_wins') ||
+                  (m.participantB === session.user.id && m.result === 'participant_a_wins')
+                ).length
+                const played = reg.division.matches.filter(m => m.result !== 'pending' && m.result !== 'bye').length
+
+                return (
+                  <div key={reg.id} className="flex items-start justify-between gap-3">
+                    <div>
+                      <Link href={`/tournaments/${t.id}`} className="text-sm font-medium text-ink hover:text-brand-red transition-colors">
+                        {t.title}
+                      </Link>
+                      <p className="text-xs text-ash mt-0.5">{reg.division.name}</p>
+                      <p suppressHydrationWarning className="text-xs text-ash">
+                        {new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    </div>
+                    {t.status === 'complete' && played > 0 && (
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-xs font-bold text-ink">{wins}W – {losses}L</p>
+                        <p className="text-xs text-ash">{played} match{played !== 1 ? 'es' : ''}</p>
+                      </div>
+                    )}
+                    {(t.status === 'open' || t.status === 'in_progress') && (
+                      <span className="text-xs text-amber-600 font-medium flex-shrink-0 capitalize">{t.status.replace('_', ' ')}</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Training Reflection */}
         <div className="border border-smoke bg-paper p-6">

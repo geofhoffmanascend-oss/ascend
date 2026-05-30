@@ -90,7 +90,7 @@ export function GymListClient({ gyms, total, page, limit }: { gyms: Gym[]; total
                 <td className="px-4 py-3 text-ink">{gym.memberCount}</td>
                 <td className="px-4 py-3 text-ash">{gym.headInstructorName ?? '—'}</td>
                 <td className="px-4 py-3 text-ash">{[gym.city, gym.state].filter(Boolean).join(', ') || '—'}</td>
-                <td className="px-4 py-3 text-ash">{new Date(gym.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                <td suppressHydrationWarning className="px-4 py-3 text-ash">{new Date(gym.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
               </tr>
             ))}
             {gyms.length === 0 && (

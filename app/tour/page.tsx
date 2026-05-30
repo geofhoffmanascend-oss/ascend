@@ -71,7 +71,7 @@ export default function TourPage() {
           <span className="inline-block bg-brand-red px-3 py-1">
             <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">How It Works</span>
           </span>
-          <h1 className="font-display text-paper max-w-2xl">Everything a serious BJJ student needs</h1>
+          <h1 className="font-display text-paper max-w-2xl">Your complete Jiu-Jitsu training companion built for students, instructors, and gym administration.</h1>
           <p className="text-ash text-lg max-w-xl leading-relaxed">
             From your first class to your black belt — AscendIt is built for the whole journey.
           </p>
@@ -165,11 +165,11 @@ export default function TourPage() {
               </div>
             </div>
             <p className="text-sm text-ash leading-relaxed border-l-2 border-steel/40 pl-3">
-              Training BJJ for 2 years. Competing locally, focused on building a technical guard game.
+              Training Jiu-Jitsu for 2 years. Competing locally, focused on building a technical guard game.
             </p>
             <div className="border border-smoke/20 bg-ink-soft/50 rounded p-3">
               <p className="text-xs font-bold uppercase tracking-widest text-slate mb-1">Competition</p>
-              <p className="text-sm text-paper">IBJJF Regional — Blue Belt, 1st Place</p>
+              <p className="text-sm text-paper">Regional Open — Blue Belt, 1st Place</p>
               <p className="text-xs text-ash">March 2026</p>
             </div>
             <div className="border border-smoke/20 bg-ink-soft/50 rounded p-3">
@@ -187,7 +187,7 @@ export default function TourPage() {
       <section className="bg-ink-soft border-t border-steel/30">
         <div className="max-w-2xl mx-auto px-4 py-24 text-center flex flex-col items-center gap-6">
           <h2 className="font-display text-paper">Ready to level up your training?</h2>
-          <p className="text-ash text-lg">Join AscendIt and take control of your BJJ journey.</p>
+          <p className="text-ash text-lg">Join AscendIt and take control of your Jiu-Jitsu journey.</p>
           <div className="flex gap-3 flex-wrap justify-center">
             <Link href="/register" className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors">
               Create Free Account

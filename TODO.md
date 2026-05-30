@@ -297,6 +297,16 @@ Root cause: `SessionProvider` had no initial session, causing server/client mism
 
 ### [x] BUG-3 — Gallery layout/density buttons — FIXED (user confirmed)
 
+### [x] BUG-4 — Day view missing register button — FIXED
+**Symptom:** The weekly schedule view has a register/commit button on class cards, but the day view (`/schedule/[date]`) does not. Students viewing a specific day cannot register from that view.
+**Fix:** Add register/uncommit button to the day view class card, consistent with the week view. Should respect the same blocked-group enforcement.
+
+### [x] BUG-5 — Onboarding: back button added to gym forum sub-step; Home Gym + Schedule Prefs editable from /settings
+**Symptom:** The student onboarding wizard has no back button on step 1 (first step has no back), and while later steps do have a back button, students who skip the wizard entirely have no way to return and complete skipped information later (e.g., home gym, schedule preferences).
+**Fix (two parts):**
+1. Ensure all wizard steps after step 1 have a working back button (audit current state).
+2. Add an "Complete your profile" or "Update gym / preferences" entry point on the settings page (`/settings`) that re-opens key onboarding fields: home gym picker, schedule preferences (class group visibility), and contact info. This lets students who skipped onboarding fill in info later without re-running the full wizard.
+
 ---
 
 ## PHASE 18 — UX & Profile Polish
@@ -439,7 +449,7 @@ Two separate tours: one for prospective students (`/tour`), one for prospective 
 ### [x] 29.4 — Event approval queue: `/site-admin/events` — approve/reject with inline rejection note; submitter notified
 ### [x] 29.5 — New gym review queue: `/site-admin/gyms/new-review` — free-tier gyms from last 30 days with member counts
 ### [ ] 29.6 — Platform payment dashboard: payment terms editable on gym detail page; transaction summaries placeholder (Phase 30)
-### [ ] 29.7 — Site admin role assignment: only existing site admins can grant site admin role
+### [x] 29.7 — Site admin role assignment: `/site-admin/admins` page; grant/revoke via PUT/DELETE `/api/site-admin/users/[id]/site-admin-role`; self-revocation blocked; sidebar link added
 
 ---
 
@@ -481,14 +491,14 @@ Payment layers under consideration:
 
 For participating gyms to host scrimmage-style in-house tournaments run through the app.
 
-### [ ] 32.1 — Tournament model: name, date, gymId, format (`round_robin | single_elim | double_elim`), status (`draft | open | in_progress | complete`)
-### [ ] 32.2 — Division model: weight class, belt range, age group; linked to tournament
-### [ ] 32.3 — Registration: students register for divisions; gym admin approves/seeds brackets
-### [ ] 32.4 — Bracket generation: auto-generate brackets from registered participants
-### [ ] 32.5 — Match result entry: gym admin or designated scorer enters results; bracket updates in real time
-### [ ] 32.6 — Tournament results page: public or gym-only visibility toggle; shows placements
-### [ ] 32.7 — Tournament history on student profile: competitions entered, placements
-### [ ] 32.8 — Future: open the tournament system to public events so external competitions can use the bracket tool
+### [x] 32.1 — Tournament model: name, date, gymId, format, status; participating-gym-only creation
+### [x] 32.2 — Division model: beltMin/beltMax, weightClass, ageGroup; linked to tournament
+### [x] 32.3 — Registration: students register with belt validation; gym admin confirms; withdraw while open
+### [x] 32.4 — Bracket generation: `lib/bracket.ts` pure functions; single_elim + round_robin; double_elim stubbed
+### [x] 32.5 — Match result entry: inline result picker in admin bracket view; single_elim propagates winners; auto-completes tournament
+### [x] 32.6 — Tournament results page `/tournaments/[id]/results`: public or gym-member visibility; BracketView with participant names
+### [x] 32.7 — Tournament history on student profile: competitions entered, placements
+### [ ] 32.8 — Future: surface tournaments on public events calendar
 
 ---
 

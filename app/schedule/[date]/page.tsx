@@ -6,6 +6,8 @@ import prisma from '@/lib/database'
 import { BeltBadge } from '@/app/components/BeltBadge'
 import { getMondayOfWeek } from '@/lib/generateSessions'
 import { ViewToggle, PeriodNav } from '../ScheduleShell'
+import { DayViewActions } from './DayViewActions'
+import { classTypeToGroup } from '@/lib/classGroups'
 
 type Belt = 'white' | 'blue' | 'purple' | 'brown' | 'black' | 'coral' | 'red'
 
@@ -26,6 +28,11 @@ export default async function DayViewPage({ params }: { params: Promise<{ date: 
   const dayEnd = new Date(date)
   dayEnd.setUTCHours(23, 59, 59, 999)
 
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { blockedClassGroups: true, hiddenClassGroups: true },
+  })
+
   const sessions = await prisma.classSession.findMany({
     where: { date: { gte: day, lte: dayEnd }, class: { isActive: true } },
     include: {
@@ -41,8 +48,20 @@ export default async function DayViewPage({ params }: { params: Promise<{ date: 
           user: { select: { id: true, name: true, belt: true } },
         },
       },
+      attendance: {
+        where: { userId: session.user.id },
+        select: { attended: true },
+      },
     },
     orderBy: { class: { startTime: 'asc' } },
+  })
+
+  const blocked = (user?.blockedClassGroups ?? []) as string[]
+  const hidden = (user?.hiddenClassGroups ?? []) as string[]
+
+  const visibleSessions = sessions.filter(s => {
+    const group = classTypeToGroup(s.class.type as any)
+    return group === null || !hidden.includes(group)
   })
 
   const formatted = day.toLocaleDateString('en-US', {
@@ -72,17 +91,20 @@ export default async function DayViewPage({ params }: { params: Promise<{ date: 
         </div>
       </div>
 
-      {sessions.length === 0 && (
+      {visibleSessions.length === 0 && (
         <p className="text-ash text-sm italic">No classes scheduled for this day.</p>
       )}
 
       <div className="flex flex-col gap-6">
-        {sessions.map(s => {
+        {visibleSessions.map(s => {
           const myCommitment = s.commitments.find(c => c.userId === session.user.id)
+          const myCheckedIn = s.attendance?.[0]?.attended ?? false
+          const group = classTypeToGroup(s.class.type as any)
+          const isBlocked = group !== null && blocked.includes(group)
           return (
             <div
               key={s.id}
-              className={`border bg-paper p-6 ${myCommitment ? 'border-l-2 border-l-brand-red border-t-smoke border-r-smoke border-b-smoke' : 'border-smoke'} ${s.cancelled ? 'opacity-60' : ''}`}
+              className={`border bg-paper p-6 ${isBlocked ? 'opacity-50 border-smoke' : myCommitment ? 'border-l-2 border-l-brand-red border-t-smoke border-r-smoke border-b-smoke' : 'border-smoke'} ${s.cancelled ? 'opacity-60' : ''}`}
             >
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div>
@@ -118,7 +140,21 @@ export default async function DayViewPage({ params }: { params: Promise<{ date: 
                 </div>
               )}
 
-              <div className="border-t border-smoke pt-4">
+              {isBlocked && (
+                <p className="text-xs text-ash italic mb-4">Not included in your membership</p>
+              )}
+
+              <DayViewActions
+                sessionId={s.id}
+                sessionDate={s.date.toISOString()}
+                startTime={s.class.startTime}
+                commitmentId={myCommitment?.id ?? null}
+                checkedIn={myCheckedIn}
+                isBlocked={isBlocked}
+                isCancelled={s.cancelled ?? false}
+              />
+
+              <div className="border-t border-smoke pt-4 mt-4">
                 <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">
                   {s.commitments.length} Registered
                 </p>

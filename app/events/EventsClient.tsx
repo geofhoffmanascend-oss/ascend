@@ -85,7 +85,7 @@ export function EventsClient({ events }: { events: Event[] }) {
                     <span className={`px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${TYPE_STYLES[event.type]}`}>
                       {TYPE_LABELS[event.type]}
                     </span>
-                    <span className="text-xs text-ash">{formatEventDate(event.startDate)}</span>
+                    <span suppressHydrationWarning className="text-xs text-ash">{formatEventDate(event.startDate)}</span>
                   </div>
                   <p className="font-display text-base font-bold text-ink truncate">{event.title}</p>
                   {(event.location || event.city) && (

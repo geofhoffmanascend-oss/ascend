@@ -100,7 +100,7 @@ function GymRegisterForm() {
 
       <div className="flex flex-col gap-1">
         <label className={labelCls}>Gym Name <span className="text-brand-red">*</span></label>
-        <input type="text" value={name} onChange={e => setName(e.target.value)} required className={inputCls} placeholder="Lions BJJ" />
+        <input type="text" value={name} onChange={e => setName(e.target.value)} required className={inputCls} placeholder="Lions Jiu-Jitsu" />
       </div>
 
       <div className="flex flex-col gap-1">

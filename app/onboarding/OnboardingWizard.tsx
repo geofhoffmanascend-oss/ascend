@@ -312,6 +312,9 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
                 setStep(s => s + 1)
               }}
             />
+            <div>
+              <button onClick={() => setShowGymForumPrompt(false)} className={secondaryBtn}>← Back</button>
+            </div>
           </div>
         )}
 

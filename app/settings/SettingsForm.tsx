@@ -5,6 +5,7 @@ import { JOURNAL_PROMPTS } from '@/lib/journalPrompts'
 import { PushPermissionButton } from '@/app/components/PushPermissionButton'
 import { Toast } from '@/app/components/Toast'
 import { ALL_GROUPS, GROUP_LABELS, GROUP_DESCRIPTIONS } from '@/lib/classGroups'
+import { GymPicker } from '@/app/components/GymPicker'
 import type { ClassGroup } from '@prisma/client'
 
 type Prefs = {
@@ -21,17 +22,52 @@ type Prefs = {
 
 type ForumRow = { id: string; title: string; type: string; classGroup: string | null; subscribed: boolean }
 
-type Props = { userId: string; initial: Prefs; forums: ForumRow[]; hiddenClassGroups: ClassGroup[] }
+type Props = {
+  userId: string
+  initial: Prefs
+  forums: ForumRow[]
+  hiddenClassGroups: ClassGroup[]
+  currentGym: { id: string; name: string } | null
+}
 
 const CATEGORY_LABELS = { wellness: 'Wellness', training: 'Training', reflection: 'Reflection' }
 
-export function SettingsForm({ userId, initial, forums: initialForums, hiddenClassGroups: initialHidden }: Props) {
+export function SettingsForm({ userId, initial, forums: initialForums, hiddenClassGroups: initialHidden, currentGym }: Props) {
   const [prefs, setPrefs] = useState<Prefs>(initial)
   const [hiddenGroups, setHiddenGroups] = useState<ClassGroup[]>(initialHidden)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const clearToast = useCallback(() => setToast(null), [])
+
+  // Gym
+  const [selectedGym, setSelectedGym] = useState<{ id: string; name: string } | null>(currentGym)
+  const [gymSaving, setGymSaving] = useState(false)
+  const [gymSaved, setGymSaved] = useState(false)
+
+  async function saveGym() {
+    setGymSaving(true)
+    if (selectedGym) {
+      // Join gym membership
+      await fetch(`/api/gyms/${selectedGym.id}/membership`, { method: 'PUT' })
+      // Update user.gymId
+      await fetch(`/api/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gymId: selectedGym.id }),
+      })
+    } else {
+      // Leave gym
+      await fetch(`/api/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gymId: null }),
+      })
+    }
+    setGymSaved(true)
+    setTimeout(() => setGymSaved(false), 3000)
+    setGymSaving(false)
+  }
 
   const allPromptKeys = JOURNAL_PROMPTS.map(p => p.key)
   const enabledPromptKeys: string[] = prefs.defaultJournalPrompts
@@ -91,6 +127,35 @@ export function SettingsForm({ userId, initial, forums: initialForums, hiddenCla
 
   return (
     <div className="flex flex-col gap-6">
+
+      {/* Home Gym */}
+      <section className="border border-smoke bg-paper p-6 flex flex-col gap-4">
+        <p className="text-xs font-bold uppercase tracking-widest text-steel">Home Gym</p>
+        <GymPicker value={selectedGym} onChange={setSelectedGym} onCreateNew={() => {}} />
+        {selectedGym && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-mist border border-smoke text-sm text-ink">
+            <svg className="w-4 h-4 text-brand-red flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span>{selectedGym.name}</span>
+          </div>
+        )}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={saveGym}
+            disabled={gymSaving}
+            className="px-5 py-2.5 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors disabled:opacity-60"
+          >
+            {gymSaving ? 'Saving…' : 'Save Gym'}
+          </button>
+          {gymSaved && <span className="text-sm text-green-600">Saved ✓</span>}
+          {selectedGym && (
+            <button onClick={() => setSelectedGym(null)} className="text-sm text-ash hover:text-ink transition-colors">
+              Remove gym
+            </button>
+          )}
+        </div>
+      </section>
 
       <section className="border border-smoke bg-paper p-6 flex flex-col gap-4">
         <p className="text-xs font-bold uppercase tracking-widest text-steel">Push Notifications</p>

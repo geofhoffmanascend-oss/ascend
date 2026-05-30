@@ -74,7 +74,7 @@ export default function MyEventsPage() {
                 <div className="min-w-0">
                   <p className="font-display text-base font-bold text-ink truncate">{event.title}</p>
                   <p className="text-xs text-ash mt-0.5">
-                    {TYPE_LABELS[event.type]} · {[event.city, event.state].filter(Boolean).join(', ')} · {new Date(event.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    <span suppressHydrationWarning>{TYPE_LABELS[event.type]} · {[event.city, event.state].filter(Boolean).join(', ')} · {new Date(event.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                   </p>
                   {event.status === 'rejected' && event.rejectionNote && (
                     <p className="text-xs text-red-600 mt-1">Reason: {event.rejectionNote}</p>

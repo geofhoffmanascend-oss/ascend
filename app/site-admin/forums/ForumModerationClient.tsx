@@ -75,7 +75,7 @@ export function ForumModerationClient({ forums }: { forums: Forum[] }) {
                       ? <span className="text-xs text-green-600 ml-1">✓</span>
                       : <span className="text-xs text-ash ml-1 italic">(unverified)</span>
                     }
-                    <span className="text-xs text-ash ml-2">
+                    <span suppressHydrationWarning className="text-xs text-ash ml-2">
                       {new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                   </div>

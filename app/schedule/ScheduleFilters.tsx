@@ -20,8 +20,8 @@ export const DEFAULT_FILTERS: Filters = {
 }
 
 const TYPE_OPTIONS = [
-  { key: 'gi',               label: 'Gi (BJJ)' },
-  { key: 'nogi',             label: 'No-Gi (BJJ)' },
+  { key: 'gi',               label: 'Gi (Jiu-Jitsu)' },
+  { key: 'nogi',             label: 'No-Gi (Jiu-Jitsu)' },
   { key: 'muay_thai',        label: 'Muay Thai' },
   { key: 'wrestling',        label: 'Wrestling' },
   { key: 'self_defense',     label: 'Self Defense' },

@@ -51,6 +51,7 @@ export function Header() {
               <NavLink href="/schedule">Schedule</NavLink>
               <NavLink href="/forum">Forum</NavLink>
               <NavLink href="/events">Events</NavLink>
+              <NavLink href="/tournaments">Tournaments</NavLink>
               <NavLink href="/lessons">Lessons</NavLink>
               <NavLink href="/journal">Journal</NavLink>
               <NavLink href="/gallery">Gallery</NavLink>
@@ -158,6 +159,7 @@ export function Header() {
               <NavLink href="/schedule" onClick={close}>Schedule</NavLink>
               <NavLink href="/forum" onClick={close}>Forum</NavLink>
               <NavLink href="/events" onClick={close}>Events</NavLink>
+              <NavLink href="/tournaments" onClick={close}>Tournaments</NavLink>
               <NavLink href="/lessons" onClick={close}>Lessons</NavLink>
               <NavLink href="/journal" onClick={close}>Journal</NavLink>
               <NavLink href="/gallery" onClick={close}>Gallery</NavLink>

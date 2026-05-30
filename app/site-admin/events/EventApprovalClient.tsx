@@ -61,7 +61,7 @@ export function EventApprovalClient({ events: initial }: { events: Event[] }) {
                 <span className="text-xs font-bold uppercase tracking-wide bg-mist text-steel px-2 py-0.5">
                   {TYPE_LABELS[event.type]}
                 </span>
-                <span className="text-xs text-ash">
+                <span suppressHydrationWarning className="text-xs text-ash">
                   {new Date(event.startDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
               </div>
@@ -75,7 +75,7 @@ export function EventApprovalClient({ events: initial }: { events: Event[] }) {
               {event.description && (
                 <p className="text-sm text-ash mt-2 line-clamp-3">{event.description}</p>
               )}
-              <p className="text-xs text-ash mt-2">
+              <p suppressHydrationWarning className="text-xs text-ash mt-2">
                 Submitted by {event.submittedBy.name ?? event.submittedBy.email ?? 'Unknown'} · {new Date(event.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </p>
             </div>

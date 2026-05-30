@@ -29,6 +29,8 @@ export default async function SettingsPage() {
         defaultJournalPrompts: true,
         hiddenClassGroups:     true,
         blockedClassGroups:    true,
+        gymId:                 true,
+        gym:                   { select: { id: true, name: true } },
       },
     }),
     prisma.forum.findMany({
@@ -78,6 +80,7 @@ export default async function SettingsPage() {
         initial={user}
         forums={forums}
         hiddenClassGroups={(user.hiddenClassGroups ?? []) as ClassGroup[]}
+        currentGym={user.gym ?? null}
       />
     </div>
   )

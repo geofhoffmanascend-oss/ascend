@@ -97,7 +97,7 @@ export default function NewEventPage() {
         {/* Title */}
         <div className="flex flex-col gap-1">
           <label className={labelCls}>Title <span className="text-brand-red">*</span></label>
-          <input value={title} onChange={e => setTitle(e.target.value)} className={inputCls} placeholder="e.g., Saturday Open Mat at BJJ Lab" />
+          <input value={title} onChange={e => setTitle(e.target.value)} className={inputCls} placeholder="e.g., Saturday Open Mat at Grappling Lab" />
         </div>
 
         {/* Type */}

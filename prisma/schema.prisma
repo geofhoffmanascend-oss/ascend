@@ -251,6 +251,8 @@ model User {
   trainingReflection   TrainingReflection?
   eventsSubmitted      PublicEvent[]  @relation("EventSubmitter")
   eventsApproved       PublicEvent[]  @relation("EventApprover")
+  tournamentsCreated   Tournament[]   @relation("TournamentCreator")
+  registrations        Registration[]
 }
 
 model Account {
@@ -712,6 +714,7 @@ model Gym {
   orders       Order[]
   settings     GymSettings[]
   publicEvents PublicEvent[]
+  tournaments  Tournament[]
 }
 
 model GymMembership {
@@ -857,4 +860,87 @@ model PublicEvent {
   submittedBy  User  @relation("EventSubmitter", fields: [submittedById], references: [id], onDelete: Cascade)
   approvedBy   User? @relation("EventApprover",  fields: [approvedById],  references: [id], onDelete: SetNull)
   gym          Gym?  @relation(fields: [gymId], references: [id], onDelete: SetNull)
+}
+
+enum TournamentFormat {
+  round_robin
+  single_elim
+  double_elim
+}
+
+enum TournamentStatus {
+  draft
+  open
+  in_progress
+  complete
+}
+
+enum MatchResult {
+  pending
+  participant_a_wins
+  participant_b_wins
+  draw
+  bye
+}
+
+model Tournament {
+  id          String           @id @default(cuid())
+  gymId       String
+  title       String
+  description String?
+  date        DateTime
+  format      TournamentFormat
+  status      TournamentStatus @default(draft)
+  isPublic    Boolean          @default(false)
+  createdById String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  gym         Gym              @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  createdBy   User             @relation("TournamentCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  divisions   Division[]
+}
+
+model Division {
+  id            String         @id @default(cuid())
+  tournamentId  String
+  name          String
+  beltMin       Belt
+  beltMax       Belt
+  weightClass   String?
+  ageGroup      String?
+  createdAt     DateTime       @default(now())
+
+  tournament    Tournament     @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  registrations Registration[]
+  matches       TournamentMatch[]
+}
+
+model Registration {
+  id           String   @id @default(cuid())
+  divisionId   String
+  userId       String
+  confirmed    Boolean  @default(false)
+  seed         Int?
+  createdAt    DateTime @default(now())
+
+  division     Division @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([divisionId, userId])
+}
+
+model TournamentMatch {
+  id            String      @id @default(cuid())
+  divisionId    String
+  round         Int
+  position      Int
+  participantA  String?
+  participantB  String?
+  result        MatchResult @default(pending)
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  division      Division    @relation(fields: [divisionId], references: [id], onDelete: Cascade)
 }

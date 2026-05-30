@@ -192,7 +192,7 @@ export function StoreClient({ products, myOrders: initialOrders }: Props) {
             <div key={order.id} className="border border-smoke bg-paper p-4">
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div>
-                  <p className="text-xs text-ash">{new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                  <p suppressHydrationWarning className="text-xs text-ash">{new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                   <p className="text-xs text-ash mt-0.5">Order #{order.id.slice(-6).toUpperCase()}</p>
                 </div>
                 <span className={`text-xs font-bold px-2 py-1 border ${STATUS_COLOR[order.status]}`}>

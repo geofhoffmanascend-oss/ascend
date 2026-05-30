@@ -147,7 +147,7 @@ export function UploadModal({ onClose, onUploaded, userGymId }: Props) {
               type="text"
               value={hashtags}
               onChange={e => setHashtags(e.target.value)}
-              placeholder="#competition #seminar #bjj"
+              placeholder="#competition #seminar #jiujitsu"
               className="w-full px-4 py-3 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors"
             />
           </div>

@@ -221,7 +221,7 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
                     ? <span className="text-xs text-green-600 font-medium">✓ Verified</span>
                     : <span className="text-xs text-ash italic">(Unverified)</span>
                 )}
-                <span className="text-xs text-ash">{formatDate(post.createdAt)}</span>
+                <span suppressHydrationWarning className="text-xs text-ash">{formatDate(post.createdAt)}</span>
                 <span className={`px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${POST_TYPE_STYLES[post.type] ?? POST_TYPE_STYLES.text}`}>
                   {POST_TYPE_LABELS[post.type] ?? post.type}
                 </span>
@@ -261,7 +261,7 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           <BeltBadge belt={reply.author.belt as Belt} stripes={0} />
                           <Link href={`/profile/${reply.authorId}`} className="text-xs font-medium text-ink hover:text-brand-red transition-colors">{reply.author.name ?? 'Unknown'}</Link>
-                          <span className="text-xs text-ash">{formatDate(reply.createdAt, true)}</span>
+                          <span suppressHydrationWarning className="text-xs text-ash">{formatDate(reply.createdAt, true)}</span>
                         </div>
                         <p className="text-sm text-ink leading-relaxed">{reply.content}</p>
                       </div>

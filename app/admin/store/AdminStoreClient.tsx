@@ -199,7 +199,7 @@ export function AdminStoreClient({ products: initialProducts, orders: initialOrd
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <div>
                     <p className="text-sm font-medium text-ink">{order.user.name ?? order.user.email}</p>
-                    <p className="text-xs text-ash">{new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</p>
+                    <p suppressHydrationWarning className="text-xs text-ash">{new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</p>
                     <p className="text-xs text-ash">Order #{order.id.slice(-6).toUpperCase()}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">

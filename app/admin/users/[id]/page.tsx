@@ -72,6 +72,11 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
       </div>
 
       <div className="flex flex-col gap-6">
+        <div className="flex items-center gap-3">
+          <p className="text-xs font-bold uppercase tracking-widest text-ash whitespace-nowrap">Admin Controls</p>
+          <div className="h-px flex-1 bg-smoke" />
+        </div>
+
         {/* Role Management */}
         <RoleManager userId={user.id} currentRoles={user.roles as string[]} />
 
@@ -89,6 +94,11 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
           initialVerified={user.beltVerified}
           verifierName={verifier?.name ?? null}
         />
+
+        <div className="flex items-center gap-3 mt-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-ash whitespace-nowrap">Profile &amp; History</p>
+          <div className="h-px flex-1 bg-smoke" />
+        </div>
 
         {/* Contact */}
         <div className="border border-smoke bg-paper p-6">

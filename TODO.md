@@ -284,7 +284,7 @@ Schema pushed: `ClassGroup` enum (`grappling | striking | kids | competition | s
 
 These items are code-complete but require manual steps to fully activate:
 
-- **Vercel env vars (Phase 19):** Add `RESEND_API_KEY` and `EMAIL_FROM=onboarding@resend.dev` to Vercel dashboard → Project → Settings → Environment Variables (Production + Preview). Without this, password reset emails won't send in production.
+- **Vercel env vars (Phase 19):** ✅ `RESEND_API_KEY` added to Vercel **Production + Preview** (2026-06-01, new rotated key; also updated in `.env.local`). ⚠️ Still need to add **`EMAIL_FROM=onboarding@resend.dev`** to Vercel (Production + Preview) — not yet pushed. Also: old Resend key `re_UaUtDYNk…` is still active on Resend's side — revoke it in the Resend dashboard if this was a security rotation.
 - **Group forum seeding (Phase 17):** One-time setup — while logged in as admin, POST to `/api/admin/init-group-forums` (e.g. from browser devtools or a REST client) to create the 5 group forums in the database.
 - **Belt forum seeding (Phase 27):** One-time setup — while logged in as site_admin, POST to `/api/site-admin/belt-forums/init` to create the 5 belt forums. Safe to run multiple times (idempotent).
 - **Production email domain:** Sandbox sender only delivers to your verified Resend email. To send to any user, verify a domain at resend.com and update `EMAIL_FROM` to `noreply@yourdomain.com`.
@@ -503,7 +503,7 @@ Two separate tours: one for prospective students (`/tour`), one for prospective 
 ### [ ] 30.12 — Gym revenue dashboard (`/admin/payments`) + platform revenue dashboard (`/site-admin/payments`, folds in 29.6) (§15)
 ### [ ] 30.13 — Gym onboarding copy: explain paid-tier unlocks (scheduling, store, tournaments, paid private lessons, money collection) vs free-tier retains (profile, gym forum + moderation, communication under banner); state student data is always preserved + fees negotiable / gym bears Stripe fees (guide §21.2). Files: `/onboarding/admin`, `/gyms/register`.
 
-**Decisions confirmed (guide §21):** D1 participating-only collects · D2 payee bears Stripe fee + platform fee on top · D3 defaults 5%/0%/0% · D4 rates negotiable per-gym AND per-vendor from site-admin dashboard (override UI in core scope) · D5 USD/no-tax · D6 keep pay-at-pickup fallback · D7 hybrid checkout (single-payee destination charge, multi-payee separate charges + automated transfers) · D8 platform sub = gym's one-student monthly fee, negotiable, 14-day trial · D9 site_admin comped flag · D10 soft lapse per §21.1 capability matrix · D11 gym-defined membership plans. **Pending:** D12 grace · D13 vendor scope · D14 photo prints · D15 refunds · D16 payouts · D17 payment methods.
+**Decisions confirmed (guide §21):** D1 participating-only collects · D2 payee bears Stripe fee + platform fee on top · D3 defaults 5%/0%/0% · D4 rates negotiable per-gym AND per-vendor from site-admin dashboard (override UI in core scope) · D5 USD/no-tax · D6 keep pay-at-pickup fallback · D7 hybrid checkout (single-payee destination charge, multi-payee separate charges + automated transfers) · D8 platform sub = gym's one-student monthly fee, negotiable, 14-day trial · D9 site_admin comped flag · D10 soft lapse per §21.1 capability matrix · D11 gym-defined membership plans · D12 7-day membership grace · D13 vendor selling deferred to 30D · D14 photo-print sales deferred (30D) · D15 payee refunds own sales ≤30d + site_admin always, fee pro-rata · D16 Stripe default auto payouts · D17 cards + wallets. **All 17 set.** Only gate to start coding: manual Stripe test-credential setup (30.0a–g) + your go-ahead.
 
 **⚠️ Product note (guide §21.1):** AscendIt is a social network first; gym membership is optional. Free/lapsed gyms lose money-collection + **scheduling** + store + tournaments + paid lessons, but keep profile, gym-forum moderation, and communication under their banner. **Students always keep their own data.** Gating scheduling behind the paid tier is a product change to land with 30B (currently scheduling is universal).
 
@@ -586,29 +586,23 @@ When returning from "Add my gym" (`initialGymId`/`initialGymName` present), the 
 ### [x] 36.2 — Brand name resolved (not a rename) — DONE
 User clarified: **AscendIt** is the app name (already consistent in the UI — Header, layout title, onboarding, gym-register all say AscendIt). **Ascend** is intentionally repurposed as a demo gym (see Phase 37). No UI rename needed.
 
-### [ ] 36.3 — Remove Avatar URL from onboarding step 1 (MED)
-Asking a brand-new user to paste a hosted image URL is friction with no uploader. Keep avatar editing only in `/profile/edit`. File: `OnboardingWizard.tsx`.
+### [x] 36.3 — Remove Avatar URL from onboarding step 1 — DONE (removed field + state; avatar editing stays in `/profile/edit`)
 
-### [ ] 36.4 — Standardize skip / secondary-button copy (MED)
-Onboarding uses "I train independently" / "Skip" / "Skip for now" / "Skip Reflection" across steps 2–5. Standardize the skip affordance; audit site-wide. File: `OnboardingWizard.tsx`.
+### [x] 36.4 — Standardize skip / secondary-button copy — DONE (steps 3/4/5 now all "Skip for now"; step 2's "I train independently" kept — distinct path choice, not a skip)
 
-### [ ] 36.5 — Resolve dead-end placeholders shown to real users (MED)
-Admin-tour final CTA is a "Phase 19 email" placeholder; `/vendor` is a stub. Either wire them up or clearly label "coming soon" / hide the nav entry. Files: `app/tour/admin/page.tsx`, `app/vendor/*`, `Header.tsx`.
+### [x] 36.5 — Resolve dead-end placeholders — DONE (admin-tour CTAs now link to `/gyms/register` instead of a guessed `mailto`; "wired later" disclaimer removed. `/vendor` stub already labeled "Coming soon" — left as-is)
 
-### [ ] 36.6 — Audit first-run empty states (MED)
-Confirm dashboard panels, schedule (nothing committed), forum, journal, gallery render inviting empty states for a day-1 user, not blank boxes. Files: respective pages.
+### [x] 36.6 — Audit first-run empty states — DONE
+Audited dashboard, journal, gallery, forum, schedule: empty states already inviting (CTAs/links present; schedule per-day "—" is an appropriate column placeholder). Also fixed a Phase 37 continuity gap found during the audit: dashboard now hides the **Training Journal** section and **Private Lessons** card when those features are off for the gym (was showing dead links that bounced to /dashboard). File: `app/dashboard/page.tsx`.
 
-### [ ] 36.7 — Lighten the onboarding reflection step (LOW)
-Three open-ended prompts at first run is heavy. Collapse to one optional prompt; full reflection stays at `/reflection/edit`. File: `OnboardingWizard.tsx`.
+### [ ] 36.7 — Lighten the onboarding reflection step (LOW) — ⏸️ NEEDS YOUR CALL
+Three open-ended prompts at first run is heavy. Collapse to one optional prompt; full reflection stays at `/reflection/edit`. File: `OnboardingWizard.tsx`. **Parked (not auto-done):** this removes data we currently collect at signup (why-started / challenges / goals feed the journal/profile). Confirm you want to trim it, and which single prompt to keep, before I cut the other two.
 
-### [ ] 36.8 — Group/section the admin user-detail screen (LOW)
-Roles + belt verify + class access + email actions are stacked as one wall. Add sections/accordion. File: `app/admin/users/[id]/page.tsx`.
+### [x] 36.8 — Group/section the admin user-detail screen — DONE (split the flat stack into two labeled groups with divider headers: "Admin Controls" = role/class-access/email/belt; "Profile & History" = contact/rank/attendance/notes)
 
-### [ ] 36.9 — Fix "Step 2 of 6" double-label on the gym-forum sub-step (LOW)
-The forum sub-step reprints "Step 2" so the user sees it twice. Use a sub-label or rely on the dots. File: `OnboardingWizard.tsx`.
+### [x] 36.9 — Fix "Step 2 of 6" double-label on the gym-forum sub-step — DONE (sub-step now reads "Step 2 · Gym Forum")
 
-### [ ] 36.10 — Verify privileged-area nav consistency (LOW)
-Admin/instructor use card hubs; site-admin uses a sidebar; student uses header icons. Confirm this is deliberate and document the intended pattern. Files: `admin/`, `instructor/`, `site-admin/` layouts.
+### [x] 36.10 — Verify privileged-area nav consistency — DONE (verified deliberate; documented in `guides/phase35-ux-audit.md` CONT-7: global header for all; card hubs for shallow admin/instructor areas; sidebar for the deeper site-admin console — keep them distinct)
 
 **Out of scope (tracked separately as feature-audit gaps, not UX bloat):** hidden-group forum notification muting, custom media-access edit UI, `allowMediaTagging` pre-submit check, per-type in-app notification preference threading.
 
@@ -645,6 +639,16 @@ Schema pushed: new `GymFeatures` model (`gymId @unique`, 6 booleans, cascade). K
 ---
 
 ## SESSION LOG
+
+**2026-06-01 — Phase 35/36 UX, Phase 37 gym toggles, Phase 30 payments plan, Resend key, copy**
+- **36.1** — fixed onboarding gym return-from-register (no step-1 restart / re-prompt; "you're now a member" banner). Finding: `POST /api/gyms` already auto-joins creator.
+- **Phase 35/36** — wrote `guides/phase35-ux-audit.md`, triaged into Phase 36. Executed 36.3 (drop avatar URL), 36.4 (standardize "Skip for now"), 36.5 (admin-tour CTAs → `/gyms/register`), 36.6 (empty states OK + dashboard now hides Journal/Lessons when feature off), 36.8 (admin user-detail grouped), 36.9 (sub-step label), 36.10 (nav pattern documented). **36.7 parked** (needs your call — trims signup reflection data).
+- **Phase 37** — per-gym feature toggles: new `GymFeatures` model (+ client-safe `lib/gymFeatureFlags.ts`), `lib/features.ts` `getEffectiveFeatures` (platform AND gym, admin bypass), nav + page hiding, API enforcement on 6 routes, `/admin/settings` "Gym Features" UI, `prisma db push` done, `scripts/setup-ascend-gym.ts` created the **Ascend** demo gym + moved 3 instructors. Confirmed Phase 33 toggles were API-only; added UI hiding. Verified via `scripts/verify-gym-features.ts` (10/10). **Found: platform flags `storeEnabled`, `galleryUploadEnabled`, `allowEventSubmission`, `allowBeltForumPosting` are currently OFF in DB → now also hidden in UI for non-admins.**
+- **Phase 30 (payments)** — wrote `guides/phase30-payment-system.md` (Stripe Connect/Billing framework + spec-vs-schema reconciliation); rewrote Phase 30 into 13 tasks (30A–30E). **All 17 design decisions captured (guide §21)**, incl. social-network-first tier model (see memory). Build still gated on Stripe test-credential setup (30.0a–g) + go-ahead. Saved `[[project_tier_model]]` memory.
+- **Resend key** — rotated `RESEND_API_KEY` in `.env.local` + pushed to Vercel Production + Preview (upgraded Vercel CLI 53→54.6.1 to get past an agent-mode bug). `EMAIL_FROM` still not pushed; old key not revoked.
+- **heroBanner** — diagnosed "old banner persists" as a stale `w=384` next/image variant cached in the dev server (not the file); fix = kill server + `rm -rf .next` + restart + hard refresh. Saved gotcha to memory.
+- **Landing copy** — hero subtitle changed to "Message with your team, journal your goals & progress, share photos, find open mats and more…" (individual-first; was gym-gated verbs). Note: headline still has "jui jitsu" typo (unfixed, pending your OK).
+- **Nothing committed/pushed** (per standing rule). Dev server left running on :3002.
 
 **2026-05-30/31 — Platform settings completion, 32.8, auth UX, bug fixes, housekeeping**
 - Finished the interrupted **Phase 33** platform feature-toggles work: wired enforcement for the 3 unenforced flags (`allowBeltForumPosting`, `galleryUploadEnabled`, `storeEnabled`); verified `PlatformSettings` table exists in DB and client is generated; typecheck clean. Committed as `0385fe6` (not pushed).

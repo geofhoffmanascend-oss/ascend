@@ -69,9 +69,9 @@ export default function AdminTourPage() {
           <p className="text-ash text-lg max-w-xl leading-relaxed">
             AscendIt gives you full visibility into your students, schedule, and community — without the spreadsheets.
           </p>
-          <a href="mailto:hello@ascendit.app" className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors">
-            Request a Demo
-          </a>
+          <Link href="/gyms/register" className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors">
+            Register Your Gym
+          </Link>
         </div>
       </div>
 
@@ -191,14 +191,13 @@ export default function AdminTourPage() {
             AscendIt gives your instructors the tools and your students the experience they expect from a world-class academy.
           </p>
           <div className="flex gap-3 flex-wrap justify-center">
-            <a href="mailto:hello@ascendit.app" className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors">
-              Request a Demo
-            </a>
+            <Link href="/gyms/register" className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors">
+              Register Your Gym
+            </Link>
             <Link href="/tour" className="px-6 py-3 border border-steel text-ash text-sm font-medium hover:border-paper hover:text-paper transition-colors">
               See the Student Tour →
             </Link>
           </div>
-          <p className="text-paper/40 text-xs mt-2">Demo form will be wired to email API in a future update.</p>
         </div>
       </section>
     </div>

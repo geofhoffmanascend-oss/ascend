@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
 import { getMondayOfWeek } from '@/lib/generateSessions'
+import { getEffectiveFeatures } from '@/lib/features'
 import { DeleteAccountButton } from '@/app/components/DeleteAccountButton'
 import { CheckinButton } from '@/app/components/CheckinButton'
 
@@ -12,6 +13,8 @@ const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
+
+  const features = await getEffectiveFeatures(session)
 
   const monday = getMondayOfWeek(new Date())
   const sunday = new Date(monday)
@@ -194,6 +197,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Recent journal entries */}
+      {features.journal && (
       <div className="mb-8">
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Training Journal</p>
@@ -227,6 +231,7 @@ export default async function DashboardPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* Recent forum activity */}
       {recentPosts.length > 0 && (
@@ -266,10 +271,12 @@ export default async function DashboardPage() {
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Forums</p>
           <p className="text-slate text-sm">Class discussions and announcements</p>
         </Link>
-        <Link href="/lessons" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
-          <p className="text-xs font-bold uppercase tracking-widest text-steel">Private Lessons</p>
-          <p className="text-slate text-sm">Request or view your lesson history</p>
-        </Link>
+        {features.privateLessons && (
+          <Link href="/lessons" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-steel">Private Lessons</p>
+            <p className="text-slate text-sm">Request or view your lesson history</p>
+          </Link>
+        )}
         {(session.user.roles?.includes('instructor') || session.user.roles?.includes('admin')) && (
           <Link href="/instructor" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
             <p className="text-xs font-bold uppercase tracking-widest text-steel">Instructor</p>

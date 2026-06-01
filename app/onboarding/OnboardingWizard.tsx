@@ -66,7 +66,6 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
 
   // Step 1
   const [name, setName] = useState(userName || '')
-  const [avatarUrl, setAvatarUrl] = useState('')
   const [belt, setBelt] = useState<Belt>(userBelt || 'white')
   const [stripes, setStripes] = useState(userStripes || 0)
 
@@ -109,7 +108,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
   }
 
   async function saveStep1() {
-    await patch({ name: name || undefined, avatarUrl: avatarUrl || undefined, belt, stripes })
+    await patch({ name: name || undefined, belt, stripes })
   }
 
   async function saveStep2() {
@@ -188,17 +187,6 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
                 onChange={e => setName(e.target.value)}
                 className={inputCls}
                 placeholder="Your name"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className={labelCls}>Avatar URL <span className="normal-case font-normal text-ash">(optional)</span></label>
-              <input
-                type="url"
-                value={avatarUrl}
-                onChange={e => setAvatarUrl(e.target.value)}
-                className={inputCls}
-                placeholder="https://..."
               />
             </div>
 
@@ -310,7 +298,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
         {step === 2 && showGymForumPrompt && selectedGym && (
           <div className="flex flex-col gap-5">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 2 of {TOTAL_STEPS}</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 2 · Gym Forum</p>
               <h2 className="font-display text-xl text-ink mb-1">Connect with your training partners</h2>
             </div>
             {justCreatedGym && (
@@ -371,7 +359,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
             <div className="flex justify-between">
               <button onClick={() => setStep(s => s - 1)} className={secondaryBtn}>← Back</button>
               <div className="flex gap-3">
-                <button onClick={handleSkip} className={secondaryBtn}>Skip</button>
+                <button onClick={handleSkip} className={secondaryBtn}>Skip for now</button>
                 <button
                   onClick={() => handleNext(saveStep3)}
                   disabled={saving}
@@ -415,7 +403,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
             <div className="flex justify-between">
               <button onClick={() => setStep(s => s - 1)} className={secondaryBtn}>← Back</button>
               <div className="flex gap-3">
-                <button onClick={handleSkip} className={secondaryBtn}>Skip</button>
+                <button onClick={handleSkip} className={secondaryBtn}>Skip for now</button>
                 <button
                   onClick={() => handleNext(saveStep4)}
                   disabled={saving}

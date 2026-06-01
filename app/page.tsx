@@ -21,12 +21,12 @@ export default function HomePage() {
           />
 
           <p className="font-display text-xl text-ink max-w-md text-center leading-snug">
-            Connecting people with the shared pursuit of one day being good at jiu jitsu.
+            Connecting people with the shared pursuit of one day being good at Jiu-Jitsu.
           </p>
 
           <p className="text-slate text-sm max-w-md leading-relaxed text-center">
-            Schedule classes, declare your attendance, connect with training partners,
-            and track your progress from white belt to black.
+            Message with your team, journal your goals &amp; progress, share photos,
+            find open mats and more…
           </p>
 
           <div className="flex gap-3 flex-wrap justify-center">

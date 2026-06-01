@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/database'
 import { BELT_ORDER } from '@/lib/belt'
-import { getPlatformSettings } from '@/lib/platformSettings'
+import { getEffectiveFeatures } from '@/lib/features'
 
 export async function POST(
   _req: NextRequest,
@@ -12,10 +12,8 @@ export async function POST(
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!session.user.roles?.includes('site_admin') && !session.user.roles?.includes('admin')) {
-    const { allowTournamentRegistration } = await getPlatformSettings()
-    if (!allowTournamentRegistration) return NextResponse.json({ error: 'Tournament registration is not available yet.' }, { status: 403 })
-  }
+  const { tournaments } = await getEffectiveFeatures(session)
+  if (!tournaments) return NextResponse.json({ error: 'Tournaments are not available for your gym.' }, { status: 403 })
 
   const { id: tournamentId, divId } = await params
 

@@ -44,14 +44,18 @@ export default withAuth(
         if (pathname.startsWith('/profile/')) return true
         if (pathname.startsWith('/gyms/') && !pathname.startsWith('/gyms/register')) return true
         if (pathname === '/events' || pathname.startsWith('/events/') && !pathname.startsWith('/events/new')) return true
+        // Public tournament results (page self-gates on isPublic; detail page redirects anon to login)
+        if (pathname.startsWith('/tournaments/')) return true
         if (pathname.startsWith('/api/events') && req.method === 'GET') return true
         if (pathname.startsWith('/api/auth')) return true
         if (pathname.startsWith('/api/checkin/public')) return true
         if (pathname.startsWith('/api/profile')) return true
         if (pathname.startsWith('/api/gyms')) return true
         if (pathname === '/reset-password') return true
+        if (pathname === '/forgot-password') return true
         if (pathname === '/confirm-email') return true
         if (pathname.startsWith('/api/auth/reset-password')) return true
+        if (pathname.startsWith('/api/auth/forgot-password')) return true
         if (pathname.startsWith('/api/auth/confirm-email')) return true
         return !!token
       },

@@ -5,6 +5,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
+import { getEffectiveFeatures } from '@/lib/features'
 
 const STATUS_STYLES: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-700',
@@ -18,6 +19,9 @@ export const metadata = { title: 'Lessons' }
 export default async function LessonsPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
+
+  const { privateLessons } = await getEffectiveFeatures(session)
+  if (!privateLessons) redirect('/dashboard')
 
   const lessons = await prisma.privateLesson.findMany({
     where: {

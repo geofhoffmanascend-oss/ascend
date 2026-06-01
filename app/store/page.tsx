@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import prisma from '@/lib/database'
+import { getEffectiveFeatures } from '@/lib/features'
 import { StoreClient } from './StoreClient'
 
 export const metadata = { title: 'Store' }
@@ -11,6 +12,9 @@ export const metadata = { title: 'Store' }
 export default async function StorePage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
+
+  const { store } = await getEffectiveFeatures(session)
+  if (!store) redirect('/dashboard')
 
   const [products, orders] = await Promise.all([
     prisma.product.findMany({

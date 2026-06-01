@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { PasswordInput } from '@/app/components/PasswordInput'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -59,7 +60,6 @@ export default function RegisterPage() {
           {[
             { key: 'name', label: 'Full Name', type: 'text', placeholder: 'John Smith' },
             { key: 'email', label: 'Email', type: 'email', placeholder: 'you@example.com' },
-            { key: 'password', label: 'Password', type: 'password', placeholder: '8+ characters' },
           ].map(({ key, label, type, placeholder }) => (
             <div key={key} className="flex flex-col gap-1">
               <label className="text-xs font-bold uppercase tracking-widest text-steel">{label}</label>
@@ -73,6 +73,17 @@ export default function RegisterPage() {
               />
             </div>
           ))}
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold uppercase tracking-widest text-steel">Password</label>
+            <PasswordInput
+              value={form.password}
+              onChange={v => update('password', v)}
+              required
+              autoComplete="new-password"
+              placeholder="8+ characters"
+            />
+          </div>
 
           {error && <p className="text-sm text-brand-red">{error}</p>}
 

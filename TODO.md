@@ -7,6 +7,13 @@
 - Add new tasks here as they are identified
 - Never read `guides/DO_NOT_REVIEW/` files unless explicitly asked
 
+## Keep `todo.html` in Sync
+`todo.html` (project root) is a browser-openable checklist mirroring the **open** tasks in this file. It is the source of truth for nothing — `TODO.md` is — but it must be kept in agreement:
+- When you mark a task `[x]` here, find its `<div class="item" data-id="…">` in `todo.html` and either remove it or note it complete (checkbox state itself is saved per-browser in `localStorage`, not in the file).
+- When you add a new task here, add a matching `<div class="item">` block in `todo.html` under the right `<section>`, with a **unique** `data-id` (use the task number, e.g. `30.6`, or `guide-XX`).
+- When a whole phase closes out, remove its `<section>` from `todo.html`.
+- Do not change the `data-id` of an existing item — that resets its saved checkbox state.
+
 ## Constraints
 - Do NOT push to git without explicit user instruction
 - Do NOT run database commands without explicit user instruction
@@ -287,6 +294,17 @@ These items are code-complete but require manual steps to fully activate:
 
 ## ACTIVE BUGS
 
+### [x] BUG-7 — Bracket winner dropdown doesn't save first option — FIXED
+**Symptom:** In the admin bracket tab, the result dropdown appears to have the first option selected, but saving does nothing unless you pick the second option then reselect the first.
+**Root cause:** `MatchCard` in `app/components/BracketView.tsx` initialized the `<select>` state to `match.result` = `'pending'`, but the select had no `pending` option (only the two competitors + draw). A controlled select whose value matches no option displays the first option while state stays `pending`; reselecting the already-shown first option fires no `onChange`, so `pending` was saved.
+**Fix:** Added a disabled placeholder `<option value="pending" disabled>Select result…</option>`; Save is disabled and `save()` no-ops while result is `pending`. Forces a deliberate pick that always fires `onChange`.
+
+### [x] BUG-6 — Dev hydration mismatch / stale nav (Events & Tournaments missing) — FIXED
+**Symptom:** Hydration error where server rendered `/events` but client rendered `/lessons` in the same nav slot; Events/Tournaments nav links not visible despite being in `Header.tsx`.
+**Root cause:** `public/sw.js` serves `/_next/static/` **cache-first with no revalidation**. In dev (non-content-hashed chunks) the SW handed the browser a *stale client bundle* (old Header without Events/Tournaments) against freshly server-rendered HTML → React discarded the server tree and re-rendered the old nav.
+**Fix:** `app/components/ServiceWorkerRegistration.tsx` now only registers the SW in `production`; in dev it unregisters existing SWs and clears all caches.
+**One-time manual cleanup for anyone who already has the bad SW:** DevTools → Application → unregister SW + Clear site data; `rm -rf .next`; restart dev; hard reload.
+
 ### [x] BUG-1 — Header hydration mismatch — FIXED
 Root cause: `SessionProvider` had no initial session, causing server/client mismatch. Fix: `RootLayout` now fetches server session and passes it to `SessionProvider` via the `session` prop in `providers.tsx`. Additional fix: `suppressHydrationWarning` added to `<body>` to suppress browser-extension-injected attribute mismatches (Grammarly, password managers, etc.).
 
@@ -453,25 +471,41 @@ Two separate tours: one for prospective students (`/tour`), one for prospective 
 
 ---
 
-## PHASE 30 — Payment System ⚠️ FLAGGED — Details TBD
-**Do not build until payment terms are decided. Create a guide when ready.**
-**Guide needed:** `guides/phase30-payment-system.md`
+## PHASE 30 — Payment System (Stripe) ⚠️ TEST MODE FIRST
+**Guide:** `guides/phase30-payment-system.md` (DONE — framework + spec reconciliation). Tasks below are derived from the guide's §1 phasing and §3 schema.
 
-Payment layers under consideration:
-- Student membership dues paid to gym through app (Stripe)
-- Gym platform subscription paid to site (negotiated flat fee or tiered)
-- Per-gym negotiated revenue share:
-  - % of merch/store sales (e.g. 10%)
-  - % of photo print sales (e.g. 25%)
-  - % of membership payments (e.g. 2.5%)
-- Free tier gyms: no payment, limited features
-- Participating tier: custom terms negotiated with site admin
+**⚠️ Build in Stripe TEST MODE end-to-end.** Test keys (`pk_test_…` / `sk_test_…`) + test cards (`4242 4242 4242 4242`) only. No live keys until the full flow is verified and the user explicitly approves (see `todo.html` → Phase 30 manual steps).
 
-### [ ] 30.1 — [BLOCKED] Define payment terms schema: per-gym `PaymentTerms` model with negotiated rates per category
-### [ ] 30.2 — [BLOCKED] Stripe integration for student→gym dues collection
-### [ ] 30.3 — [BLOCKED] Platform fee collection from gyms (flat or revenue-share)
-### [ ] 30.4 — [BLOCKED] Per-gym revenue dashboard for gym admins
-### [ ] 30.5 — [BLOCKED] Platform revenue dashboard for site admin
+**🟡 Confirm before coding (guide §20):** fee rates (default 5% gear / 3% membership / 0% one-time) + per-gym overrides; whether **vendor selling** is in scope (30D) or deferred; membership model (gym-defined plans vs single dues); `past_due` grace policy; how site_admin marks a gym "comped".
+
+**Spec-vs-codebase gaps the guide resolves (§0):** vendors aren't sellers in the schema (`Product` has no `vendorId`); memberships have no price/plan and `MembershipStatus` lacks paused/canceled/past_due/unpaid; gym tier is manual (not subscription-driven); NO Stripe-ref fields exist anywhere; store is pay-at-pickup (no payment state); fees have no home; no webhook infra. All require small additive schema (§3) — not a redesign.
+
+### 30A — Foundation + one-time money to gyms
+### [ ] 30.1 — Schema (§3): `Gym` Stripe fields, `Payment`, `Payout`, `StripeEvent`, `PlatformSettings` fee/mode fields; `prisma db push`
+### [ ] 30.2 — `lib/stripe.ts` (client + test/live guardrail + fee helpers) + env vars (§4)
+### [ ] 30.3 — Webhook route `/api/stripe/webhook` (raw body, signature verify, `StripeEvent` dedup, dispatch table §12); make public in `middleware.ts`
+### [ ] 30.4 — Connect (Express) onboarding for gyms: `/api/stripe/connect` + return handler; `account.updated` flips capability flags (§7)
+### [ ] 30.5 — Gear checkout via Checkout Session + destination charge + platform fee; gym vs platform-product branching; reconcile order fulfillment on webhook (§9). Replaces/augments pay-at-pickup
+### [ ] 30.6 — Generic one-time student→gym payment (dues/drop-in) reusing the destination-charge primitive (§8)
+
+### 30B — Gym → platform monthly subscription (Billing)
+### [ ] 30.7 — Gym as platform Customer; subscribe to `STRIPE_PLATFORM_PRICE_ID`; `invoice.paid`/`payment_failed`/`subscription.deleted` drive `participatingStatus`; preserve site_admin comped override (§11)
+
+### 30C — Recurring student→gym memberships (subscriptions on connected accounts — hardest)
+### [ ] 30.8 — `MembershipPlan` CRUD; create Product+Price on the connected account; expand `MembershipStatus` enum
+### [ ] 30.9 — Membership subscribe flow: Customer on the gym's connected account, `application_fee_percent`; webhooks drive `GymMembership` status + access gating (§10)
+
+### 30D — Vendor sales (only if greenlit; needs `Product.vendorId`)
+### [ ] 30.10 — [DECISION-GATED] Vendor Connect onboarding + vendor-product checkout; add `Product.vendorId` + seller-resolution rule
+
+### 30E — Dashboards, refunds, disputes, payouts
+### [ ] 30.11 — Refunds (admin action + `charge.refunded`), dispute recording (`charge.dispute.created`), payout tracking (`payout.paid/failed` → `Payout`) (§14)
+### [ ] 30.12 — Gym revenue dashboard (`/admin/payments`) + platform revenue dashboard (`/site-admin/payments`, folds in 29.6) (§15)
+### [ ] 30.13 — Gym onboarding copy: explain paid-tier unlocks (scheduling, store, tournaments, paid private lessons, money collection) vs free-tier retains (profile, gym forum + moderation, communication under banner); state student data is always preserved + fees negotiable / gym bears Stripe fees (guide §21.2). Files: `/onboarding/admin`, `/gyms/register`.
+
+**Decisions confirmed (guide §21):** D1 participating-only collects · D2 payee bears Stripe fee + platform fee on top · D3 defaults 5%/0%/0% · D4 rates negotiable per-gym AND per-vendor from site-admin dashboard (override UI in core scope) · D5 USD/no-tax · D6 keep pay-at-pickup fallback · D7 hybrid checkout (single-payee destination charge, multi-payee separate charges + automated transfers) · D8 platform sub = gym's one-student monthly fee, negotiable, 14-day trial · D9 site_admin comped flag · D10 soft lapse per §21.1 capability matrix · D11 gym-defined membership plans. **Pending:** D12 grace · D13 vendor scope · D14 photo prints · D15 refunds · D16 payouts · D17 payment methods.
+
+**⚠️ Product note (guide §21.1):** AscendIt is a social network first; gym membership is optional. Free/lapsed gyms lose money-collection + **scheduling** + store + tournaments + paid lessons, but keep profile, gym-forum moderation, and communication under their banner. **Students always keep their own data.** Gating scheduling behind the paid tier is a product change to land with 30B (currently scheduling is universal).
 
 ---
 
@@ -498,7 +532,7 @@ For participating gyms to host scrimmage-style in-house tournaments run through 
 ### [x] 32.5 — Match result entry: inline result picker in admin bracket view; single_elim propagates winners; auto-completes tournament
 ### [x] 32.6 — Tournament results page `/tournaments/[id]/results`: public or gym-member visibility; BracketView with participant names
 ### [x] 32.7 — Tournament history on student profile: competitions entered, placements
-### [ ] 32.8 — Future: surface tournaments on public events calendar
+### [x] 32.8 — Surface tournaments on public events calendar — public, non-draft, upcoming tournaments merged into `/events` (purple "Tournament" chip + filter), linked to `/tournaments/[id]/results`; `/tournaments/` subpaths made public-readable in middleware (results page self-gates on `isPublic`)
 
 ---
 
@@ -522,8 +556,110 @@ Schema pushed: `PlatformSettings` model (7 boolean flags + `updatedAt`).
 
 ---
 
+## PHASE 34 — Auth UX: Self-Service Password Reset + Show/Hide Password
+
+### [x] 34.1 — Self-service forgot-password flow: public `/forgot-password` page → `POST /api/auth/forgot-password` (case-insensitive email lookup, always returns ok to prevent email enumeration, reuses `PasswordResetToken` 1h tokens) → existing `/reset-password?token=` page. Email copy now branches on `selfService` flag.
+### [x] 34.2 — "Forgot?" link added next to the password label on `/login`
+### [x] 34.3 — Reusable `PasswordInput` component (`app/components/PasswordInput.tsx`) with eye show/hide toggle; wired into login, register, and reset-password (both fields)
+### [x] 34.4 — Middleware: `/forgot-password` + `/api/auth/forgot-password` made public
+
+### [x] 34.5 — `allowDangerousEmailAccountLinking: true` on Google provider — a Google sign-in now links to an existing same-email account (created via credentials) instead of failing with `OAuthAccountNotLinked`. Safe because Google verifies email ownership.
+
+**Note:** OAuth-only users (signed up with Google, no password) can use the forgot-password flow to *set* a password, which then enables credentials login. With 34.5, email→Google also works seamlessly now.
+
+---
+
+## PHASE 35 — First-Impression UX Audit (Guide) — DONE
+
+### [x] 35.1 — Create `guides/phase35-ux-audit.md` — DONE (per-role walkthrough; flags DUP/BLOAT/CLUTTER/CONT; ordered fix list → Phase 36)
+### [x] 35.2 — Triage the fix list into actionable tasks — DONE (Phase 36 below)
+
+---
+
+## PHASE 36 — UX Audit Fixes (execution of `guides/phase35-ux-audit.md`)
+
+Ordered by first-impression impact. See the guide's §9 for full context. Do each as its own commit. `OnboardingWizard.tsx` is touched by 36.1/36.3/36.4/36.7/36.9 — do 36.1 first, then batch the smaller copy/field edits.
+
+### [x] 36.1 — Fix onboarding gym return-from-register (HIGH — the named redundancy) — DONE
+When returning from "Add my gym" (`initialGymId`/`initialGymName` present), the wizard now starts at **step 2's gym-forum sub-step** instead of restarting at step 1 + re-prompting for the gym. Shows a "You created {gym} — you're now a member" confirmation banner. Step-1 data is preserved (persisted on Next, re-passed via props). **Finding:** `POST /api/gyms` already auto-joins the creator as `active` and sets `gymId`, so no membership PUT is needed on the return path; the PUT (still used on the normal pick-existing-gym path) is idempotent (`upsert`/`update:{}`), so Back→Next is safe. File: `app/onboarding/OnboardingWizard.tsx`. Typecheck clean; full register→return loop not browser-tested.
+
+### [x] 36.2 — Brand name resolved (not a rename) — DONE
+User clarified: **AscendIt** is the app name (already consistent in the UI — Header, layout title, onboarding, gym-register all say AscendIt). **Ascend** is intentionally repurposed as a demo gym (see Phase 37). No UI rename needed.
+
+### [ ] 36.3 — Remove Avatar URL from onboarding step 1 (MED)
+Asking a brand-new user to paste a hosted image URL is friction with no uploader. Keep avatar editing only in `/profile/edit`. File: `OnboardingWizard.tsx`.
+
+### [ ] 36.4 — Standardize skip / secondary-button copy (MED)
+Onboarding uses "I train independently" / "Skip" / "Skip for now" / "Skip Reflection" across steps 2–5. Standardize the skip affordance; audit site-wide. File: `OnboardingWizard.tsx`.
+
+### [ ] 36.5 — Resolve dead-end placeholders shown to real users (MED)
+Admin-tour final CTA is a "Phase 19 email" placeholder; `/vendor` is a stub. Either wire them up or clearly label "coming soon" / hide the nav entry. Files: `app/tour/admin/page.tsx`, `app/vendor/*`, `Header.tsx`.
+
+### [ ] 36.6 — Audit first-run empty states (MED)
+Confirm dashboard panels, schedule (nothing committed), forum, journal, gallery render inviting empty states for a day-1 user, not blank boxes. Files: respective pages.
+
+### [ ] 36.7 — Lighten the onboarding reflection step (LOW)
+Three open-ended prompts at first run is heavy. Collapse to one optional prompt; full reflection stays at `/reflection/edit`. File: `OnboardingWizard.tsx`.
+
+### [ ] 36.8 — Group/section the admin user-detail screen (LOW)
+Roles + belt verify + class access + email actions are stacked as one wall. Add sections/accordion. File: `app/admin/users/[id]/page.tsx`.
+
+### [ ] 36.9 — Fix "Step 2 of 6" double-label on the gym-forum sub-step (LOW)
+The forum sub-step reprints "Step 2" so the user sees it twice. Use a sub-label or rely on the dots. File: `OnboardingWizard.tsx`.
+
+### [ ] 36.10 — Verify privileged-area nav consistency (LOW)
+Admin/instructor use card hubs; site-admin uses a sidebar; student uses header icons. Confirm this is deliberate and document the intended pattern. Files: `admin/`, `instructor/`, `site-admin/` layouts.
+
+**Out of scope (tracked separately as feature-audit gaps, not UX bloat):** hidden-group forum notification muting, custom media-access edit UI, `allowMediaTagging` pre-submit check, per-type in-app notification preference threading.
+
+---
+
+## PHASE 37 — Per-Gym Feature Toggles + UI Hiding — DONE
+
+Guide: `guides/phase37-gym-feature-toggles.md`. Gym admins can turn optional features on/off for their own gym, mirroring the Phase 33 platform toggles. A feature is on only if platform AND gym allow it; `admin`/`site_admin` bypass. Toggles now also **hide** features in the UI (nav + page), not just block the API.
+
+Schema pushed: new `GymFeatures` model (`gymId @unique`, 6 booleans, cascade). Kept separate from `GymSettings` so the global `reviewUrl`/feedback flow is untouched.
+
+### [x] 37.1 — `GymFeatures` model + `lib/gymFeatures.ts` (`getGymFeatures`, `upsertGymFeatures`, labels) + `prisma db push`
+### [x] 37.2 — `lib/features.ts` `getEffectiveFeatures(session)` = platform AND gym, admin/site_admin bypass
+### [x] 37.3 — UI hide: `layout.tsx` computes features → `Header` hides Tournaments/Lessons/Journal/Gallery/Store nav (desktop + mobile); server guards on the 5 feature pages redirect to `/dashboard` when off
+### [x] 37.4 — API enforcement via `getEffectiveFeatures`: store orders, tournament register, media upload, gym forum (now also honors gym flag), + new checks on private lessons & training-logs
+### [x] 37.5 — Gym-admin UI: "Gym Features" section on `/admin/settings` (`GymFeaturesForm`) backed by `GET/PUT /api/admin/gym-features` (scoped to the admin's gym)
+### [x] 37.6 — Confirmed Phase 33 site-admin toggles were API-only (no UI hiding); UI hiding now added for both platform + gym scopes via the shared effective-features path
+### [x] 37.7 — Demo gym: `scripts/setup-ascend-gym.ts` created "Ascend" (participating); moved 3 instructors (Admin User, Marcus Silva, Dana Lee) into it. **Note:** existing classes/forums remain under "Ascend BJJ Test Gym" — only instructor membership moved.
+### [x] 37.8 — Follow-up UI gaps closed: server guards added to `/journal/new` and `/lessons/new`; "+ Submit Event" button on `/events` now hidden when event submission is off (platform `allowEventSubmission`, admin bypass).
+
+**Verified** — typecheck clean; schema pushed; `scripts/verify-gym-features.ts` exercises real `getEffectiveFeatures` (10/10: gym-flag hide, platform-flag hide, admin + site_admin bypass, no-gym defaults); dev server compiles touched routes (`/events` 200, gated routes 307, no compile errors). Not click-through tested — no headless browser available in this env.
+
+⚠️ **Finding — platform toggles already OFF in DB:** the `PlatformSettings` singleton currently has `storeEnabled=false`, `galleryUploadEnabled=false`, `allowEventSubmission=false`, `allowBeltForumPosting=false` (staged off, likely Phase 33). With the new UI-hiding, non-admin users now **don't see Store/Gallery nav or the Submit Event button** and are redirected off `/store` and `/gallery` (admins bypass). Before this change those were visible but action-blocked. Flip them on at `/site-admin/settings` (or via `upsertPlatformSettings`) if they should be live.
+
+---
+
 ## GUIDES NEEDED (before building the above phases)
 
 - [ ] `guides/phase24-multi-gym-architecture.md` — schema redesign, model changes, migration plan
-- [ ] `guides/phase30-payment-system.md` — payment terms, Stripe integration, revenue share logic (create when payment terms are decided)
+- [x] `guides/phase30-payment-system.md` — DONE (Stripe Connect/Billing framework, spec-vs-schema reconciliation, phased task list)
 - [ ] `guides/phase32-tournament-system.md` — bracket formats, scoring, real-time updates
+- [x] `guides/phase35-ux-audit.md` — DONE (per-role UI walkthrough; ordered fix list → Phase 36)
+
+---
+
+## SESSION LOG
+
+**2026-05-30/31 — Platform settings completion, 32.8, auth UX, bug fixes, housekeeping**
+- Finished the interrupted **Phase 33** platform feature-toggles work: wired enforcement for the 3 unenforced flags (`allowBeltForumPosting`, `galleryUploadEnabled`, `storeEnabled`); verified `PlatformSettings` table exists in DB and client is generated; typecheck clean. Committed as `0385fe6` (not pushed).
+- **32.8** — surfaced public tournaments on `/events` (purple "Tournament" chip + filter, links to results); `/tournaments/` made public-readable in middleware. (uncommitted)
+- **Phase 34** — self-service forgot-password (`/forgot-password` + API), reusable `PasswordInput` eye toggle on login/register/reset, and `allowDangerousEmailAccountLinking` on Google. (uncommitted)
+- **BUG-6** — fixed dev hydration mismatch caused by the service worker serving stale `/_next/static/` bundles; SW now only registers in production and self-cleans in dev. (uncommitted)
+- **BUG-7** — fixed bracket winner-dropdown not saving the first option (controlled-select value with no matching option). (uncommitted)
+- Added `todo.html` (browser checklist) + sync instructions; added Stripe **test-mode** credential subtasks (30.0a–g) + **Phase 35** UX-audit guide task to both TODO files.
+- **Untracked the 19 guides** via `git rm -r --cached guides/` (staged deletions; files remain on disk); `/guides/` + `/todo.html` in `.gitignore`.
+- Created **15 test competitors** (`testcomp1–15@ascend.test`, pw `Test1234!`) + active memberships, registered 5 to each of the 3 divisions of "in-house, whitebelt toruney" via `scripts/seed-tournament-test.ts` (idempotent, untracked).
+- **Clarified Phase 28/32 status:** both fully built + nav-wired, but invisible locally due to BUG-6's stale SW bundle, and absent from production because local `main` is **3 commits ahead of origin** (nothing pushed).
+
+### Pending decisions / next session
+1. **Commit + maybe push** the uncommitted work (32.8, Phase 34, BUG-6, BUG-7, guide untracking, todo files). Local `main` is ahead of `origin/main` by 3 commits already; pushing would deploy Phases 26–33+. User has said don't push — revisit.
+2. **One-time SW cleanup** in browser if not yet done (DevTools → unregister SW + clear site data; `rm -rf .next`; restart dev; hard reload) — required to see Events/Tournaments + test BUG-7 fix against a fresh bundle.
+3. **Phase 30 payment terms** still undecided — blocks all of Phase 30. Build in Stripe TEST MODE when unblocked.
+4. **Phase 35** UX-audit guide ready to build (`guides/phase35-ux-audit.md`).
+5. Tournament "in-house, whitebelt toruney" is in `draft` — set to `open`/generate brackets to exercise the registrations + bracket UI.

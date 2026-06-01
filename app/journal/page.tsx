@@ -5,12 +5,16 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
+import { getEffectiveFeatures } from '@/lib/features'
 
 export const metadata = { title: 'Training Journal' }
 
 export default async function JournalPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
+
+  const { journal } = await getEffectiveFeatures(session)
+  if (!journal) redirect('/dashboard')
 
   const logs = await prisma.trainingLog.findMany({
     where: { userId: session.user.id },

@@ -7,11 +7,16 @@ export async function sendPasswordResetEmail({
   to,
   name,
   resetUrl,
+  selfService = false,
 }: {
   to: string
   name: string
   resetUrl: string
+  selfService?: boolean
 }) {
+  const intro = selfService
+    ? `Hi ${name}, we received a request to reset the password for your Ascend account.`
+    : `Hi ${name}, an admin requested a password reset for your Ascend account.`
   return resend.emails.send({
     from: `Ascend BJJ <${FROM}>`,
     to,
@@ -19,7 +24,7 @@ export async function sendPasswordResetEmail({
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;">
         <h2 style="margin:0 0 8px;font-size:20px;color:#0A0A0A;">Reset your password</h2>
-        <p style="margin:0 0 24px;color:#404040;font-size:14px;">Hi ${name}, an admin requested a password reset for your Ascend account.</p>
+        <p style="margin:0 0 24px;color:#404040;font-size:14px;">${intro}</p>
         <a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#CC0000;color:#fff;font-weight:700;font-size:14px;text-decoration:none;letter-spacing:0.05em;">
           Set New Password
         </a>

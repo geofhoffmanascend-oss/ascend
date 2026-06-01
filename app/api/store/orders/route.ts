@@ -3,7 +3,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/database'
 import { createNotification } from '@/lib/notify'
-import { getPlatformSettings } from '@/lib/platformSettings'
+import { getEffectiveFeatures } from '@/lib/features'
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -31,12 +31,8 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const isSiteAdmin = session.user.roles?.includes('site_admin')
-  const isAdmin = session.user.roles?.includes('admin')
-  if (!isSiteAdmin && !isAdmin) {
-    const { storeEnabled } = await getPlatformSettings()
-    if (!storeEnabled) return NextResponse.json({ error: 'The store is not available yet.' }, { status: 403 })
-  }
+  const { store } = await getEffectiveFeatures(session)
+  if (!store) return NextResponse.json({ error: 'The store is not available for your gym.' }, { status: 403 })
 
   const body = await req.json()
   const { items, notes } = body as { items: { productId: string; quantity: number }[]; notes?: string }

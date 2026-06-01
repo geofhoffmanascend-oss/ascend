@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
+import { getEffectiveFeatures } from '@/lib/features'
 
 export const metadata: Metadata = { title: 'Tournaments' }
 
@@ -16,6 +17,9 @@ const STATUS_STYLES: Record<string, string> = {
 export default async function TournamentsPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
+
+  const { tournaments: tournamentsEnabled } = await getEffectiveFeatures(session)
+  if (!tournamentsEnabled) redirect('/dashboard')
 
   const gymId = session.user.gymId ?? null
 

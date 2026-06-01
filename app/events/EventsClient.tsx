@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-type EventType = 'open_mat' | 'competition' | 'seminar' | 'other'
+type EventType = 'open_mat' | 'competition' | 'seminar' | 'other' | 'tournament'
 
 interface Event {
   id: string
@@ -15,6 +15,7 @@ interface Event {
   startDate: string
   endDate: string | null
   gym: { name: string; slug: string; logoUrl: string | null } | null
+  href: string
 }
 
 const TYPE_LABELS: Record<EventType, string> = {
@@ -22,6 +23,7 @@ const TYPE_LABELS: Record<EventType, string> = {
   competition: 'Competition',
   seminar: 'Seminar',
   other: 'Other',
+  tournament: 'Tournament',
 }
 
 const TYPE_STYLES: Record<EventType, string> = {
@@ -29,6 +31,7 @@ const TYPE_STYLES: Record<EventType, string> = {
   competition: 'bg-red-100 text-red-700',
   seminar: 'bg-blue-100 text-blue-700',
   other: 'bg-mist text-steel',
+  tournament: 'bg-purple-100 text-purple-700',
 }
 
 const FILTERS: { key: EventType | 'all'; label: string }[] = [
@@ -36,6 +39,7 @@ const FILTERS: { key: EventType | 'all'; label: string }[] = [
   { key: 'open_mat', label: 'Open Mat' },
   { key: 'competition', label: 'Competition' },
   { key: 'seminar', label: 'Seminar' },
+  { key: 'tournament', label: 'Tournament' },
 ]
 
 function formatEventDate(iso: string) {
@@ -75,8 +79,8 @@ export function EventsClient({ events }: { events: Event[] }) {
         <div className="flex flex-col gap-3">
           {filtered.map(event => (
             <Link
-              key={event.id}
-              href={`/events/${event.id}`}
+              key={`${event.type}-${event.id}`}
+              href={event.href}
               className="border border-smoke bg-paper p-4 hover:border-steel transition-colors"
             >
               <div className="flex items-start justify-between gap-3">

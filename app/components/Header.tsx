@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { NavBadges } from './NavBadges'
 import type { Session } from 'next-auth'
+import type { EffectiveFeatures } from '@/lib/features'
 
 function NavLink({
   href,
@@ -30,13 +31,17 @@ function NavLink({
   )
 }
 
-export function Header({ initialSession }: { initialSession?: Session | null }) {
+export function Header({ initialSession, features }: { initialSession?: Session | null; features?: EffectiveFeatures | null }) {
   // useSession provides reactive updates (e.g. after sign-out); initialSession
   // ensures the server and initial client render match, eliminating hydration mismatches.
   const { data: liveSession } = useSession()
   const session = liveSession ?? initialSession
   const [open, setOpen] = useState(false)
   const close = () => setOpen(false)
+
+  // Feature visibility (Phase 37). Computed server-side from platform + gym toggles;
+  // when absent (shouldn't happen for a logged-in user) default to showing the link.
+  const show = (key: keyof EffectiveFeatures) => features?.[key] !== false
 
   return (
     <header className="bg-ink-soft border-b border-steel/30">
@@ -55,11 +60,11 @@ export function Header({ initialSession }: { initialSession?: Session | null }) 
               <NavLink href="/schedule">Schedule</NavLink>
               <NavLink href="/forum">Forum</NavLink>
               <NavLink href="/events">Events</NavLink>
-              <NavLink href="/tournaments">Tournaments</NavLink>
-              <NavLink href="/lessons">Lessons</NavLink>
-              <NavLink href="/journal">Journal</NavLink>
-              <NavLink href="/gallery">Gallery</NavLink>
-              <NavLink href="/store">Store</NavLink>
+              {show('tournaments') && <NavLink href="/tournaments">Tournaments</NavLink>}
+              {show('privateLessons') && <NavLink href="/lessons">Lessons</NavLink>}
+              {show('journal') && <NavLink href="/journal">Journal</NavLink>}
+              {show('gallery') && <NavLink href="/gallery">Gallery</NavLink>}
+              {show('store') && <NavLink href="/store">Store</NavLink>}
 
               {(session.user.roles?.includes('instructor') || session.user.roles?.includes('admin')) && (
                 <>
@@ -163,11 +168,11 @@ export function Header({ initialSession }: { initialSession?: Session | null }) 
               <NavLink href="/schedule" onClick={close}>Schedule</NavLink>
               <NavLink href="/forum" onClick={close}>Forum</NavLink>
               <NavLink href="/events" onClick={close}>Events</NavLink>
-              <NavLink href="/tournaments" onClick={close}>Tournaments</NavLink>
-              <NavLink href="/lessons" onClick={close}>Lessons</NavLink>
-              <NavLink href="/journal" onClick={close}>Journal</NavLink>
-              <NavLink href="/gallery" onClick={close}>Gallery</NavLink>
-              <NavLink href="/store" onClick={close}>Store</NavLink>
+              {show('tournaments') && <NavLink href="/tournaments" onClick={close}>Tournaments</NavLink>}
+              {show('privateLessons') && <NavLink href="/lessons" onClick={close}>Lessons</NavLink>}
+              {show('journal') && <NavLink href="/journal" onClick={close}>Journal</NavLink>}
+              {show('gallery') && <NavLink href="/gallery" onClick={close}>Gallery</NavLink>}
+              {show('store') && <NavLink href="/store" onClick={close}>Store</NavLink>}
 
               {(session.user.roles?.includes('instructor') || session.user.roles?.includes('admin')) && (
                 <>

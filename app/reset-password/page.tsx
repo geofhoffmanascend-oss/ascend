@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { PasswordInput } from '@/app/components/PasswordInput'
 
 function ResetPasswordForm() {
   const params = useSearchParams()
@@ -50,14 +51,12 @@ function ResetPasswordForm() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <label className="text-xs font-bold uppercase tracking-widest text-steel">New Password</label>
-        <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
-          className="w-full px-4 py-3 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors"
+        <PasswordInput value={password} onChange={setPassword} required autoComplete="new-password"
           placeholder="At least 8 characters" />
       </div>
       <div className="flex flex-col gap-1">
         <label className="text-xs font-bold uppercase tracking-widest text-steel">Confirm Password</label>
-        <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} required
-          className="w-full px-4 py-3 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors"
+        <PasswordInput value={confirm} onChange={setConfirm} required autoComplete="new-password"
           placeholder="Repeat password" />
       </div>
       {error && <p className="text-sm text-brand-red">{error}</p>}

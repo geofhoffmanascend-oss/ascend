@@ -3,11 +3,15 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
+import { getEffectiveFeatures } from '@/lib/features'
 import { NewLessonForm } from './NewLessonForm'
 
 export default async function NewLessonPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
+
+  const { privateLessons } = await getEffectiveFeatures(session)
+  if (!privateLessons) redirect('/dashboard')
 
   const [instructors, students] = await Promise.all([
     prisma.user.findMany({

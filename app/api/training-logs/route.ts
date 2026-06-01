@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/database'
+import { getEffectiveFeatures } from '@/lib/features'
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -27,6 +28,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { journal } = await getEffectiveFeatures(session)
+  if (!journal) return NextResponse.json({ error: 'The training journal is not available for your gym.' }, { status: 403 })
 
   const { classSessionId, title, isPrivate, isGuided, freeFormContent, guidedResponses } = await req.json()
 

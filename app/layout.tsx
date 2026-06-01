@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk } from 'next/font/google'
 import './globals.css'
 import { getServerSession } from 'next-auth'
 import { authOptions } from './api/auth/[...nextauth]/route'
+import { getEffectiveFeatures } from '@/lib/features'
 import { Providers } from './providers'
 import { Header } from './components/Header'
 import { Footer } from './components/Footer'
@@ -34,6 +35,7 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions)
+  const features = session ? await getEffectiveFeatures(session) : null
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
       <head>
@@ -42,7 +44,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body suppressHydrationWarning>
         <Providers session={session}>
           <div className="min-h-screen flex flex-col">
-            <Header initialSession={session} />
+            <Header initialSession={session} features={features} />
             <main className="flex-1">{children}</main>
             <Footer />
           </div>

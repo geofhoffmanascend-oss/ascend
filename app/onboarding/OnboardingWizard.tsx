@@ -52,7 +52,15 @@ function StepDots({ current }: { current: number }) {
 
 export function OnboardingWizard({ userId, userName, userBelt, userStripes, redirectAfter, initialGymId, initialGymName }: Props) {
   const router = useRouter()
-  const [step, setStep] = useState(1)
+
+  // Returning from "Add my gym" (/gyms/register?returnTo=onboarding): the gym was
+  // already created and the creator auto-joined as an active member (see POST /api/gyms).
+  // Step 1 was completed before they left (its values are persisted and re-passed via props),
+  // so skip straight to the gym-forum sub-step instead of restarting at step 1 and re-prompting
+  // for a gym they just created.
+  const returningFromRegister = Boolean(initialGymId && initialGymName)
+
+  const [step, setStep] = useState(returningFromRegister ? 2 : 1)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -64,9 +72,10 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
 
   // Step 2 — gym
   const [selectedGym, setSelectedGym] = useState<{ id: string; name: string } | null>(
-    initialGymId && initialGymName ? { id: initialGymId, name: initialGymName } : null
+    returningFromRegister ? { id: initialGymId!, name: initialGymName! } : null
   )
-  const [showGymForumPrompt, setShowGymForumPrompt] = useState(false)
+  const [showGymForumPrompt, setShowGymForumPrompt] = useState(returningFromRegister)
+  const [justCreatedGym, setJustCreatedGym] = useState(returningFromRegister)
 
   // Step 3
   const [phone, setPhone] = useState('')
@@ -249,7 +258,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
 
             <GymPicker
               value={selectedGym}
-              onChange={setSelectedGym}
+              onChange={gym => { setSelectedGym(gym); setJustCreatedGym(false) }}
               onCreateNew={gymName => {
                 router.push(`/gyms/register?returnTo=onboarding&name=${encodeURIComponent(gymName)}`)
               }}
@@ -304,6 +313,14 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
               <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 2 of {TOTAL_STEPS}</p>
               <h2 className="font-display text-xl text-ink mb-1">Connect with your training partners</h2>
             </div>
+            {justCreatedGym && (
+              <div className="flex items-center gap-2 px-4 py-3 bg-mist border border-smoke text-sm text-ink">
+                <svg className="w-4 h-4 text-brand-red flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>You created <strong>{selectedGym.name}</strong> — you're now a member.</span>
+              </div>
+            )}
             <GymForumPrompt
               gymId={selectedGym.id}
               gymName={selectedGym.name}
@@ -313,7 +330,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
               }}
             />
             <div>
-              <button onClick={() => setShowGymForumPrompt(false)} className={secondaryBtn}>← Back</button>
+              <button onClick={() => { setShowGymForumPrompt(false); setJustCreatedGym(false) }} className={secondaryBtn}>← Back</button>
             </div>
           </div>
         )}

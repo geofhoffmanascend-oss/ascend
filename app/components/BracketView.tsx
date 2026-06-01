@@ -98,7 +98,7 @@ function MatchCard({ match, nameMap, isAdmin, onResultSave }: {
   const winnerB = match.result === 'participant_b_wins'
 
   async function save() {
-    if (!onResultSave) return
+    if (!onResultSave || result === 'pending') return
     setSaving(true)
     await onResultSave(match.id, result, notes)
     setEditing(false)
@@ -131,6 +131,7 @@ function MatchCard({ match, nameMap, isAdmin, onResultSave }: {
       {isAdmin && editing && (
         <div className="px-3 py-2 border-t border-smoke flex flex-col gap-2">
           <select value={result} onChange={e => setResult(e.target.value)} className="text-xs border border-smoke bg-paper px-1 py-0.5 w-full">
+            <option value="pending" disabled>Select result…</option>
             <option value="participant_a_wins">{nameA} wins</option>
             <option value="participant_b_wins">{nameB} wins</option>
             <option value="draw">Draw</option>
@@ -143,7 +144,7 @@ function MatchCard({ match, nameMap, isAdmin, onResultSave }: {
             className="text-xs border border-smoke bg-paper px-1 py-0.5 w-full"
           />
           <div className="flex gap-1">
-            <button onClick={save} disabled={saving} className="text-xs px-2 py-0.5 bg-brand-red text-paper hover:bg-red-700 disabled:opacity-50">
+            <button onClick={save} disabled={saving || result === 'pending'} className="text-xs px-2 py-0.5 bg-brand-red text-paper hover:bg-red-700 disabled:opacity-50">
               {saving ? '…' : 'Save'}
             </button>
             <button onClick={() => setEditing(false)} className="text-xs text-ash hover:text-ink">Cancel</button>

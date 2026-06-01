@@ -3,6 +3,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import prisma from '@/lib/database'
 import { JOURNAL_PROMPTS } from '@/lib/journalPrompts'
+import { getEffectiveFeatures } from '@/lib/features'
 import { JournalForm } from '../JournalForm'
 
 export default async function NewJournalPage({
@@ -12,6 +13,9 @@ export default async function NewJournalPage({
 }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
+
+  const { journal } = await getEffectiveFeatures(session)
+  if (!journal) redirect('/dashboard')
 
   const { sessionId } = await searchParams
 

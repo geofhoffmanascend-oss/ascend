@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/database'
 import { createNotification } from '@/lib/notify'
 import { getPlatformSettings } from '@/lib/platformSettings'
+import { getGymFeatures } from '@/lib/gymFeatures'
 
 // GET /api/gyms/[id]/forum — get gym_forum for this gym (or null)
 export async function GET(
@@ -39,8 +40,13 @@ export async function POST(
   const isSiteAdmin = session.user.roles?.includes('site_admin')
   const isAdmin = session.user.roles?.includes('admin')
   if (!isSiteAdmin && !isAdmin) {
-    const { allowGymForumCreation } = await getPlatformSettings()
-    if (!allowGymForumCreation) return NextResponse.json({ error: 'Gym forum creation is not available yet.' }, { status: 403 })
+    const [{ allowGymForumCreation }, gymFeatures] = await Promise.all([
+      getPlatformSettings(),
+      getGymFeatures(gymId),
+    ])
+    if (!allowGymForumCreation || !gymFeatures.gymForumEnabled) {
+      return NextResponse.json({ error: 'Gym forum creation is not available for this gym.' }, { status: 403 })
+    }
   }
 
   // Verify caller is an active member of this gym

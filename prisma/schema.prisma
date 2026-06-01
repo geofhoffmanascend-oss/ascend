@@ -715,6 +715,23 @@ model Gym {
   settings     GymSettings[]
   publicEvents PublicEvent[]
   tournaments  Tournament[]
+  features     GymFeatures?
+}
+
+// Per-gym feature toggles (Phase 37). Gym admins turn optional features on/off
+// for their own gym. Combined with PlatformSettings (Phase 33): a feature is on
+// only if the platform allows it AND the gym allows it. Missing row = all on.
+model GymFeatures {
+  id                    String   @id @default(cuid())
+  gymId                 String   @unique
+  gym                   Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  storeEnabled          Boolean  @default(true)
+  tournamentsEnabled    Boolean  @default(true)
+  galleryEnabled        Boolean  @default(true)
+  privateLessonsEnabled Boolean  @default(true)
+  gymForumEnabled       Boolean  @default(true)
+  journalEnabled        Boolean  @default(true)
+  updatedAt             DateTime @updatedAt
 }
 
 model GymMembership {

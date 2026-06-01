@@ -7,12 +7,16 @@ import prisma from '@/lib/database'
 import { GalleryClient } from './GalleryClient'
 import { getWatermarkedUrl } from '@/lib/cloudinary'
 import { visibilityFilter } from '@/lib/mediaAccess'
+import { getEffectiveFeatures } from '@/lib/features'
 
 export const metadata = { title: 'Gallery' }
 
 export default async function GalleryPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
+
+  const { gallery } = await getEffectiveFeatures(session)
+  if (!gallery) redirect('/dashboard')
 
   const items = await prisma.mediaItem.findMany({
     where: visibilityFilter(session.user.id, session.user.gymId ?? null),

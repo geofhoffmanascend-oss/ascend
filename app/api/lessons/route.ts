@@ -3,10 +3,14 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/database'
 import { createNotification } from '@/lib/notify'
+import { getEffectiveFeatures } from '@/lib/features'
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { privateLessons } = await getEffectiveFeatures(session)
+  if (!privateLessons) return NextResponse.json({ error: 'Private lessons are not available for your gym.' }, { status: 403 })
 
   const { instructorId, scheduledAt, durationMins, ukeId, location, notes } = await req.json()
   if (!instructorId || !scheduledAt) {

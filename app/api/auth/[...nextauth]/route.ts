@@ -55,6 +55,9 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      // Google verifies email ownership, so it's safe to link a Google sign-in to an
+      // existing account that shares the same email (e.g. one created via credentials).
+      allowDangerousEmailAccountLinking: true,
       authorization: {
         params: { prompt: 'select_account' },
       },

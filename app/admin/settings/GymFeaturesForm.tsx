@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { GYM_FEATURE_LABELS, type GymFeatureFlags } from '@/lib/gymFeatures'
+import { GYM_FEATURE_LABELS, type GymFeatureFlags } from '@/lib/gymFeatureFlags'
 
 export function GymFeaturesForm({ initial }: { initial: GymFeatureFlags }) {
   const [flags, setFlags] = useState<GymFeatureFlags>(initial)

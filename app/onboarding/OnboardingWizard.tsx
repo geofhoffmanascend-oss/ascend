@@ -78,7 +78,6 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
 
   // Step 3
   const [phone, setPhone] = useState('')
-  const [emergencyContact, setEmergencyContact] = useState('')
 
   // Step 4 — checked = shown on schedule; unchecked = hidden
   const [checkedGroups, setCheckedGroups] = useState<Set<ClassGroupKey>>(
@@ -117,7 +116,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
   }
 
   async function saveStep3() {
-    await patch({ phone: phone || undefined, emergencyContact: emergencyContact || undefined })
+    await patch({ phone: phone || undefined })
   }
 
   async function saveStep4() {
@@ -329,7 +328,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 3 of {TOTAL_STEPS}</p>
               <h2 className="font-display text-xl text-ink mb-1">Contact info</h2>
-              <p className="text-sm text-slate">Used for emergency situations and gym communication. Both optional.</p>
+              <p className="text-sm text-slate">Used for gym communication. Optional.</p>
             </div>
 
             <div className="flex flex-col gap-1">
@@ -340,17 +339,6 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
                 onChange={e => setPhone(e.target.value)}
                 className={inputCls}
                 placeholder="(555) 000-0000"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className={labelCls}>Emergency Contact</label>
-              <input
-                type="text"
-                value={emergencyContact}
-                onChange={e => setEmergencyContact(e.target.value)}
-                className={inputCls}
-                placeholder="Name — (555) 000-0000"
               />
             </div>
 
@@ -487,15 +475,34 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 6 of {TOTAL_STEPS}</p>
               <h2 className="font-display text-2xl text-ink mb-2">You're all set!</h2>
-              <p className="text-sm text-slate">Welcome to AscendIt. Here are a few places to start.</p>
+              <p className="text-sm text-slate">Welcome to AscendIt.</p>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-smoke pt-5">
-              <Link href="/schedule" className="flex items-center justify-between py-2 text-sm text-ink hover:text-brand-red transition-colors">
-                <span>View Schedule</span>
-                <span className="text-ash">→</span>
+            {/* Menu cue — points new users at the nav menu */}
+            <div className="border border-smoke bg-mist p-4 flex items-center gap-3">
+              <span className="text-2xl animate-bounce leading-none" aria-hidden>☰</span>
+              <p className="text-sm text-steel">
+                Find everything — schedule, forums, messages &amp; journal — in the{' '}
+                <span className="font-bold text-ink">menu</span> at the top
+                <span className="hidden sm:inline"> right</span> of every page.
+              </p>
+            </div>
+
+            {/* Gym-aware primary next step */}
+            {selectedGym ? (
+              <Link href="/schedule" className="block border border-smoke border-l-2 border-l-brand-red bg-paper p-4 hover:border-steel transition-colors">
+                <p className="text-sm font-bold text-ink">Register for class →</p>
+                <p className="text-xs text-ash mt-0.5">See {selectedGym.name}&apos;s schedule and reserve your spot.</p>
               </Link>
-              <Link href="/forum" className="flex items-center justify-between py-2 text-sm text-ink hover:text-brand-red transition-colors border-t border-smoke">
+            ) : (
+              <Link href="/events" className="block border border-smoke border-l-2 border-l-brand-red bg-paper p-4 hover:border-steel transition-colors">
+                <p className="text-sm font-bold text-ink">Find local open mats, tournaments &amp; seminars →</p>
+                <p className="text-xs text-ash mt-0.5">You're training independently — see what's happening near you.</p>
+              </Link>
+            )}
+
+            <div className="flex flex-col gap-3 border-t border-smoke pt-5">
+              <Link href="/forum" className="flex items-center justify-between py-2 text-sm text-ink hover:text-brand-red transition-colors">
                 <span>Browse Forums</span>
                 <span className="text-ash">→</span>
               </Link>

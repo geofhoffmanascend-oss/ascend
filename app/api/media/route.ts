@@ -71,8 +71,8 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { gallery } = await getEffectiveFeatures(session)
-  if (!gallery) return NextResponse.json({ error: 'The gallery is not available for your gym.' }, { status: 403 })
+  const { galleryUpload } = await getEffectiveFeatures(session)
+  if (!galleryUpload) return NextResponse.json({ error: 'Gallery uploads are turned off for your gym.' }, { status: 403 })
 
   const contentType = req.headers.get('content-type') ?? ''
 

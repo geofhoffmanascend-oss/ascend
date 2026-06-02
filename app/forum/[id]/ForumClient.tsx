@@ -8,6 +8,16 @@ type Belt = 'white' | 'blue' | 'purple' | 'brown' | 'black' | 'coral' | 'red'
 
 type Author = { name: string | null; belt: string; beltVerified?: boolean; beltVerifiedBy?: string | null }
 
+type Reply = {
+  id: string
+  authorId: string
+  content: string
+  createdAt: string
+  author: Author
+  likeCount: number
+  likedByMe: boolean
+}
+
 type Post = {
   id: string
   authorId: string
@@ -17,13 +27,9 @@ type Post = {
   pinned: boolean
   createdAt: string
   author: Author
-  replies: {
-    id: string
-    authorId: string
-    content: string
-    createdAt: string
-    author: Author
-  }[]
+  likeCount: number
+  likedByMe: boolean
+  replies: Reply[]
 }
 
 type Props = {
@@ -62,6 +68,8 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
   const [form, setForm] = useState({ content: '', type: 'text', videoUrl: '' })
   const [replyContent, setReplyContent] = useState('')
   const [saving, setSaving] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editContent, setEditContent] = useState('')
 
   const canAnnounce = userRoles.includes('instructor') || userRoles.includes('admin')
   const canPin = userRoles.includes('instructor') || userRoles.includes('admin')
@@ -77,7 +85,7 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
     })
     if (res.ok) {
       const post = await res.json()
-      const newPost: Post = { ...post, createdAt: post.createdAt, replies: [] }
+      const newPost: Post = { ...post, createdAt: post.createdAt, replies: [], likeCount: 0, likedByMe: false }
       setPosts(prev => {
         return post.pinned
           ? [newPost, ...prev]
@@ -99,7 +107,7 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
     })
     if (res.ok) {
       const reply = await res.json()
-      setPosts(prev => prev.map(p => p.id === postId ? { ...p, replies: [...p.replies, reply] } : p))
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, replies: [...p.replies, { ...reply, likeCount: 0, likedByMe: false }] } : p))
       setReplyContent('')
       setReplyTo(null)
     }
@@ -126,6 +134,55 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
       setPosts(prev => prev.map(p => p.id === parentId ? { ...p, replies: p.replies.filter(r => r.id !== id) } : p))
     } else {
       setPosts(prev => prev.filter(p => p.id !== id))
+    }
+  }
+
+  async function toggleLike(id: string, liked: boolean, isReply = false, parentId?: string) {
+    // optimistic
+    const apply = (delta: number, nowLiked: boolean) => setPosts(prev => prev.map(p => {
+      if (isReply && parentId) {
+        if (p.id !== parentId) return p
+        return { ...p, replies: p.replies.map(r => r.id === id ? { ...r, likeCount: r.likeCount + delta, likedByMe: nowLiked } : r) }
+      }
+      return p.id === id ? { ...p, likeCount: p.likeCount + delta, likedByMe: nowLiked } : p
+    }))
+    apply(liked ? -1 : 1, !liked)
+    const res = await fetch(`/api/posts/${id}/like`, { method: liked ? 'DELETE' : 'POST' })
+    if (!res.ok) { apply(liked ? 1 : -1, liked); return } // revert
+    const data = await res.json()
+    // reconcile exact count
+    setPosts(prev => prev.map(p => {
+      if (isReply && parentId) {
+        if (p.id !== parentId) return p
+        return { ...p, replies: p.replies.map(r => r.id === id ? { ...r, likeCount: data.count, likedByMe: data.liked } : r) }
+      }
+      return p.id === id ? { ...p, likeCount: data.count, likedByMe: data.liked } : p
+    }))
+  }
+
+  function startEdit(id: string, content: string) {
+    setEditingId(id)
+    setEditContent(content)
+  }
+
+  async function saveEdit(id: string, isReply = false, parentId?: string) {
+    if (!editContent.trim()) return
+    const res = await fetch(`/api/posts/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: editContent }),
+    })
+    if (res.ok) {
+      const updated = await res.json()
+      setPosts(prev => prev.map(p => {
+        if (isReply && parentId) {
+          if (p.id !== parentId) return p
+          return { ...p, replies: p.replies.map(r => r.id === id ? { ...r, content: updated.content } : r) }
+        }
+        return p.id === id ? { ...p, content: updated.content } : p
+      }))
+      setEditingId(null)
+      setEditContent('')
     }
   }
 
@@ -197,7 +254,7 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
               disabled={saving || !form.content.trim()}
               className="px-5 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors disabled:opacity-60"
             >
-              {saving ? 'Posting…' : 'Post'}
+              {saving ? 'Posting…' : "'ScendIt"}
             </button>
           </div>
         </form>
@@ -233,6 +290,9 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
                     {post.pinned ? 'Unpin' : 'Pin'}
                   </button>
                 )}
+                {post.authorId === userId && editingId !== post.id && (
+                  <button onClick={() => startEdit(post.id, post.content)} className="text-xs text-ash hover:text-brand-red transition-colors">Edit</button>
+                )}
                 {(post.authorId === userId || userRoles.includes('admin')) && (
                   <button onClick={() => deletePost(post.id)} className="text-xs text-ash hover:text-brand-red transition-colors">✕</button>
                 )}
@@ -241,13 +301,37 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
 
             {/* Post body */}
             <div className="px-5 py-3">
-              <p className="text-ink text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
-              {post.videoUrl && (
-                <a href={post.videoUrl} target="_blank" rel="noopener noreferrer"
-                  className="inline-block mt-2 text-xs text-brand-red hover:text-brand-red-dark underline">
-                  Watch video →
-                </a>
+              {editingId === post.id ? (
+                <div className="flex flex-col gap-2">
+                  <textarea
+                    value={editContent}
+                    onChange={e => setEditContent(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors resize-none"
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={() => saveEdit(post.id)} disabled={!editContent.trim()} className="px-3 py-1.5 bg-brand-red text-paper text-xs font-bold hover:bg-brand-red-dark transition-colors disabled:opacity-60">Save</button>
+                    <button onClick={() => setEditingId(null)} className="px-3 py-1.5 text-xs text-ash hover:text-ink transition-colors">Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-ink text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
+                  {post.videoUrl && (
+                    <a href={post.videoUrl} target="_blank" rel="noopener noreferrer"
+                      className="inline-block mt-2 text-xs text-brand-red hover:text-brand-red-dark underline">
+                      Watch video →
+                    </a>
+                  )}
+                </>
               )}
+              <button
+                onClick={() => toggleLike(post.id, post.likedByMe)}
+                className={`inline-flex items-center gap-1 mt-3 text-xs font-medium transition-colors ${post.likedByMe ? 'text-brand-red' : 'text-ash hover:text-ink'}`}
+              >
+                👍 <span>{post.likeCount > 0 ? post.likeCount : 'Like'}</span>
+              </button>
             </div>
 
             {/* Replies + reply form */}
@@ -257,20 +341,44 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
                 <div className="mt-1 mb-3 flex flex-col gap-2 border-l-2 border-steel/25 pl-4 ml-1">
                   {post.replies.map(reply => (
                     <div key={reply.id} className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           <BeltBadge belt={reply.author.belt as Belt} stripes={0} />
                           <Link href={`/profile/${reply.authorId}`} className="text-xs font-medium text-ink hover:text-brand-red transition-colors">{reply.author.name ?? 'Unknown'}</Link>
                           <span suppressHydrationWarning className="text-xs text-ash">{formatDate(reply.createdAt, true)}</span>
                         </div>
-                        <p className="text-sm text-ink leading-relaxed">{reply.content}</p>
-                      </div>
-                      {(reply.authorId === userId || userRoles.includes('admin')) && (
+                        {editingId === reply.id ? (
+                          <div className="flex flex-col gap-2">
+                            <textarea
+                              value={editContent}
+                              onChange={e => setEditContent(e.target.value)}
+                              rows={2}
+                              className="w-full px-3 py-2 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors resize-none"
+                              autoFocus
+                            />
+                            <div className="flex gap-2">
+                              <button onClick={() => saveEdit(reply.id, true, post.id)} disabled={!editContent.trim()} className="px-3 py-1 bg-brand-red text-paper text-xs font-bold hover:bg-brand-red-dark transition-colors disabled:opacity-60">Save</button>
+                              <button onClick={() => setEditingId(null)} className="px-3 py-1 text-xs text-ash hover:text-ink transition-colors">Cancel</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-ink leading-relaxed">{reply.content}</p>
+                        )}
                         <button
-                          onClick={() => deletePost(reply.id, true, post.id)}
-                          className="text-xs text-ash hover:text-brand-red transition-colors flex-shrink-0 mt-0.5"
-                        >✕</button>
-                      )}
+                          onClick={() => toggleLike(reply.id, reply.likedByMe, true, post.id)}
+                          className={`inline-flex items-center gap-1 mt-1 text-xs font-medium transition-colors ${reply.likedByMe ? 'text-brand-red' : 'text-ash hover:text-ink'}`}
+                        >
+                          👍 <span>{reply.likeCount > 0 ? reply.likeCount : 'Like'}</span>
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
+                        {reply.authorId === userId && editingId !== reply.id && (
+                          <button onClick={() => startEdit(reply.id, reply.content)} className="text-xs text-ash hover:text-brand-red transition-colors">Edit</button>
+                        )}
+                        {(reply.authorId === userId || userRoles.includes('admin')) && (
+                          <button onClick={() => deletePost(reply.id, true, post.id)} className="text-xs text-ash hover:text-brand-red transition-colors">✕</button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -293,7 +401,7 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
                     disabled={saving || !replyContent.trim()}
                     className="px-3 py-2 bg-brand-red text-paper text-xs font-bold hover:bg-brand-red-dark transition-colors disabled:opacity-60"
                   >
-                    Reply
+                    {"'ScendIt"}
                   </button>
                   <button onClick={() => setReplyTo(null)} className="px-3 py-2 text-xs text-ash hover:text-ink transition-colors">
                     Cancel

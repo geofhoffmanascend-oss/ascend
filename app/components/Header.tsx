@@ -57,9 +57,10 @@ export function Header({ initialSession, features }: { initialSession?: Session 
           {session ? (
             <>
               <NavLink href="/dashboard">Dashboard</NavLink>
-              <NavLink href="/schedule">Schedule</NavLink>
-              <NavLink href="/forum">Forum</NavLink>
-              <NavLink href="/events">Events</NavLink>
+              {show('feed') && <NavLink href="/feed">Feed</NavLink>}
+              {show('schedule') && <NavLink href="/schedule">Schedule</NavLink>}
+              {show('forums') && <NavLink href="/forum">Forums</NavLink>}
+              {show('eventsNav') && <NavLink href="/events">Events</NavLink>}
               {show('tournaments') && <NavLink href="/tournaments">Tournaments</NavLink>}
               {show('privateLessons') && <NavLink href="/lessons">Lessons</NavLink>}
               {show('journal') && <NavLink href="/journal">Journal</NavLink>}
@@ -165,9 +166,10 @@ export function Header({ initialSession, features }: { initialSession?: Session 
           {session ? (
             <>
               <NavLink href="/dashboard" onClick={close}>Dashboard</NavLink>
-              <NavLink href="/schedule" onClick={close}>Schedule</NavLink>
-              <NavLink href="/forum" onClick={close}>Forum</NavLink>
-              <NavLink href="/events" onClick={close}>Events</NavLink>
+              {show('feed') && <NavLink href="/feed" onClick={close}>Feed</NavLink>}
+              {show('schedule') && <NavLink href="/schedule" onClick={close}>Schedule</NavLink>}
+              {show('forums') && <NavLink href="/forum" onClick={close}>Forums</NavLink>}
+              {show('eventsNav') && <NavLink href="/events" onClick={close}>Events</NavLink>}
               {show('tournaments') && <NavLink href="/tournaments" onClick={close}>Tournaments</NavLink>}
               {show('privateLessons') && <NavLink href="/lessons" onClick={close}>Lessons</NavLink>}
               {show('journal') && <NavLink href="/journal" onClick={close}>Journal</NavLink>}

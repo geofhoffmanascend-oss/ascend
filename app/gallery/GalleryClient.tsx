@@ -42,6 +42,7 @@ type Props = {
   currentUserId: string
   currentUserRoles: string[]
   currentUserGymId: string | null
+  canUpload: boolean
 }
 
 function gridStyle(density: Density) {
@@ -70,7 +71,7 @@ function serializeItem(item: MediaItem & { publicId?: string | null; forSale?: b
   }
 }
 
-export function GalleryClient({ initialItems, nextCursor: initialCursor, currentUserId, currentUserRoles, currentUserGymId }: Props) {
+export function GalleryClient({ initialItems, nextCursor: initialCursor, currentUserId, currentUserRoles, currentUserGymId, canUpload }: Props) {
   const [items,       setItems]       = useState<MediaItem[]>(initialItems)
   const [cursor,      setCursor]      = useState(initialCursor)
   const [loading,     setLoading]     = useState(false)
@@ -141,12 +142,14 @@ export function GalleryClient({ initialItems, nextCursor: initialCursor, current
           </div>
           <h1 className="font-display text-2xl text-ink">Media Archive</h1>
         </div>
-        <button
-          onClick={() => setShowUpload(true)}
-          className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors self-start"
-        >
-          + Upload
-        </button>
+        {canUpload && (
+          <button
+            onClick={() => setShowUpload(true)}
+            className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors self-start"
+          >
+            + Upload
+          </button>
+        )}
       </div>
 
       {/* Unified search + toolbar */}
@@ -166,7 +169,7 @@ export function GalleryClient({ initialItems, nextCursor: initialCursor, current
       {items.length === 0 && !loading && (
         <div className="border border-smoke bg-paper p-16 text-center">
           <p className="text-ash text-sm">
-            {hasFilters ? 'No photos match your search.' : 'No media yet. Be the first to upload!'}
+            {hasFilters ? 'No photos match your search.' : canUpload ? 'No media yet. Be the first to upload!' : 'No media yet.'}
           </p>
         </div>
       )}
@@ -225,7 +228,7 @@ export function GalleryClient({ initialItems, nextCursor: initialCursor, current
         </div>
       )}
 
-      {showUpload && <UploadModal onClose={() => setShowUpload(false)} onUploaded={onUploaded} userGymId={currentUserGymId} />}
+      {showUpload && canUpload && <UploadModal onClose={() => setShowUpload(false)} onUploaded={onUploaded} userGymId={currentUserGymId} />}
 
       {selected && (
         <MediaModal

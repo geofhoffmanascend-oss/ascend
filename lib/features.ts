@@ -9,21 +9,32 @@ import { getGymFeatures } from './gymFeatures'
 export interface EffectiveFeatures {
   store: boolean
   tournaments: boolean
-  gallery: boolean
+  gallery: boolean        // gallery visible/browsable (nav + page)
+  galleryUpload: boolean  // new uploads allowed (always implies gallery)
   privateLessons: boolean
   gymForum: boolean
   journal: boolean
   events: boolean // platform-only (public event submission); no per-gym toggle
+  // Navbar-link visibility (platform-only). `events` above = submit button.
+  feed: boolean
+  schedule: boolean
+  forums: boolean
+  eventsNav: boolean
 }
 
 const ALL_ON: EffectiveFeatures = {
   store: true,
   tournaments: true,
   gallery: true,
+  galleryUpload: true,
   privateLessons: true,
   gymForum: true,
   journal: true,
   events: true,
+  feed: true,
+  schedule: true,
+  forums: true,
+  eventsNav: true,
 }
 
 export async function getEffectiveFeatures(session: Session | null): Promise<EffectiveFeatures> {
@@ -37,13 +48,20 @@ export async function getEffectiveFeatures(session: Session | null): Promise<Eff
     getGymFeatures(session?.user?.gymId),
   ])
 
+  const galleryVisible = platform.galleryEnabled && gym.galleryEnabled
+
   return {
     store: platform.storeEnabled && gym.storeEnabled,
     tournaments: platform.allowTournamentRegistration && gym.tournamentsEnabled,
-    gallery: platform.galleryUploadEnabled && gym.galleryEnabled,
+    gallery: galleryVisible,
+    galleryUpload: galleryVisible && platform.galleryUploadEnabled && gym.galleryUploadEnabled,
     privateLessons: gym.privateLessonsEnabled,
     gymForum: platform.allowGymForumCreation && gym.gymForumEnabled,
     journal: gym.journalEnabled,
     events: platform.allowEventSubmission,
+    feed: platform.feedEnabled,
+    schedule: platform.scheduleEnabled,
+    forums: platform.forumsEnabled,
+    eventsNav: platform.eventsEnabled,
   }
 }

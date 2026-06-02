@@ -26,8 +26,14 @@ export default async function ForumPage({ params }: { params: Promise<{ id: stri
         where: { parentId: null },
         include: {
           author: { select: { name: true, belt: true, beltVerified: true, beltVerifiedBy: true } },
+          _count: { select: { likes: true } },
+          likes: { where: { userId: session.user.id }, select: { id: true } },
           replies: {
-            include: { author: { select: { name: true, belt: true, beltVerified: true, beltVerifiedBy: true } } },
+            include: {
+              author: { select: { name: true, belt: true, beltVerified: true, beltVerifiedBy: true } },
+              _count: { select: { likes: true } },
+              likes: { where: { userId: session.user.id }, select: { id: true } },
+            },
             orderBy: { createdAt: 'asc' },
           },
         },
@@ -64,12 +70,23 @@ export default async function ForumPage({ params }: { params: Promise<{ id: stri
     }
   }
 
+  // Mark this forum read for the current user (drives unread badges on /forum).
+  await prisma.forumRead.upsert({
+    where: { userId_forumId: { userId: session.user.id, forumId: forum.id } },
+    create: { userId: session.user.id, forumId: forum.id },
+    update: { lastReadAt: new Date() },
+  })
+
   const posts = forum.posts.map(p => ({
     ...p,
     createdAt: p.createdAt.toISOString(),
+    likeCount: p._count.likes,
+    likedByMe: p.likes.length > 0,
     replies: p.replies.map(r => ({
       ...r,
       createdAt: r.createdAt.toISOString(),
+      likeCount: r._count.likes,
+      likedByMe: r.likes.length > 0,
     })),
   }))
 

@@ -1,7 +1,6 @@
 import { CheckInSource } from '@prisma/client'
 import prisma from '@/lib/database'
 import { createNotification } from '@/lib/notify'
-import { sendPush } from '@/lib/push'
 
 export function sessionStartTime(date: Date, startTime: string): Date {
   const [h, m] = startTime.split(':').map(Number)
@@ -46,15 +45,11 @@ export async function recordCheckin(
     select: { class: { select: { title: true } } },
   }).then(async s => {
     if (!s) return
-    const notif = await createNotification(userId, 'feedback_prompt', `How was ${s.class.title}?`, {
+    // push is sent inside createNotification
+    await createNotification(userId, 'feedback_prompt', `How was ${s.class.title}?`, {
       body: 'Log your training or share feedback with your instructor.',
       link: `/feedback/${classSessionId}`,
     })
-    if (notif) sendPush(userId, {
-      title: `How was ${s.class.title}?`,
-      body: 'Log your training or share feedback with your instructor.',
-      link: `/feedback/${classSessionId}`,
-    }).catch(() => {})
   }).catch(() => {})
 
   return attendance

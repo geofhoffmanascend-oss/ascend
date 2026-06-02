@@ -5,6 +5,7 @@ import prisma from '@/lib/database'
 import { createNotification } from '@/lib/notify'
 import { canPostInBeltForum } from '@/lib/belt'
 import { getPlatformSettings } from '@/lib/platformSettings'
+import { PUBLIC_FORUM_TYPES } from '@/lib/feed'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
@@ -78,6 +79,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       where: { forumId, userId: { not: session.user.id } },
       select: { userId: true },
     })
+    const notified = new Set(subscriptions.map(s => s.userId))
     await Promise.all(
       subscriptions.map(sub =>
         createNotification(sub.userId, 'general', `New post in ${post.forum.title}`, {
@@ -86,6 +88,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         })
       )
     )
+
+    // Activity feed: also notify the author's followers, but only for public-forum
+    // posts (never restricted content), and skip anyone already notified as a subscriber.
+    if (forum && (PUBLIC_FORUM_TYPES as readonly string[]).includes(forum.type)) {
+      const followers = await prisma.follow.findMany({
+        where: { followingId: session.user.id },
+        select: { followerId: true },
+      })
+      await Promise.all(
+        followers
+          .filter(f => f.followerId !== session.user.id && !notified.has(f.followerId))
+          .map(f =>
+            createNotification(f.followerId, 'followed_post', `${authorName} posted in ${post.forum.title}`, {
+              body: snippet,
+              link,
+            })
+          )
+      )
+    }
   }
 
   return NextResponse.json(post, { status: 201 })

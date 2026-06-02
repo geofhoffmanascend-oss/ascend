@@ -112,7 +112,7 @@ export function LessonDetailClient({
               disabled={saving || !content.trim()}
               className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors disabled:opacity-60"
             >
-              Send
+              {"'ScendIt"}
             </button>
           </form>
         )}

@@ -5,7 +5,6 @@ import prisma from '@/lib/database'
 import { isInCheckinWindow } from '@/lib/checkin'
 import { classTypeToGroup } from '@/lib/classGroups'
 import { createNotification } from '@/lib/notify'
-import { sendPush } from '@/lib/push'
 import { getPlatformSettings } from '@/lib/platformSettings'
 
 export async function POST(req: NextRequest) {
@@ -54,19 +53,13 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  // Same-day check-in reminder push (fire and forget)
+  // Same-day check-in reminder (push is sent inside createNotification)
   if (classSession && isInCheckinWindow(classSession.date)) {
     const title = classSession.class.title
     const time = classSession.class.startTime
     createNotification(session.user.id, 'checkin_prompt', `You have ${title} today at ${time}`, {
       body: 'Tap to check in when you arrive.',
       link: '/schedule',
-    }).then(notif => {
-      if (notif) sendPush(session.user.id, {
-        title: `You have ${title} today at ${time}`,
-        body: 'Tap to check in when you arrive.',
-        link: '/schedule',
-      }).catch(() => {})
     }).catch(() => {})
   }
 

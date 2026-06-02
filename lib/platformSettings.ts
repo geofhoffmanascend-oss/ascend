@@ -6,8 +6,13 @@ export interface PlatformFlags {
   allowEventSubmission: boolean
   allowTournamentRegistration: boolean
   scheduleReadOnly: boolean
+  galleryEnabled: boolean
   galleryUploadEnabled: boolean
   storeEnabled: boolean
+  feedEnabled: boolean
+  scheduleEnabled: boolean
+  forumsEnabled: boolean
+  eventsEnabled: boolean
 }
 
 const DEFAULTS: PlatformFlags = {
@@ -16,8 +21,13 @@ const DEFAULTS: PlatformFlags = {
   allowEventSubmission: true,
   allowTournamentRegistration: true,
   scheduleReadOnly: false,
+  galleryEnabled: true,
   galleryUploadEnabled: true,
   storeEnabled: true,
+  feedEnabled: true,
+  scheduleEnabled: true,
+  forumsEnabled: true,
+  eventsEnabled: true,
 }
 
 export async function getPlatformSettings(): Promise<PlatformFlags> {

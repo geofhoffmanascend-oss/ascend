@@ -3,8 +3,12 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { notFound, redirect } from 'next/navigation'
 import prisma from '@/lib/database'
+import Link from 'next/link'
 import { BeltBadge } from '@/app/components/BeltBadge'
 import { ShareButton } from './ShareButton'
+import { FollowButton } from './FollowButton'
+import { ProfilePosts, type ProfilePost } from './ProfilePosts'
+import { PUBLIC_FORUM_TYPES } from '@/lib/feed'
 
 export async function generateMetadata({ params }: { params: Promise<{ userId: string }> }): Promise<Metadata> {
   const { userId } = await params
@@ -32,6 +36,8 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       avatarUrl: true,
       createdAt: true,
       profilePrivacy: true,
+      gym: { select: { name: true, slug: true } },
+      _count: { select: { followers: true, following: true } },
       competitions: {
         orderBy: { date: 'desc' },
         select: { id: true, name: true, date: true, location: true, division: true, weightClass: true, result: true },
@@ -46,7 +52,38 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
   const isAdmin = session?.user?.roles?.includes('admin') ?? false
   const isAuthenticated = !!session
+  const viewerId = session?.user?.id ?? null
+  const viewerGymId = session?.user?.gymId ?? null
   const privacy = (user.profilePrivacy as Record<string, string>) ?? {}
+
+  // Follow state for the current viewer
+  const isFollowing = viewerId
+    ? !!(await prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: viewerId, followingId: userId } },
+      }))
+    : false
+
+  // Public post history (anyone) + restricted posts the viewer can see (same-gym forum)
+  const postSelect = {
+    id: true, content: true, createdAt: true,
+    forum: { select: { id: true, title: true } },
+  }
+  const publicPostRows = await prisma.post.findMany({
+    where: { authorId: userId, parentId: null, forum: { type: { in: [...PUBLIC_FORUM_TYPES] } } },
+    orderBy: { createdAt: 'desc' }, take: 20, select: postSelect,
+  })
+  const extraPostRows = (viewerId && viewerGymId)
+    ? await prisma.post.findMany({
+        where: { authorId: userId, parentId: null, forum: { type: 'gym_forum', gymId: viewerGymId } },
+        orderBy: { createdAt: 'desc' }, take: 20, select: postSelect,
+      })
+    : []
+  const toVM = (p: typeof publicPostRows[number], restricted: boolean): ProfilePost => ({
+    id: p.id, content: p.content, createdAt: p.createdAt.toISOString(),
+    forumId: p.forum.id, forumTitle: p.forum.title, restricted,
+  })
+  const publicPosts = publicPostRows.map(p => toVM(p, false))
+  const extraPosts = extraPostRows.map(p => toVM(p, true))
 
   function visible(field: string, defaultLevel = 'members') {
     if (isAdmin) return true
@@ -66,8 +103,21 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
             <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Member Profile</span>
           </div>
           <h1 className="font-display text-2xl text-ink">{user.name ?? 'Unknown'}</h1>
+          {user.gym && (
+            <p className="text-sm text-slate mt-1">
+              <Link href={`/gyms/${user.gym.slug}`} className="hover:text-ink transition-colors">{user.gym.name}</Link>
+            </p>
+          )}
+          <p className="text-xs text-ash mt-1">
+            <span className="font-medium text-steel">{user._count.followers}</span> followers
+            {' · '}
+            <span className="font-medium text-steel">{user._count.following}</span> following
+          </p>
         </div>
-        <ShareButton url={profilePath} />
+        <div className="flex items-center gap-2 shrink-0">
+          {isAuthenticated && <FollowButton userId={userId} initialFollowing={isFollowing} />}
+          <ShareButton url={profilePath} />
+        </div>
       </div>
 
       <div className="flex flex-col gap-6">
@@ -161,6 +211,9 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
             </div>
           )
         })()}
+
+        {/* Post history */}
+        <ProfilePosts publicPosts={publicPosts} extraPosts={extraPosts} />
       </div>
     </div>
   )

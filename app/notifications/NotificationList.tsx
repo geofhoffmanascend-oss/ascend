@@ -21,6 +21,8 @@ const TYPE_ICON: Record<NotificationType, string> = {
   private_message: '✉️',
   checkin_prompt:  '✅',
   feedback_prompt: '💬',
+  new_follower:    '👤',
+  followed_post:   '📣',
   general:         '🔔',
 }
 

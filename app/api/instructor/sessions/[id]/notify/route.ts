@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireInstructor } from '@/lib/instructorAuth'
 import prisma from '@/lib/database'
 import { createNotification } from '@/lib/notify'
-import { sendPush } from '@/lib/push'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { error, session } = await requireInstructor()
@@ -34,11 +33,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   await Promise.all(
     targetIds.map(async uid => {
-      const notif = await createNotification(uid, 'class_update', title.trim(), {
+      // push is sent inside createNotification
+      await createNotification(uid, 'class_update', title.trim(), {
         body: body?.trim() || undefined,
         link: `/schedule`,
       })
-      if (notif) await sendPush(uid, { title: title.trim(), body: body?.trim(), link: '/schedule' })
     })
   )
 

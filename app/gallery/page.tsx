@@ -15,7 +15,7 @@ export default async function GalleryPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
 
-  const { gallery } = await getEffectiveFeatures(session)
+  const { gallery, galleryUpload } = await getEffectiveFeatures(session)
   if (!gallery) redirect('/dashboard')
 
   const items = await prisma.mediaItem.findMany({
@@ -48,6 +48,7 @@ export default async function GalleryPage() {
       currentUserId={session.user.id}
       currentUserRoles={session.user.roles}
       currentUserGymId={session.user.gymId ?? null}
+      canUpload={galleryUpload}
     />
   )
 }

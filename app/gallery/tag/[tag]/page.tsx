@@ -6,10 +6,14 @@ import prisma from '@/lib/database'
 import { GalleryClient } from '../../GalleryClient'
 import { getWatermarkedUrl } from '@/lib/cloudinary'
 import { visibilityFilter } from '@/lib/mediaAccess'
+import { getEffectiveFeatures } from '@/lib/features'
 
 export default async function HashtagAlbumPage({ params }: { params: Promise<{ tag: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
+
+  const { gallery, galleryUpload } = await getEffectiveFeatures(session)
+  if (!gallery) redirect('/dashboard')
 
   const { tag: rawTag } = await params
   const tag = decodeURIComponent(rawTag).toLowerCase().replace(/^#/, '')
@@ -59,6 +63,7 @@ export default async function HashtagAlbumPage({ params }: { params: Promise<{ t
         currentUserId={session.user.id}
         currentUserRoles={session.user.roles}
         currentUserGymId={session.user.gymId ?? null}
+        canUpload={galleryUpload}
       />
     </div>
   )

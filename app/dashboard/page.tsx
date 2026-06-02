@@ -25,7 +25,7 @@ export default async function DashboardPage() {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
   thirtyDaysAgo.setUTCHours(0, 0, 0, 0)
 
-  const [commitments, attendanceRecords, recentLogs, recentPosts] = await Promise.all([
+  const [commitments, attendanceRecords, recentLogs, recentPosts, unreadMessages] = await Promise.all([
   prisma.commitment.findMany({
     where: {
       userId: session.user.id,
@@ -80,7 +80,13 @@ export default async function DashboardPage() {
       forum: { select: { id: true, title: true } },
     },
   }),
+  prisma.directMessage.count({
+    where: { recipientId: session.user.id, readAt: null },
+  }),
 ])
+
+  const hasGym = !!session.user.gymId
+  const isStaff = session.user.roles?.includes('instructor') || session.user.roles?.includes('admin')
 
   const todayStr = new Date().toISOString().split('T')[0]
   const checkedInIds = new Set(attendanceRecords.map(r => r.classSessionId))
@@ -120,13 +126,21 @@ export default async function DashboardPage() {
         </h1>
       </div>
 
-      {/* This week's committed classes */}
-      <div className="mb-8">
-        <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">This Week</p>
+      {/* ── THIS WEEK ── upcoming committed classes */}
+      {features.schedule && (
+      <div className="mb-10">
+        <ZoneLabel>This Week</ZoneLabel>
         {commitments.length === 0 ? (
-          <div className="border border-smoke bg-paper p-5">
-            <p className="text-ash text-sm">No classes registered this week. <Link href="/schedule" className="text-brand-red hover:text-brand-red-dark font-medium">View schedule →</Link></p>
-          </div>
+          hasGym ? (
+            <div className="border border-smoke bg-paper p-5">
+              <p className="text-ash text-sm">No classes registered this week. <Link href="/schedule" className="text-brand-red hover:text-brand-red-dark font-medium">View schedule →</Link></p>
+            </div>
+          ) : (
+            <Link href="/events" className="block border border-smoke border-l-2 border-l-brand-red bg-paper p-5 hover:border-steel transition-colors">
+              <p className="text-sm font-medium text-ink">Post or find local open mats, tournaments &amp; seminars</p>
+              <p className="text-xs text-ash mt-1">You're not at a gym yet — explore what's happening near you. <span className="text-brand-red font-medium">Browse events →</span></p>
+            </Link>
+          )
         ) : (
           <div className="flex flex-col gap-2">
             {commitments.map(c => {
@@ -164,41 +178,76 @@ export default async function DashboardPage() {
             })}
           </div>
         )}
+        {hasGym && commitments.length > 0 && (
+          <Link href="/schedule" className="inline-block mt-3 text-xs font-medium text-ash hover:text-ink transition-colors">View full schedule →</Link>
+        )}
       </div>
+      )}
 
-      {/* Attendance summary */}
-      <div className="mb-8">
-        <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">Attendance (Last 30 Days)</p>
-        <div className="flex gap-4 flex-wrap mb-3">
-          <div className="border border-smoke bg-paper px-5 py-4">
-            <p className="text-2xl font-display font-bold text-ink">{attendanceRecords.length}</p>
-            <p className="text-xs text-ash uppercase tracking-wide">Classes Attended</p>
-          </div>
-          <div className="border border-smoke bg-paper px-5 py-4">
-            <p className="text-2xl font-display font-bold text-ink">{streak}</p>
-            <p className="text-xs text-ash uppercase tracking-wide">Week Streak</p>
-          </div>
+      {/* ── COMMUNITY ── */}
+      <div className="mb-10">
+        <ZoneLabel>Community</ZoneLabel>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <Tile href="/messages" icon="✉" accent="ink" title="Messages" subtitle={unreadMessages > 0 ? `${unreadMessages} new` : 'Direct messages'} badge={unreadMessages} />
+          {features.forums && <Tile href="/forum" icon="💬" accent="ink" title="Forums" subtitle="Discussions & announcements" />}
+          {features.eventsNav && <Tile href="/events" icon="📅" accent="ink" title="Events" subtitle="Open mats, comps, seminars" />}
         </div>
-        {attendanceRecords.length > 0 && (
-          <div className="flex flex-col gap-1">
-            {attendanceRecords.slice(0, 5).map(r => (
-              <div key={r.id} className="border border-smoke bg-paper px-4 py-2 flex items-center justify-between">
-                <p className="text-sm text-ink">{r.classSession.class.title}</p>
-                <p className="text-xs text-ash">
-                  {new Date(r.classSession.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}
+
+      {/* Recent forum activity */}
+      {features.forums && recentPosts.length > 0 && (
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">Recent Forum Activity</p>
+          <div className="flex flex-col gap-2">
+            {recentPosts.map(p => (
+              <Link
+                key={p.id}
+                href={`/forum/${p.forum.id}`}
+                className="border border-smoke bg-paper p-4 hover:border-steel transition-colors flex items-start justify-between gap-4"
+              >
+                <div className="min-w-0">
+                  <p className="text-xs text-ash mb-0.5">{p.forum.title}</p>
+                  <p className="text-sm text-ink truncate">{p.content}</p>
+                  <p className="text-xs text-ash mt-0.5">by {p.author.name ?? 'Unknown'}</p>
+                </div>
+                <p className="text-xs text-ash flex-shrink-0">
+                  {new Date(p.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </p>
-              </div>
+              </Link>
             ))}
           </div>
-        )}
-        {attendanceRecords.length === 0 && (
-          <p className="text-ash text-sm italic">No attended classes in the last 30 days.</p>
-        )}
+        </div>
+      )}
       </div>
+
+      {/* ── YOU ── */}
+      <div className="mb-10">
+        <ZoneLabel>You</ZoneLabel>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <Tile href="/profile" icon="👤" accent="steel" title="My Profile" subtitle="Belt, goals, history" />
+          {features.journal && <Tile href="/journal" icon="📓" accent="steel" title="Journal" subtitle="Log your training" />}
+          {features.privateLessons && <Tile href="/lessons" icon="🎯" accent="steel" title="Private Lessons" subtitle="Request or view" />}
+        </div>
+
+        {/* Attendance — only when there's something to show */}
+        {attendanceRecords.length > 0 && (
+          <div className="mb-6">
+            <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">Attendance (Last 30 Days)</p>
+            <div className="flex gap-4 flex-wrap mb-3">
+              <div className="border border-smoke bg-paper px-5 py-4">
+                <p className="text-2xl font-display font-bold text-ink">{attendanceRecords.length}</p>
+                <p className="text-xs text-ash uppercase tracking-wide">Classes Attended</p>
+              </div>
+              <div className="border border-smoke bg-paper px-5 py-4">
+                <p className="text-2xl font-display font-bold text-ink">{streak}</p>
+                <p className="text-xs text-ash uppercase tracking-wide">Week Streak</p>
+              </div>
+            </div>
+          </div>
+        )}
 
       {/* Recent journal entries */}
       {features.journal && (
-      <div className="mb-8">
+      <div>
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Training Journal</p>
           <Link href="/journal" className="text-xs text-ash hover:text-ink transition-colors">View all →</Link>
@@ -233,67 +282,66 @@ export default async function DashboardPage() {
       </div>
       )}
 
-      {/* Recent forum activity */}
-      {recentPosts.length > 0 && (
-        <div className="mb-8">
-          <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">Recent Forum Activity</p>
-          <div className="flex flex-col gap-2">
-            {recentPosts.map(p => (
-              <Link
-                key={p.id}
-                href={`/forum/${p.forum.id}`}
-                className="border border-smoke bg-paper p-4 hover:border-steel transition-colors flex items-start justify-between gap-4"
-              >
-                <div className="min-w-0">
-                  <p className="text-xs text-ash mb-0.5">{p.forum.title}</p>
-                  <p className="text-sm text-ink truncate">{p.content}</p>
-                  <p className="text-xs text-ash mt-0.5">by {p.author.name ?? 'Unknown'}</p>
-                </div>
-                <p className="text-xs text-ash flex-shrink-0">
-                  {new Date(p.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </p>
-              </Link>
-            ))}
+      </div>
+
+      {/* ── MANAGE ── staff only */}
+      {isStaff && (
+        <div className="mb-10">
+          <ZoneLabel>Manage</ZoneLabel>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Tile href="/instructor" icon="📋" accent="red" title="Instructor" subtitle="Rosters, attendance, plans" />
+            {session.user.roles?.includes('admin') && (
+              <Tile href="/admin" icon="⚙️" accent="red" title="Admin" subtitle="Users, classes, reports" />
+            )}
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href="/schedule" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
-          <p className="text-xs font-bold uppercase tracking-widest text-steel">Schedule</p>
-          <p className="text-slate text-sm">View classes and commit to sessions</p>
-        </Link>
-        <Link href="/profile" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
-          <p className="text-xs font-bold uppercase tracking-widest text-steel">My Profile</p>
-          <p className="text-slate text-sm">Belt, goals, competition history</p>
-        </Link>
-        <Link href="/forum" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
-          <p className="text-xs font-bold uppercase tracking-widest text-steel">Forums</p>
-          <p className="text-slate text-sm">Class discussions and announcements</p>
-        </Link>
-        {features.privateLessons && (
-          <Link href="/lessons" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-steel">Private Lessons</p>
-            <p className="text-slate text-sm">Request or view your lesson history</p>
-          </Link>
-        )}
-        {(session.user.roles?.includes('instructor') || session.user.roles?.includes('admin')) && (
-          <Link href="/instructor" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-steel">Instructor</p>
-            <p className="text-slate text-sm">Rosters, attendance, lesson plans</p>
-          </Link>
-        )}
-        {session.user.roles?.includes('admin') && (
-          <Link href="/admin" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-steel">Admin</p>
-            <p className="text-slate text-sm">Users, classes, attendance reports</p>
-          </Link>
-        )}
-      </div>
-
-      <div className="mt-8 pt-8 border-t border-smoke">
-        <DeleteAccountButton />
-      </div>
+      {/* Dev-only convenience tool — hidden in production (beta users shouldn't see it) */}
+      {process.env.NODE_ENV !== 'production' && (
+        <div className="mt-8 pt-8 border-t border-smoke">
+          <DeleteAccountButton />
+        </div>
+      )}
     </div>
+  )
+}
+
+function ZoneLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 mb-4">
+      <span className="font-display text-sm font-bold tracking-widest uppercase text-ink">{children}</span>
+      <span className="flex-1 h-px bg-smoke" />
+    </div>
+  )
+}
+
+const ACCENTS: Record<string, string> = {
+  red: 'border-l-brand-red',
+  ink: 'border-l-ink',
+  steel: 'border-l-steel',
+}
+
+function Tile({
+  href, icon, title, subtitle, accent, badge,
+}: {
+  href: string; icon: string; title: string; subtitle: string; accent: keyof typeof ACCENTS; badge?: number
+}) {
+  return (
+    <Link
+      href={href}
+      className={`relative border border-smoke border-l-2 ${ACCENTS[accent]} bg-paper hover:border-steel transition-colors p-5 flex items-center gap-4`}
+    >
+      <span className="w-10 h-10 flex items-center justify-center bg-mist text-lg flex-shrink-0" aria-hidden>{icon}</span>
+      <div className="min-w-0">
+        <p className="text-sm font-bold text-ink">{title}</p>
+        <p className="text-xs text-slate mt-0.5">{subtitle}</p>
+      </div>
+      {badge != null && badge > 0 && (
+        <span className="absolute top-3 right-3 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-brand-red text-paper text-[11px] font-bold leading-none">
+          {badge > 9 ? '9+' : badge}
+        </span>
+      )}
+    </Link>
   )
 }

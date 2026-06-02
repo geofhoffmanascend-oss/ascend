@@ -6,22 +6,23 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
 import { ClassGroup } from '@prisma/client'
-import { canPostInBeltForum, BELT_COLORS, BELT_LABELS } from '@/lib/belt'
+import { canPostInBeltForum } from '@/lib/belt'
+import { ForumListClient, type ForumVM } from './ForumListClient'
 
-export const metadata = { title: 'Forums' }
+export const metadata: Metadata = { title: 'Forums' }
 
 export default async function ForumListPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
 
+  const userId = session.user.id
   const isInstructor = session.user.roles?.includes('instructor') || session.user.roles?.includes('admin')
   const gymId = session.user.gymId ?? null
-
   const userBelt = session.user.belt ?? 'white'
 
-  const [user, allForums, subscriptions, gymForum, gym] = await Promise.all([
+  const [user, allForums, subscriptions, reads, gymForum, gym] = await Promise.all([
     prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: { blockedClassGroups: true, hiddenClassGroups: true },
     }),
     prisma.forum.findMany({
@@ -30,10 +31,8 @@ export default async function ForumListPage() {
         posts: { orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true, author: { select: { name: true } } } },
       },
     }),
-    prisma.forumSubscription.findMany({
-      where: { userId: session.user.id },
-      select: { forumId: true },
-    }),
+    prisma.forumSubscription.findMany({ where: { userId }, select: { forumId: true } }),
+    prisma.forumRead.findMany({ where: { userId }, select: { forumId: true, lastReadAt: true } }),
     gymId
       ? prisma.forum.findFirst({
           where: { gymId, type: 'gym_forum' },
@@ -48,29 +47,79 @@ export default async function ForumListPage() {
   const blocked = (user?.blockedClassGroups ?? []) as ClassGroup[]
   const hidden = (user?.hiddenClassGroups ?? []) as ClassGroup[]
   const subscribedIds = new Set(subscriptions.map(s => s.forumId))
+  const readMap = new Map(reads.map(r => [r.forumId, r.lastReadAt]))
   const gymForumWithCount = gymForum as typeof gymForum & { _count: { posts: number; subscriptions: number } } | null
 
-  const beltOrder = ['white', 'blue', 'purple', 'brown', 'black'] as const
-  const beltForums = beltOrder
-    .map(belt => allForums.find(f => f.type === 'belt_forum' && f.beltLevel === belt))
-    .filter(Boolean) as typeof allForums
+  // Compute unread counts only for forums the user has opened before (a read
+  // record exists) AND that have a newer post — keeps it quiet for first visits.
+  const unreadCandidates = allForums.filter(f => {
+    const lr = readMap.get(f.id)
+    const latest = f.posts[0]?.createdAt
+    return lr && latest && latest > lr
+  })
+  const unreadEntries = await Promise.all(
+    unreadCandidates.map(async f => {
+      const lr = readMap.get(f.id)!
+      const count = await prisma.post.count({
+        where: { forumId: f.id, createdAt: { gt: lr }, authorId: { not: userId } },
+      })
+      return [f.id, count] as const
+    }),
+  )
+  const unreadMap = new Map<string, number>(unreadEntries)
 
+  type RawForum = (typeof allForums)[number]
+  const baseVM = (f: RawForum, inDefault: boolean): ForumVM => ({
+    id: f.id,
+    title: f.title,
+    totalPosts: f._count.posts,
+    unread: unreadMap.get(f.id) ?? 0,
+    latestAt: f.posts[0]?.createdAt ? f.posts[0].createdAt.toISOString() : null,
+    latestBy: f.posts[0]?.author.name ?? null,
+    inDefault,
+  })
+
+  // General (announcement + instructor-only always shown; general only if subscribed)
   const publicTypes = isInstructor
     ? ['general', 'announcement', 'instructor_only']
     : ['general', 'announcement']
+  const general: ForumVM[] = allForums
+    .filter(f => publicTypes.includes(f.type as string))
+    .map(f => baseVM(f, f.type !== 'general' || subscribedIds.has(f.id)))
 
-  const publicForums = allForums.filter(f => publicTypes.includes(f.type as string))
+  // Belt forums (your own belt always shown; others only if subscribed)
+  const beltOrder = ['white', 'blue', 'purple', 'brown', 'black'] as const
+  const belt: ForumVM[] = beltOrder
+    .map(b => allForums.find(f => f.type === 'belt_forum' && f.beltLevel === b))
+    .filter(Boolean)
+    .map(f => {
+      const ff = f as RawForum
+      const beltKey = ff.beltLevel as string
+      const isUserBelt = beltKey === userBelt
+      return {
+        ...baseVM(ff, isUserBelt || subscribedIds.has(ff.id)),
+        beltKey,
+        isUserBelt,
+        canPost: canPostInBeltForum(userBelt, beltKey),
+      }
+    })
 
-  const classForums = allForums.filter(f =>
-    f.type === 'class_forum' && subscribedIds.has(f.id)
-  )
+  // Class-group forums (exclude blocked + hidden groups; default-shown if subscribed)
+  const group: ForumVM[] = allForums
+    .filter(f =>
+      f.type === 'group_forum' &&
+      f.classGroup !== null &&
+      !blocked.includes(f.classGroup as ClassGroup) &&
+      !hidden.includes(f.classGroup as ClassGroup),
+    )
+    .map(f => baseVM(f, subscribedIds.has(f.id)))
 
-  const groupForums = allForums.filter(f =>
-    f.type === 'group_forum' &&
-    f.classGroup !== null &&
-    !blocked.includes(f.classGroup as ClassGroup) &&
-    !hidden.includes(f.classGroup as ClassGroup)
-  )
+  // Class forums — only the ones you're subscribed to (auto-subscribed on register)
+  const cls: ForumVM[] = allForums
+    .filter(f => f.type === 'class_forum' && subscribedIds.has(f.id))
+    .map(f => baseVM(f, true))
+
+  const gymUnread = gymForumWithCount ? (unreadMap.get(gymForumWithCount.id) ?? 0) : 0
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
@@ -82,132 +131,50 @@ export default async function ForumListPage() {
       </div>
 
       <div className="flex flex-col gap-6">
-        {/* Gym Forum */}
+        {/* Gym Forum (always shown) */}
         {gymId && gym && (
           <section>
             <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">Your Gym</p>
             {gymForumWithCount ? (
               <Link
                 href={`/forum/${gymForumWithCount.id}`}
-                className="border border-smoke bg-paper p-4 hover:border-steel transition-colors flex items-center justify-between"
+                className={`bg-paper p-4 hover:border-steel transition-colors flex items-center justify-between border ${
+                  gymUnread > 0 ? 'border-l-2 border-l-brand-red border-y-smoke border-r-smoke' : 'border-smoke'
+                }`}
               >
                 <div>
-                  <p className="text-sm font-medium text-ink">{gymForumWithCount.title ?? `${gym.name} Community`}</p>
+                  <p className={`text-sm text-ink ${gymUnread > 0 ? 'font-bold' : 'font-medium'}`}>{gymForumWithCount.title ?? `${gym.name} Community`}</p>
                   <p className="text-xs text-ash mt-0.5">
                     {gymForumWithCount._count.subscriptions} {gymForumWithCount._count.subscriptions === 1 ? 'member' : 'members'}
-                    {gym.participatingStatus === 'participating'
-                      ? ' · Official Forum'
-                      : ' · Community forum'}
+                    {gym.participatingStatus === 'participating' ? ' · Official Forum' : ' · Community forum'}
                   </p>
                 </div>
-                <p className="text-xs text-ash flex-shrink-0 ml-4">{gymForumWithCount._count.posts} posts</p>
+                <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                  {gymUnread > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-brand-red text-paper text-[11px] font-bold leading-none">
+                      {gymUnread > 9 ? '9+' : gymUnread}
+                    </span>
+                  )}
+                  <p className="text-xs text-ash">{gymForumWithCount._count.posts} posts</p>
+                </div>
               </Link>
             ) : (
               <div className="border border-smoke bg-paper p-4 flex items-center justify-between">
                 <p className="text-sm text-ash">No forum for {gym.name} yet.</p>
-                <Link href={`/gyms/${gym.slug}`} className="text-sm text-brand-red hover:underline">
-                  Create one →
-                </Link>
+                <Link href={`/gyms/${gym.slug}`} className="text-sm text-brand-red hover:underline">Create one →</Link>
               </div>
             )}
           </section>
         )}
 
-        <section>
-          <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">General</p>
-          <div className="flex flex-col gap-2">
-            {publicForums.map(f => (
-              <ForumRow key={f.id} forum={f} />
-            ))}
-          </div>
-        </section>
-
-        {beltForums.length > 0 && (
-          <section>
-            <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">Belt Forums</p>
-            <div className="flex flex-col gap-2">
-              {beltForums.map(f => {
-                const beltKey = f.beltLevel as string
-                const canPost = canPostInBeltForum(userBelt, beltKey)
-                const isUserBelt = beltKey === userBelt
-                return (
-                  <Link
-                    key={f.id}
-                    href={`/forum/${f.id}`}
-                    className={`border bg-paper p-4 hover:border-steel transition-colors flex items-center justify-between ${isUserBelt ? 'border-steel' : 'border-smoke'}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className={`w-3 h-3 rounded-full flex-shrink-0 ${BELT_COLORS[beltKey]}`} />
-                      <div>
-                        <p className={`text-sm font-medium ${isUserBelt ? 'text-ink font-bold' : 'text-ink'}`}>
-                          {BELT_LABELS[beltKey]}
-                        </p>
-                        <p className="text-xs text-ash mt-0.5">{f._count.posts} posts</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                      <span className="text-xs text-ash">Read</span>
-                      {canPost ? (
-                        <span className="text-xs text-ash">· Post</span>
-                      ) : (
-                        <span className="text-xs text-ash" title={`Requires ${BELT_LABELS[beltKey]} or higher`}>· 🔒 Post</span>
-                      )}
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
-          </section>
-        )}
-
-        {groupForums.length > 0 && (
-          <section>
-            <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">Class Groups</p>
-            <div className="flex flex-col gap-2">
-              {groupForums.map(f => (
-                <ForumRow key={f.id} forum={f} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {classForums.length > 0 && (
-          <section>
-            <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">My Classes</p>
-            <div className="flex flex-col gap-2">
-              {classForums.map(f => (
-                <ForumRow key={f.id} forum={f} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {classForums.length === 0 && (
-          <p className="text-ash text-sm italic">
-            Register for a class to join its forum. <Link href="/schedule" className="text-brand-red hover:underline">View schedule →</Link>
-          </p>
-        )}
+        <ForumListClient
+          general={general}
+          belt={belt}
+          group={group}
+          cls={cls}
+          noClasses={cls.length === 0}
+        />
       </div>
     </div>
-  )
-}
-
-function ForumRow({ forum }: { forum: { id: string; title: string; type: string; _count: { posts: number }; posts: { createdAt: Date; author: { name: string | null } }[] } }) {
-  const latest = forum.posts[0]
-  return (
-    <Link
-      href={`/forum/${forum.id}`}
-      className="border border-smoke bg-paper p-4 hover:border-steel transition-colors flex items-center justify-between"
-    >
-      <div>
-        <p className="text-sm font-medium text-ink">{forum.title}</p>
-        {latest && (
-          <p className="text-xs text-ash mt-0.5">
-            Last post by {latest.author.name ?? 'Unknown'} · {new Date(latest.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-          </p>
-        )}
-      </div>
-      <p className="text-xs text-ash flex-shrink-0 ml-4">{forum._count.posts} posts</p>
-    </Link>
   )
 }

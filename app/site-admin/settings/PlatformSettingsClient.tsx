@@ -31,14 +31,39 @@ const TOGGLES: { key: keyof PlatformFlags; label: string; description: string; d
     description: 'Allow students to register for tournament divisions. Disable to freeze registrations while brackets are being set up.',
   },
   {
+    key: 'galleryEnabled',
+    label: 'Gallery',
+    description: 'Show the gallery to users (browse/view). Disable to hide the gallery feature entirely.',
+  },
+  {
     key: 'galleryUploadEnabled',
     label: 'Gallery Uploads',
-    description: 'Allow users to upload photos and video links. Disable if Cloudinary credentials are not configured or during a media freeze.',
+    description: 'Allow users to upload photos and video links. Disable to make the gallery view-only (it stays visible). Also disable if Cloudinary is not configured.',
   },
   {
     key: 'storeEnabled',
     label: 'Gear Store',
     description: 'Show the store to students. Disable before products are added or before the gym is ready to fulfil orders.',
+  },
+  {
+    key: 'feedEnabled',
+    label: 'Feed (nav)',
+    description: 'Show the Feed link in the navbar and dashboard for non-admins. Hide to launch without the activity feed.',
+  },
+  {
+    key: 'scheduleEnabled',
+    label: 'Schedule (nav)',
+    description: 'Show the Schedule link + dashboard "This Week" for non-admins.',
+  },
+  {
+    key: 'forumsEnabled',
+    label: 'Forums (nav)',
+    description: 'Show the Forums link + forum activity on the dashboard for non-admins.',
+  },
+  {
+    key: 'eventsEnabled',
+    label: 'Events (nav)',
+    description: 'Show the Events link + dashboard Events tile for non-admins.',
   },
 ]
 

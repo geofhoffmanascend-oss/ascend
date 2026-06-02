@@ -24,7 +24,7 @@ export async function PUT(req: NextRequest) {
 
   const body = await req.json()
   const allowed: (keyof GymFeatureFlags)[] = [
-    'storeEnabled', 'tournamentsEnabled', 'galleryEnabled',
+    'storeEnabled', 'tournamentsEnabled', 'galleryEnabled', 'galleryUploadEnabled',
     'privateLessonsEnabled', 'gymForumEnabled', 'journalEnabled',
   ]
   const flags: Partial<GymFeatureFlags> = {}

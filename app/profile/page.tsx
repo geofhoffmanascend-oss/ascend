@@ -32,6 +32,7 @@ export default async function ProfilePage() {
       emergencyContact: true,
       avatarUrl: true,
       createdAt: true,
+      gym: { select: { participatingStatus: true } },
       goalsAsStudent: {
         orderBy: { createdAt: 'desc' },
         select: { id: true, description: true, targetDate: true, completedAt: true },
@@ -170,11 +171,13 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        {/* QR check-in code */}
-        <div className="border border-smoke bg-paper p-6 flex flex-col items-center gap-2">
-          <p className="text-xs font-bold uppercase tracking-widest text-steel self-start">Check-in QR Code</p>
-          <QRCodeDisplay token={user.qrToken} />
-        </div>
+        {/* QR check-in code — only for members of a participating gym */}
+        {user.gym?.participatingStatus === 'participating' && (
+          <div className="border border-smoke bg-paper p-6 flex flex-col items-center gap-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-steel self-start">Check-in QR Code</p>
+            <QRCodeDisplay token={user.qrToken} />
+          </div>
+        )}
 
         <GoalsSection goals={goals} />
         <CompetitionsSection competitions={competitions} />

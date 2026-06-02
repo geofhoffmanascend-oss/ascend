@@ -34,7 +34,20 @@ export async function createNotification(
     // TODO: if user.notifyByEmail, send email copy via nodemailer/resend
   }
 
-  return prisma.notification.create({
+  const notification = await prisma.notification.create({
     data: { userId, type, title, body: options?.body, link: options?.link },
   })
+
+  // Fire a web-push for every in-app notification. Pref-gating already happened
+  // above (this returns null when the type's pref is off), so push inherits it.
+  // Dynamic import + try/catch so a missing VAPID config can never break the
+  // in-app notification path.
+  try {
+    const { sendPush } = await import('@/lib/push')
+    await sendPush(userId, { title, body: options?.body, link: options?.link })
+  } catch {
+    // push delivery is best-effort
+  }
+
+  return notification
 }

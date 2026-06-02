@@ -629,6 +629,103 @@ Schema pushed: new `GymFeatures` model (`gymId @unique`, 6 booleans, cascade). K
 
 ---
 
+## PHASE 38 — Registration & Onboarding Separation (Owner vs Individual)
+**Problem (confirmed):** both `/register` and `/gyms/register?returnTo=onboarding` funnel everyone into the **student** wizard (`OnboardingWizard.tsx`). Gym owners get a student experience, not an owner setup flow. Owners should register as themselves, then add/claim a facility, then get a paid-tier setup tour. Address during the feature audit.
+
+### [ ] 38.1 — Branch registration intent: landing + `/register` offer "Join as an athlete" vs "Register or claim a gym". Athletes → student onboarding; owners → owner path (register self, then add/claim facility). Don't force owners through the student wizard.
+### [ ] 38.2 — Tier-separated owner onboarding: walk the **free-tier** options first (profile, gym forum, communication under their banner), THEN offer the **14-day trial** (Phase 30 D8) and prompt to load schedule, instructors, logo, forums, payment. Assumption: owners won't enter student data unless on a paid tier using the management side.
+### [ ] 38.3 — In-app guided paid-tier setup (distinct from the marketing `/tour/admin`): interactive checklist/tour showing how to add schedule, instructors, personal/gym logo, and student list. Tracks completion.
+### [ ] 38.4 — During owner registration, show users already associated with the gym (count + roster preview) so the owner sees existing members before importing.
+### [ ] 38.5 — Duplicate / similar-gym handling: same name different location, students switching gyms, and accidental duplicate-gym creation. Define merge/claim guard rails and a canonical-gym resolution rule.
+
+---
+
+## PHASE 39 — Gym Claiming & Forum Adoption
+Extends Phase 26.4 (which only allows claiming on upgrade-to-participating).
+
+### [ ] 39.1 — Owner-initiated claim: searchable list of unclaimed gyms / community gym forums; an owner can claim one if their student created it OR it matches their name/address/phone/website. Requires a verification step before transfer of control.
+### [ ] 39.2 — On successful claim: assign owner as gym admin/moderator, allow rename + rules, notify existing affiliated members (reuse 26.3/26.4 notification path).
+
+---
+
+## PHASE 40 — Invitations (Individual + Bulk CSV)
+No invite system exists today.
+
+### [ ] 40.1 — Individual invite: shareable invite **link**, **QR code**, and **email** invite so any user can invite friends. Invite carries optional gym context.
+### [ ] 40.2 — Bulk invite via **CSV** with **flexible/editable column mapping**: user uploads whatever CSV they have and maps their columns to app fields (no reformatting). Suggested mappable fields: name, email, phone, membership type, monthly fee, belt, age, notes, instructor (yes/no boolean), start date, emergency contact. Unmapped columns ignored; preview before import.
+### [ ] 40.3 — Invite acceptance flow: brand-new users register **pre-associated** to the inviting gym; **already-registered** users are prompted to associate with (or switch to) the gym rather than duplicating. Ties into 38.5 dup handling.
+### [ ] 40.4 — Instructor-flagged rows: when a CSV row is marked instructor=yes, **confirm with the owner** before granting elevated (instructor) permissions to teach assigned classes / private lessons.
+### [ ] 40.5 — Gym-account-specific invites: bulk invites sent during owner onboarding are scoped/branded to that gym account.
+
+---
+
+## PHASE 41 — Class Grouping & Group Forums at Creation
+Phase 17 gives 5 fixed `ClassGroup` enum forums; this adds **owner-defined** grouping when building the schedule.
+
+### [ ] 41.1 — When entering/editing classes on the schedule, allow grouping classes into a named group and optionally **auto-create a forum** for that group. (Decide: extend `ClassGroup` enum vs. a free-form `ClassGroup`/`ClassSeries` model.)
+
+---
+
+## PHASE 42 — Private Lesson Availability & Provider Approval
+Today `/lessons/new` is just an instructor dropdown + free `datetime-local` (no availability, no slots).
+
+### [ ] 42.1 — Instructor availability: instructors enter recurring/one-off availability windows for private instruction.
+### [ ] 42.2 — Request UX: selecting an instructor shows that instructor's **available slots**; reuse the schedule calendar to show days where instructors are available.
+### [ ] 42.3 — "Only show instructors from my home gym" toggle (**default on**); turning it off surfaces instructors from other gyms.
+### [ ] 42.4 — Individual (non-gym) private-lesson providers must be **approved by a verified black belt** on the platform before they can offer lessons.
+
+---
+
+## PHASE 43 — Legal: Waivers, Terms & Agreements ⚠️ NEEDS ATTORNEY
+**⚠️ I can scaffold storage / upload / acceptance tracking, but cannot draft legally valid waiver, hold-harmless, or ToS text. The actual legal language (Virginia-valid) must come from a licensed attorney.** Tasks below are the app plumbing only.
+
+### [ ] 43.1 — Platform legal docs surface: Terms of Service + agreement acceptance for app↔gym-owner, app↔vendor, app↔general-user (versioned, timestamped acceptance).
+### [ ] 43.2 — Gym-uploaded liability waivers: gym owners upload their own waiver (PDF/text); students must accept it when joining that gym. Store version + acceptance record per student.
+### [ ] 43.3 — Acceptance audit trail: who accepted which document version, when, and from where; surfaced to gym admin + site admin.
+
+---
+
+## PHASE 44 — Realtime UX: Messaging, Push, Forums, Dashboard, Onboarding — DONE
+Browser-verified (Playwright, desktop + mobile). Schema change pushed. Not committed.
+
+### [x] 44.1 — Messaging without refresh: `MessageThread` polls `GET /api/messages/[userId]` every 5s, merges new messages by last-id, marks-read + clears unread badge on incoming. No socket/rebuild.
+### [x] 44.2 — Push centralized: `sendPush` now fires inside `createNotification` (inherits per-type pref gating via dynamic import) so **every** notification type pushes — incl. DMs, which previously never did. Removed 5 redundant explicit `sendPush` calls. Verified all 3 VAPID vars present in Vercel Prod + Preview.
+### [x] 44.3 — Cron removed: deleted dormant `app/api/cron/*` (nothing scheduled them — `vercel.json` was `{}`); removed unused `CRON_SECRET` from `.env.local` + Vercel Prod. App has zero cron dependency (reminders/feedback fire inline on commit/check-in).
+### [x] 44.4 — Forum list cleanup: unsubscribed forums hidden by default (gym/own-belt/announcements always shown); "Show all available forums (N)" reveal button; sections sort unread-first then latest activity. Nav label "Forum" → "Forums".
+### [x] 44.5 — Forum unread badges: new `ForumRead` model (`prisma db push` done) — opening a forum stamps read time; red count badge (9+ cap) + bold + left-accent on forums with new posts since last view (excludes own posts; quiet until first visit).
+### [x] 44.6 — Dashboard restructure: grouped zones (This Week → Community → You → Manage) with icon tiles + color-coded left accents; Messages tile w/ unread badge; attendance demoted off top + hidden when empty; gym-aware empty state (no-gym → Events CTA).
+### [x] 44.7 — Onboarding finish: animated `☰` menu cue on step 6; gym-aware primary CTA (gym → Schedule "Register for class"; no-gym → Events "find local open mats…").
+
+### [x] 44.8 — PWA app icons regenerated from `logo.png` (pyramid) via `scripts/generate-pwa-icons.mjs` — replaces stale blue-"A" icons. **User action:** installed phones cache the old icon; reinstall to pick up. Per-gym custom *installed* icons not feasible without subdomains (documented).
+
+---
+
+## PHASE 45 — User Follow + Activity Feed
+Guide: `guides/phase45-user-follow.md`. **One-way** follow (no approval) + activity feed + post notifications. Schema pushed. Browser-verified (follow 0→1, persists, feed renders). Not committed.
+
+### [x] 45.1 — `Follow` model (`followerId`/`followingId`, unique, indexed) + User relations + `new_follower`/`followed_post` NotificationType values; `prisma db push`
+### [x] 45.2 — `lib/feed.ts` `PUBLIC_FORUM_TYPES` (general/announcement/belt_forum/group_forum) — gates feed/notifications/profile-posts so restricted content never leaks
+### [x] 45.3 — Follow API `POST/DELETE /api/users/[id]/follow` (idempotent, blocks self-follow, `new_follower` notify which now also pushes)
+### [x] 45.4 — `FollowButton` (optimistic follow/unfollow) on public profile
+### [x] 45.5 — Public profile: gym affiliation under name (links to `/gyms/[slug]`); follower/following counts; FollowButton; post history + "Show all activity I can see" viewer toggle (adds same-gym forum posts)
+### [x] 45.6 — Activity feed `/feed` (top-level posts from people you follow, public forums only) + Feed nav link (desktop + mobile)
+### [x] 45.7 — Follower-post notification in `POST /api/forums/[id]/posts` (public forums only; dedupes against forum subscribers)
+### [ ] 45.8 — "Show on public profile" checkboxes for phone + email (onboarding contact step + profile-edit) + render contact on public profile when set public. **Pending your call** (confirm whether email should ever be shown).
+
+---
+
+## PHASE 46 — Gym Custom Student Onboarding (Participating/Paid Gyms)
+Participating (paid) gyms can customize the new-student onboarding for members joining their gym, beyond the default minimal flow. Free/individual onboarding stays minimal (default flow no longer asks for emergency contact — that's now a gym-requestable field).
+
+### [ ] 46.1 — Gym-admin onboarding builder: participating gyms define which fields/steps to request from new students (e.g. emergency contact, waiver acceptance [Phase 43], membership type, medical notes, custom questions). Free gyms get the default flow only.
+### [ ] 46.2 — Emergency contact as an opt-in gym field: gyms can toggle "request emergency contact" on; when on, it's added to that gym's student onboarding (and editable in profile). Default/individual onboarding does NOT ask.
+### [ ] 46.3 — Onboarding flow resolution: when a student joins/affiliates with a participating gym (incl. via invite — Phase 40), run that gym's custom onboarding; otherwise the default. Store gym-custom answers per membership.
+### [ ] 46.4 — Gating: custom onboarding is a paid-tier capability (ties to Phase 30 tier model + Phase 37 feature toggles).
+
+**Note:** emergency-contact field was removed from the default onboarding (2026-06-02). The `User.emergencyContact` column is retained for gyms that request it via 46.2.
+
+---
+
 ## GUIDES NEEDED (before building the above phases)
 
 - [ ] `guides/phase24-multi-gym-architecture.md` — schema redesign, model changes, migration plan
@@ -639,6 +736,27 @@ Schema pushed: new `GymFeatures` model (`gymId @unique`, 6 booleans, cascade). K
 ---
 
 ## SESSION LOG
+
+**2026-06-02 (cont.) — BUG-8: split gallery toggle (visibility vs upload) + remove emergency contact**
+- **BUG-8 fixed:** gallery had ONE effective flag that hid the feature AND blocked uploads, so a gym admin's "Gallery" toggle made the whole feature vanish. Split into two concepts at both scopes: `gallery` (visible/browsable) = `platform.galleryEnabled && gym.galleryEnabled`; `galleryUpload` = that AND `platform.galleryUploadEnabled && gym.galleryUploadEnabled`. Added `PlatformSettings.galleryEnabled` + `GymFeatures.galleryUploadEnabled` (db push). Upload button + `POST /api/media` now gate on `galleryUpload`; nav/page still gate on `gallery`. New toggles in both site-admin + gym-admin settings UIs. **Verified** (`scripts/verify-gallery.mjs`): uploads-off→browsable+no-upload+POST 403; visible-off→redirect+nav hidden. Test flags restored to original after.
+- **Emergency contact removed from default onboarding** (user: "I don't think we need to ask for an emergency contact"). `User.emergencyContact` column kept. Added **Phase 46 — Gym Custom Student Onboarding** (participating/paid gyms customize new-student onboarding + opt into requesting emergency contact).
+
+**2026-06-02 (cont.) — Phase 45: user follow + activity feed**
+- Built one-way follow (no user-to-user model existed before — only DMs). `Follow` model + `new_follower`/`followed_post` notif types (db push); `lib/feed.ts` PUBLIC_FORUM_TYPES; follow API; `FollowButton`; public-profile gym affiliation + follower/following counts + post history (+ "show all activity I can see" toggle); `/feed` page + nav link; follower-post notifications (public forums only, deduped vs subscribers).
+- **Browser-verified** (Playwright, `scripts/verify-follow.mjs`): follow 0→1 + persists across reload, profile/feed render. Had to **restart the dev server** — it held a stale Prisma client from before the schema push (`prisma.follow` 500'd until restart). Dev server now running fresh on :3002 (bg).
+- **45.8 (phone/email show-on-profile toggles) deferred** — awaiting confirmation on whether email should ever show.
+
+**2026-06-02 — Phase 44: messaging poll, push centralization, cron removal, forum/dashboard/onboarding UX, PWA icons**
+- **Messaging (44.1)** — `MessageThread` now polls every 5s; incoming messages appear without refresh + auto mark-read.
+- **Push (44.2)** — diagnosed: built but `createNotification` never called `sendPush`, so DMs/most events never pushed. Centralized push into `createNotification`; removed 5 redundant calls. VAPID vars confirmed in Vercel Prod+Preview.
+- **Cron (44.3)** — confirmed zero scheduled crons (`vercel.json` `{}`); deleted dormant `app/api/cron/*` + removed `CRON_SECRET` (`.env.local` + Vercel Prod). Inline notifications replaced cron.
+- **Forums (44.4/44.5)** — "Forum"→"Forums" nav; new `ForumRead` model (db push done) for unread badges; default list hides unsubscribed (gym/own-belt/announcements always shown) + "Show all available forums" toggle; unread-first sorting.
+- **Dashboard (44.6)** — grouped icon-tile zones (This Week/Community/You/Manage), attendance demoted + conditional, Messages unread tile, gym-aware empty state.
+- **Onboarding (44.7)** — step-6 animated `☰` menu cue + gym-aware CTA (Schedule vs Events).
+- **PWA icons (44.8)** — regenerated all icons from `logo.png` via `scripts/generate-pwa-icons.mjs` (was stale blue-"A").
+- **Added Phases 38–43** (registration split, gym claiming, invitations/CSV, class grouping, private-lesson availability, legal/waivers) from user product notes — all OPEN.
+- **Verification** — installed `playwright` (devDep) + Chromium; `scripts/verify-ui.mjs` drove login + dashboard/forum (desktop+mobile) + onboarding (throwaway user, deleted after). All checks ✓.
+- **Nothing committed/pushed** (standing rule). Dev server on :3002; `.next` was cleared (restart needed).
 
 **2026-06-01 — Phase 35/36 UX, Phase 37 gym toggles, Phase 30 payments plan, Resend key, copy**
 - **36.1** — fixed onboarding gym return-from-register (no step-1 restart / re-prompt; "you're now a member" banner). Finding: `POST /api/gyms` already auto-joins creator.

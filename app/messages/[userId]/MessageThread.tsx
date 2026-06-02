@@ -26,12 +26,41 @@ export function MessageThread({ messages: initial, currentUserId, recipientId, i
   const [toast, setToast] = useState<{ message: string; type: 'info' | 'success' | 'error' } | null>(null)
   const [requestStatus, setRequestStatus] = useState(initialRequestStatus)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const lastSeenId = useRef<string | undefined>(initial[initial.length - 1]?.id)
 
   const clearToast = useCallback(() => setToast(null), [])
 
   useEffect(() => {
     mutate('/api/messages/unread-count')
   }, [])
+
+  // Poll for new messages so incoming messages appear without a manual refresh.
+  useEffect(() => {
+    let active = true
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/messages/${recipientId}`)
+        if (!res.ok || !active) return
+        const data: Message[] = await res.json()
+        const nextLast = data[data.length - 1]
+        if (!nextLast || nextLast.id === lastSeenId.current) return
+        lastSeenId.current = nextLast.id
+        setMessages(data)
+        // If the newest message is from the other person, mark read + clear badge.
+        if (nextLast.sender.id === recipientId) {
+          fetch(`/api/messages/${recipientId}/read`, { method: 'PATCH' })
+            .then(() => mutate('/api/messages/unread-count'))
+            .catch(() => {})
+        }
+      } catch {
+        // transient network errors are ignored; next tick retries
+      }
+    }, 5000)
+    return () => {
+      active = false
+      clearInterval(interval)
+    }
+  }, [recipientId])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -73,6 +102,7 @@ export function MessageThread({ messages: initial, currentUserId, recipientId, i
     }
 
     setMessages(ms => [...ms, { ...data, createdAt: data.createdAt }])
+    lastSeenId.current = data.id
     setBody('')
     setSending(false)
   }
@@ -138,7 +168,7 @@ export function MessageThread({ messages: initial, currentUserId, recipientId, i
           disabled={sending || !body.trim() || requestStatus === 'pending'}
           className="px-5 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors disabled:opacity-60"
         >
-          {requestStatus === 'pending' ? 'Pending' : 'Send'}
+          {requestStatus === 'pending' ? 'Pending' : "'ScendIt"}
         </button>
       </form>
 

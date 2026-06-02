@@ -200,7 +200,7 @@ export function JournalForm({ classSessionId, defaultPromptKeys, initial }: Prop
           disabled={saving}
           className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors disabled:opacity-60"
         >
-          {saving ? 'Saving…' : initial ? 'Save Changes' : 'Save Entry'}
+          {saving ? 'Saving…' : "'ScendIt"}
         </button>
         <button
           type="button"

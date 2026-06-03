@@ -104,21 +104,6 @@ export function EditProfileForm({ userId, initial, profilePrivacy: initialPrivac
 
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-bold uppercase tracking-widest text-steel">Weight Class</label>
-          <PrivacySelect field="weightClass" privacy={privacy} onChange={updatePrivacy} />
-        </div>
-        <select
-          value={form.weightClass}
-          onChange={e => update('weightClass', e.target.value)}
-          className="w-full px-4 py-3 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors"
-        >
-          <option value="">— Not specified —</option>
-          {WEIGHT_CLASSES.map(w => <option key={w} value={w}>{w}</option>)}
-        </select>
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center justify-between">
           <label className="text-xs font-bold uppercase tracking-widest text-steel">Bio</label>
           <PrivacySelect field="bio" privacy={privacy} onChange={updatePrivacy} />
         </div>

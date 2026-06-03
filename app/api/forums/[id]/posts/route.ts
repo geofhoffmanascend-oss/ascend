@@ -12,7 +12,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id: forumId } = await params
-  const { content, type, videoUrl, parentId } = await req.json()
+  const { content, type, videoUrl, parentId, imageUrl } = await req.json()
 
   if (!content?.trim()) return NextResponse.json({ error: 'Content required' }, { status: 400 })
 
@@ -44,6 +44,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
 
+  const cleanImage = typeof imageUrl === 'string' && imageUrl.trim() ? imageUrl.trim() : null
+
   const post = await prisma.post.create({
     data: {
       forumId,
@@ -51,6 +53,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       content: content.trim(),
       type: type ?? 'text',
       videoUrl: videoUrl?.trim() || null,
+      imageUrl: cleanImage,
       parentId: parentId || null,
     },
     include: {
@@ -59,6 +62,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       parent: { select: { authorId: true } },
     },
   })
+
+  // Forum gallery (Phase 49): a posted photo becomes a forum-scoped MediaItem,
+  // linked to the post (cascade-deletes with it). Excluded from the main gallery.
+  if (cleanImage) {
+    await prisma.mediaItem.create({
+      data: {
+        uploaderId: session.user.id,
+        url: cleanImage,
+        type: 'photo',
+        caption: content.trim().slice(0, 200),
+        visibility: 'private',
+        gymId: forum?.gymId ?? null,
+        forumId,
+        postId: post.id,
+      },
+    })
+  }
 
   const authorName = session.user.name ?? 'Someone'
   const snippet = content.trim().slice(0, 80)

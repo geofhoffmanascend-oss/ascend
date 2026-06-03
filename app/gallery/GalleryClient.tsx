@@ -43,6 +43,7 @@ type Props = {
   currentUserRoles: string[]
   currentUserGymId: string | null
   canUpload: boolean
+  forumId?: string
 }
 
 function gridStyle(density: Density) {
@@ -71,7 +72,7 @@ function serializeItem(item: MediaItem & { publicId?: string | null; forSale?: b
   }
 }
 
-export function GalleryClient({ initialItems, nextCursor: initialCursor, currentUserId, currentUserRoles, currentUserGymId, canUpload }: Props) {
+export function GalleryClient({ initialItems, nextCursor: initialCursor, currentUserId, currentUserRoles, currentUserGymId, canUpload, forumId }: Props) {
   const [items,       setItems]       = useState<MediaItem[]>(initialItems)
   const [cursor,      setCursor]      = useState(initialCursor)
   const [loading,     setLoading]     = useState(false)
@@ -90,6 +91,7 @@ export function GalleryClient({ initialItems, nextCursor: initialCursor, current
     if (newFilters.person)           sp.set('taggedUserId', newFilters.person.id)
     if (newFilters.myTags)           sp.set('myTags',       '1')
     if (newCursor)                   sp.set('cursor',       newCursor)
+    if (forumId)                     sp.set('forumId',      forumId)
     const res  = await fetch(`/api/media?${sp}`)
     const data = await res.json()
     setLoading(false)

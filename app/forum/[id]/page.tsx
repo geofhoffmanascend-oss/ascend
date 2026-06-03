@@ -108,8 +108,9 @@ export default async function ForumPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
-      <div className="mb-2">
+      <div className="mb-2 flex items-center justify-between">
         <Link href="/forum" className="text-xs text-ash hover:text-ink transition-colors">← Forums</Link>
+        <Link href={`/forum/${forum.id}/gallery`} className="text-xs font-medium text-brand-red hover:underline">📷 Photo Gallery →</Link>
       </div>
       <div className="mb-8">
         <div className="flex items-center gap-3 flex-wrap mb-3">

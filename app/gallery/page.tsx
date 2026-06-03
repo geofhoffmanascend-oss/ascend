@@ -19,7 +19,7 @@ export default async function GalleryPage() {
   if (!gallery) redirect('/dashboard')
 
   const items = await prisma.mediaItem.findMany({
-    where: visibilityFilter(session.user.id, session.user.gymId ?? null),
+    where: { ...visibilityFilter(session.user.id, session.user.gymId ?? null), forumId: null },
     include: {
       uploader: { select: { id: true, name: true } },
       tags:     { include: { user: { select: { id: true, name: true, avatarUrl: true } } } },

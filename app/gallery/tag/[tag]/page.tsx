@@ -26,7 +26,7 @@ export default async function HashtagAlbumPage({ params }: { params: Promise<{ t
 
   const visFilter = visibilityFilter(session.user.id, session.user.gymId ?? null)
   const items = await prisma.mediaItem.findMany({
-    where: { hashtags: { some: { hashtagId: hashtag.id } }, ...visFilter },
+    where: { hashtags: { some: { hashtagId: hashtag.id } }, ...visFilter, forumId: null },
     include: {
       uploader: { select: { id: true, name: true } },
       tags:     { include: { user: { select: { id: true, name: true, avatarUrl: true } } } },

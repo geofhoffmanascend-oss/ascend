@@ -436,6 +436,7 @@ model Forum {
   posts         Post[]
   subscriptions ForumSubscription[]
   reads         ForumRead[]
+  media         MediaItem[]
 }
 
 model Post {
@@ -445,6 +446,7 @@ model Post {
   content   String
   type      PostType @default(text)
   videoUrl  String?
+  imageUrl  String?
   parentId  String?
   pinned    Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -455,6 +457,7 @@ model Post {
   parent   Post?  @relation("PostReplies", fields: [parentId], references: [id])
   replies  Post[] @relation("PostReplies")
   likes    PostLike[]
+  media    MediaItem?
 }
 
 // Thumbs-up reaction on a forum post (one per user per post).
@@ -682,6 +685,13 @@ model MediaItem {
   tags         MediaTag[]
   hashtags     MediaHashtag[]
   accessGrants MediaAccess[]
+  // Per-forum gallery (Phase 49): media scoped to a forum, linked to its source post.
+  forumId      String?
+  forum        Forum?          @relation(fields: [forumId], references: [id], onDelete: Cascade)
+  postId       String?         @unique
+  post         Post?           @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([forumId])
 }
 
 model MediaAccess {

@@ -5,6 +5,7 @@ import prisma from '@/lib/database'
 import { uploadFromBuffer, getYouTubeThumbnail } from '@/lib/cloudinary'
 import { visibilityFilter } from '@/lib/mediaAccess'
 import { getEffectiveFeatures } from '@/lib/features'
+import { canReadForum } from '@/lib/forumAccess'
 
 function parseHashtags(raw: string): string[] {
   return [...(raw.matchAll(/#([a-zA-Z0-9_]+)/g))]
@@ -40,12 +41,35 @@ export async function GET(req: NextRequest) {
   const caption      = sp.get('q')?.trim()
   const myTags       = sp.get('myTags') === '1'
   const cursor       = sp.get('cursor')
+  const forumId      = sp.get('forumId')
   const take         = 24
 
-  const visFilter = visibilityFilter(session.user.id, session.user.gymId ?? null)
+  // Per-forum gallery: scoped to one forum, gated by forum access (not the
+  // gallery visibility tiers). Forum media never appears in the main gallery.
+  const scopeFilter = await (async () => {
+    if (forumId) {
+      const forum = await prisma.forum.findUnique({
+        where: { id: forumId },
+        select: { type: true, gymId: true, classGroup: true, beltLevel: true },
+      })
+      if (!forum) return null
+      let blockedGroups: string[] = []
+      if (forum.type === 'group_forum') {
+        const u = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedClassGroups: true } })
+        blockedGroups = (u?.blockedClassGroups ?? []) as string[]
+      }
+      if (!canReadForum(session, forum, blockedGroups)) return 'forbidden'
+      return { forumId }
+    }
+    // main gallery: visibility tiers + exclude forum-scoped media
+    return { ...visibilityFilter(session.user.id, session.user.gymId ?? null), forumId: null }
+  })()
+
+  if (scopeFilter === null) return NextResponse.json({ error: 'Forum not found' }, { status: 404 })
+  if (scopeFilter === 'forbidden') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const where = {
-    ...visFilter,
+    ...scopeFilter,
     ...(taggedUserId && { tags:     { some: { userId: taggedUserId } } }),
     ...(myTags       && { tags:     { some: { userId: session.user.id } } }),
     ...(hashtag      && { hashtags: { some: { hashtag: { tag: hashtag } } } }),

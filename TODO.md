@@ -721,6 +721,7 @@ Participating (paid) gyms can customize the new-student onboarding for members j
 ### [ ] 46.2 — Emergency contact as an opt-in gym field: gyms can toggle "request emergency contact" on; when on, it's added to that gym's student onboarding (and editable in profile). Default/individual onboarding does NOT ask.
 ### [ ] 46.3 — Onboarding flow resolution: when a student joins/affiliates with a participating gym (incl. via invite — Phase 40), run that gym's custom onboarding; otherwise the default. Store gym-custom answers per membership.
 ### [ ] 46.4 — Gating: custom onboarding is a paid-tier capability (ties to Phase 30 tier model + Phase 37 feature toggles).
+### [ ] 46.5 — QR check-in as a gym-onboarding option: QR display is now auto-gated to participating-gym members (hidden otherwise). Make enabling/branding the per-user QR check-in an explicit toggle in the participating-gym onboarding/setup.
 
 **Note:** emergency-contact field was removed from the default onboarding (2026-06-02). The `User.emergencyContact` column is retained for gyms that request it via 46.2.
 
@@ -735,7 +736,38 @@ Participating (paid) gyms can customize the new-student onboarding for members j
 
 ---
 
+## PHASE 47 — Beta Launch Prep (before real testers)
+Soft-release data cleanup is DONE (see 2026-06-02 log). Code pushed to `origin/main` 2026-06-02. Remaining before inviting the 6am crew:
+
+### [ ] 47.1 — Email delivery (BLOCKING): Resend is sandbox-only (delivers only to the verified address) and `EMAIL_FROM` was never pushed to Vercel. Verify a domain in Resend + set `EMAIL_FROM=noreply@<domain>` in Vercel (Prod+Preview). Without this, password reset / email confirm / future invites don't reach real users.
+### [ ] 47.2 — Legal: minimal Privacy Policy + Terms of Service pages + links on register/footer (real people signing up & posting). Full version = Phase 43.
+### [ ] 47.3 — Abuse/rate limiting on public endpoints (register, forgot-password, forum posting) — Vercel BotID/WAF or simple limiter.
+### [ ] 47.4 — Error monitoring (Sentry or Vercel observability) to catch crashes during beta.
+### [ ] 47.5 — Onboarding path for the crew: no invite system yet (Phase 40). They self-register + pick "Ascend Jiu Jitsu" in the gym picker. Provide a shareable signup link + verify the picker finds the gym.
+### [ ] 47.6 — Seed a welcome/announcement post in General + 6am Crew so forums aren't empty on day one.
+### [x] 47.7 — Hide dev "Delete account" button in production (`NODE_ENV !== 'production'` gate on dashboard). NOTE: `DELETE /api/account` route still live (self-only); optionally gate it too.
+### [ ] 47.8 — Forum media (pics/videos): people replacing FB Messenger/group-texts will want to share photos. Images can reuse the server-side Cloudinary `uploadFromBuffer` (image-only); **video file upload needs a Cloudinary helper extension** — DECISION NEEDED: links-only vs file upload. Add `Post.imageUrl` + composer image picker (replies are Posts too). Cloudinary confirmed working (env in Vercel prod).
+
+---
+
+## PHASE 48 — "'ScendIt" Button Branding
+### [x] 48.1 — Group A renamed to `'ScendIt`: forum new-post, forum reply-submit (the `↩ Reply` toggle stays "Reply"), DM send, lesson-message send. Journal save (new+edit) also renamed (first Group B item). Loading/pending states kept (Posting…/Saving…/Pending).
+### [ ] 48.2 — Group B (remaining) — DECISION NEEDED: whether to also rename Events submit, lesson request, profile/settings save, gallery upload, gym register, admin create-forms. Group C (auth/destructive: Sign In, Create Account, password reset, Place Order, Check In, edit Save) recommended KEEP.
+
+---
+
 ## SESSION LOG
+
+**2026-06-02 (cont. 3) — Soft-release cleanup, forum edit/like, QR gating, navbar toggles, 'ScendIt, beta prep + PUSHED**
+- **Data purge (soft release)** — ran `scripts/soft-release-cleanup.ts` against the live CockroachDB cluster. Result: **4 users** (admin@gym.com [admin/site_admin], instructor1@gym.com [Marcus Silva], geof.hoffman.ascend@gmail.com, geof.hoffman@gmail.com [site_admin, gymless]); **1 gym "Ascend Jiu Jitsu"** (slug `ascend`, **non-participating/free**); **2 forums** General + 6am Crew (members subscribed); 0 posts; all test classes/sessions/tournaments/media/messages purged. Deleted instructor2 + 26 others + 4 junk gyms.
+- **Forum edit + 👍 like** — new `PostLike` model (db push); `POST/DELETE /api/posts/[id]/like`; content-edit added to `PATCH /api/posts/[id]` (author/admin); ForumClient: like button + count + inline edit on posts & replies; delete already existed. Typecheck clean; partial browser check (login/nav/post-form confirmed; full like/edit click-through interrupted).
+- **QR gating** — `/profile` QR shown only to participating-gym members (auto-appears when gym turns participating / user joins one). [[47.7]] gym-onboarding note → 46.5.
+- **Navbar visibility toggles** — added platform flags `feedEnabled/scheduleEnabled/forumsEnabled/eventsEnabled` (db push) + site-admin Settings toggles; Header (desktop+mobile) + dashboard tiles gate on them; admins bypass (getEffectiveFeatures ALL_ON).
+- **'ScendIt rename** — Group A + journal save (see Phase 48). Group B/C pending decision.
+- **Hid dev delete-account button** in production.
+- **Emergency contact removed** from default onboarding; `User.emergencyContact` kept → Phase 46 (gym-requestable).
+- **Built earlier this session:** Phase 44 (messaging poll, push centralized into `createNotification`, cron deleted, forum cleanup + unread badges, dashboard zones, onboarding menu cue, PWA icons), Phase 45 (one-way follow + feed + notifications), BUG-8 (gallery visible-vs-upload split). Added Phases 38–43 (product backlog) + 46/47/48.
+- **PUSHED to origin/main by user (2026-06-02)** — production build verified (`BUILD_ID` ok) before push; Vercel should deploy. devDeps: `playwright` + Chromium added for browser verification (`scripts/verify-*.mjs`).
 
 **2026-06-02 (cont.) — BUG-8: split gallery toggle (visibility vs upload) + remove emergency contact**
 - **BUG-8 fixed:** gallery had ONE effective flag that hid the feature AND blocked uploads, so a gym admin's "Gallery" toggle made the whole feature vanish. Split into two concepts at both scopes: `gallery` (visible/browsable) = `platform.galleryEnabled && gym.galleryEnabled`; `galleryUpload` = that AND `platform.galleryUploadEnabled && gym.galleryUploadEnabled`. Added `PlatformSettings.galleryEnabled` + `GymFeatures.galleryUploadEnabled` (db push). Upload button + `POST /api/media` now gate on `galleryUpload`; nav/page still gate on `gallery`. New toggles in both site-admin + gym-admin settings UIs. **Verified** (`scripts/verify-gallery.mjs`): uploads-off→browsable+no-upload+POST 403; visible-off→redirect+nav hidden. Test flags restored to original after.
@@ -780,8 +812,10 @@ Participating (paid) gyms can customize the new-student onboarding for members j
 - **Clarified Phase 28/32 status:** both fully built + nav-wired, but invisible locally due to BUG-6's stale SW bundle, and absent from production because local `main` is **3 commits ahead of origin** (nothing pushed).
 
 ### Pending decisions / next session
-1. **Commit + maybe push** the uncommitted work (32.8, Phase 34, BUG-6, BUG-7, guide untracking, todo files). Local `main` is ahead of `origin/main` by 3 commits already; pushing would deploy Phases 26–33+. User has said don't push — revisit.
-2. **One-time SW cleanup** in browser if not yet done (DevTools → unregister SW + clear site data; `rm -rf .next`; restart dev; hard reload) — required to see Events/Tournaments + test BUG-7 fix against a fresh bundle.
-3. **Phase 30 payment terms** still undecided — blocks all of Phase 30. Build in Stripe TEST MODE when unblocked.
-4. **Phase 35** UX-audit guide ready to build (`guides/phase35-ux-audit.md`).
-5. Tournament "in-house, whitebelt toruney" is in `draft` — set to `open`/generate brackets to exercise the registrations + bracket UI.
+1. **Beta blockers (Phase 47):** email domain + `EMAIL_FROM` to Vercel (47.1) is the top one; then legal pages (47.2), rate limiting (47.3), error monitoring (47.4), crew signup link + welcome post (47.5/47.6).
+2. **Forum media (47.8) — DECISION:** videos links-only vs file upload? Then build `Post.imageUrl` + composer image picker (Cloudinary ready).
+3. **'ScendIt Group B (48.2) — DECISION:** rename the remaining form submits, or stop at Group A + journal?
+4. **Verify forum like/edit in browser** — built + typechecked but full click-through was interrupted (`scripts/verify-softrelease.mjs` exists; it failed only on a selector, not the feature). After a `prisma db push` the dev server MUST be restarted (stale client → `prisma.X` 500s) — recurring gotcha this session.
+5. **Phase 30 payment terms** still undecided — blocks all of Phase 30 (Stripe TEST MODE when unblocked).
+6. **Optional:** gate `DELETE /api/account` to non-production too (button already hidden in prod).
+7. **Deploy state:** all work pushed to `origin/main` 2026-06-02; confirm the Vercel prod deploy succeeded + smoke-test prod (login, forums, profile).

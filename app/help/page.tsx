@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { HelpSection } from './HelpSection'
+import { BetaNotice } from '@/app/components/BetaNotice'
 
 export const metadata = { title: 'Help' }
 
@@ -16,6 +17,7 @@ export default async function HelpPage() {
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-10">
+      <BetaNotice variant="help" />
       {/* Page header */}
       <div className="mb-8">
         <span className="inline-block bg-brand-red px-3 py-1 font-display text-xs font-bold tracking-widest uppercase text-paper mb-3">

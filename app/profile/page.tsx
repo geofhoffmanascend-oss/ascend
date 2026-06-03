@@ -130,9 +130,6 @@ export default async function ProfilePage() {
                 : <span className="text-xs text-ash italic">Unverified</span>
               }
             </div>
-            {user.weightClass && (
-              <p className="text-xs text-steel font-medium">{user.weightClass}</p>
-            )}
             <p className="text-xs text-ash">
               Member since {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </p>

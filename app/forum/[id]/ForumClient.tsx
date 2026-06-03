@@ -16,6 +16,7 @@ type Reply = {
   author: Author
   likeCount: number
   likedByMe: boolean
+  imageUrl?: string | null
 }
 
 type Post = {
@@ -24,6 +25,7 @@ type Post = {
   content: string
   type: string
   videoUrl: string | null
+  imageUrl?: string | null
   pinned: boolean
   createdAt: string
   author: Author
@@ -70,6 +72,17 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
   const [saving, setSaving] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
+  const [postImage, setPostImage] = useState<File | null>(null)
+  const [replyImage, setReplyImage] = useState<File | null>(null)
+
+  async function uploadImage(file: File): Promise<string | null> {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch(`/api/forums/${forumId}/upload`, { method: 'POST', body: fd })
+    if (!res.ok) return null
+    const data = await res.json()
+    return data.url ?? null
+  }
 
   const canAnnounce = userRoles.includes('instructor') || userRoles.includes('admin')
   const canPin = userRoles.includes('instructor') || userRoles.includes('admin')
@@ -78,10 +91,15 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
     e.preventDefault()
     if (!form.content.trim()) return
     setSaving(true)
+    let imageUrl: string | null = null
+    if (postImage) {
+      imageUrl = await uploadImage(postImage)
+      if (!imageUrl) { setSaving(false); return }
+    }
     const res = await fetch(`/api/forums/${forumId}/posts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, imageUrl }),
     })
     if (res.ok) {
       const post = await res.json()
@@ -92,6 +110,7 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
           : [...prev.filter(p => p.pinned), newPost, ...prev.filter(p => !p.pinned)]
       })
       setForm({ content: '', type: 'text', videoUrl: '' })
+      setPostImage(null)
       setShowForm(false)
     }
     setSaving(false)
@@ -100,15 +119,21 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
   async function createReply(postId: string) {
     if (!replyContent.trim()) return
     setSaving(true)
+    let imageUrl: string | null = null
+    if (replyImage) {
+      imageUrl = await uploadImage(replyImage)
+      if (!imageUrl) { setSaving(false); return }
+    }
     const res = await fetch(`/api/forums/${forumId}/posts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: replyContent, type: 'text', parentId: postId }),
+      body: JSON.stringify({ content: replyContent, type: 'text', parentId: postId, imageUrl }),
     })
     if (res.ok) {
       const reply = await res.json()
       setPosts(prev => prev.map(p => p.id === postId ? { ...p, replies: [...p.replies, { ...reply, likeCount: 0, likedByMe: false }] } : p))
       setReplyContent('')
+      setReplyImage(null)
       setReplyTo(null)
     }
     setSaving(false)
@@ -248,6 +273,11 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
               placeholder="Video URL (YouTube, Vimeo…)"
             />
           )}
+          <label className="text-xs text-steel font-medium flex items-center gap-2 cursor-pointer">
+            <span className="border border-smoke px-3 py-1.5 hover:border-steel transition-colors">📷 {postImage ? 'Change photo' : 'Add photo'}</span>
+            {postImage && <span className="text-ash">{postImage.name}</span>}
+            <input type="file" accept="image/*" className="hidden" onChange={e => setPostImage(e.target.files?.[0] ?? null)} />
+          </label>
           <div>
             <button
               type="submit"
@@ -318,6 +348,11 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
               ) : (
                 <>
                   <p className="text-ink text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
+                  {post.imageUrl && (
+                    <a href={`/forum/${forumId}/gallery`}>
+                      <img src={post.imageUrl} alt="" className="mt-2 max-h-96 w-auto rounded border border-smoke object-contain" />
+                    </a>
+                  )}
                   {post.videoUrl && (
                     <a href={post.videoUrl} target="_blank" rel="noopener noreferrer"
                       className="inline-block mt-2 text-xs text-brand-red hover:text-brand-red-dark underline">
@@ -362,7 +397,14 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
                             </div>
                           </div>
                         ) : (
-                          <p className="text-sm text-ink leading-relaxed">{reply.content}</p>
+                          <>
+                            <p className="text-sm text-ink leading-relaxed">{reply.content}</p>
+                            {reply.imageUrl && (
+                              <a href={`/forum/${forumId}/gallery`}>
+                                <img src={reply.imageUrl} alt="" className="mt-1 max-h-72 w-auto rounded border border-smoke object-contain" />
+                              </a>
+                            )}
+                          </>
                         )}
                         <button
                           onClick={() => toggleLike(reply.id, reply.likedByMe, true, post.id)}
@@ -396,6 +438,10 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
                     autoFocus
                     onKeyDown={e => e.key === 'Enter' && !e.shiftKey && createReply(post.id)}
                   />
+                  <label className={`px-3 py-2 border text-xs cursor-pointer transition-colors flex items-center ${replyImage ? 'border-brand-red text-brand-red' : 'border-smoke text-ash hover:text-ink hover:border-steel'}`} title={replyImage ? replyImage.name : 'Add photo'}>
+                    📷
+                    <input type="file" accept="image/*" className="hidden" onChange={e => setReplyImage(e.target.files?.[0] ?? null)} />
+                  </label>
                   <button
                     onClick={() => createReply(post.id)}
                     disabled={saving || !replyContent.trim()}
@@ -403,7 +449,7 @@ export function ForumClient({ forumId, posts: initial, userId, userRoles, isSubs
                   >
                     {"'ScendIt"}
                   </button>
-                  <button onClick={() => setReplyTo(null)} className="px-3 py-2 text-xs text-ash hover:text-ink transition-colors">
+                  <button onClick={() => { setReplyTo(null); setReplyImage(null) }} className="px-3 py-2 text-xs text-ash hover:text-ink transition-colors">
                     Cancel
                   </button>
                 </div>

@@ -746,7 +746,7 @@ Soft-release data cleanup is DONE (see 2026-06-02 log). Code pushed to `origin/m
 ### [ ] 47.5 — Onboarding path for the crew: no invite system yet (Phase 40). They self-register + pick "Ascend Jiu Jitsu" in the gym picker. Provide a shareable signup link + verify the picker finds the gym.
 ### [ ] 47.6 — Seed a welcome/announcement post in General + 6am Crew so forums aren't empty on day one.
 ### [x] 47.7 — Hide dev "Delete account" button in production (`NODE_ENV !== 'production'` gate on dashboard). NOTE: `DELETE /api/account` route still live (self-only); optionally gate it too.
-### [ ] 47.8 — Forum media (pics/videos): people replacing FB Messenger/group-texts will want to share photos. Images can reuse the server-side Cloudinary `uploadFromBuffer` (image-only); **video file upload needs a Cloudinary helper extension** — DECISION NEEDED: links-only vs file upload. Add `Post.imageUrl` + composer image picker (replies are Posts too). Cloudinary confirmed working (env in Vercel prod).
+### [x] 47.8 — Forum media (photos) — DONE via **Phase 49** (per-forum galleries). Photos upload + inline + per-forum gallery; video file upload still deferred (links only).
 
 ---
 
@@ -756,7 +756,49 @@ Soft-release data cleanup is DONE (see 2026-06-02 log). Code pushed to `origin/m
 
 ---
 
+## PHASE 49 — Per-Forum Galleries — DONE
+Guide: `guides/phase49-forum-galleries.md`. Photos attached to a forum post/reply display inline AND appear in a per-forum gallery (the full `GalleryClient`), gated to forum members. Schema pushed; typecheck clean; browser-verified (forum gallery shows photo, main gallery excludes it, cleanup ok). Videos remain links-only.
+
+### [x] 49.1 — Schema: `Post.imageUrl`, `MediaItem.forumId` + `postId @unique` (cascade on post delete); db push
+### [x] 49.2 — `lib/forumAccess.ts` (`canReadForum`/`canPostForum`) + `POST /api/forums/[id]/upload` (forum-access-gated Cloudinary upload, NOT the gallery toggle)
+### [x] 49.3 — `POST /api/forums/[id]/posts` accepts `imageUrl` → creates forum-scoped `MediaItem` linked to the post
+### [x] 49.4 — `ForumClient`: 📷 image picker on new post + reply; inline image render (links to forum gallery)
+### [x] 49.5 — `GET /api/media?forumId=` (forum-access-gated) + main gallery/tag pages exclude forum media (`forumId: null`)
+### [x] 49.6 — `/forum/[id]/gallery` page (access-gated) + `GalleryClient` `forumId` prop + "📷 Photo Gallery" link on forum detail
+### [ ] 49.7 — (later) video file uploads; multi-image per post; tagging/hashtags on forum photos already work via reused gallery
+
+---
+
+## PHASE 50 — Site Admin: User Management + Forum Moderation Rework — DONE (not pushed)
+### [x] 50.1 — Login tracking: `User.lastLoginAt` + `LoginEvent` model (db push); recorded in NextAuth `events.signIn`. (Existing users show "Never"/0 until next login.)
+### [x] 50.2 — `/site-admin/users` list: all users, search (name/email), gym filter, sorted by gym; columns incl. last login + 30-day login count; rows link to detail. Sidebar "Users" link added.
+### [x] 50.3 — `/site-admin/users/[id]`: stats (last login, 30d logins, attendance 30d, posts, commits) + full edit form (name, email, phone, belt, stripes, belt-verified, gym, roles) via `PATCH /api/site-admin/users/[id]` (email-unique + self site-admin-lockout guards) + link to public profile.
+### [x] 50.4 — Site-admin gym detail: member names now link to `/site-admin/users/[id]`.
+### [x] 50.5 — Forum moderation rework: `/site-admin/forums` now lists ALL forums NOT controlled by a participating gym (platform + free/non-participating gym forums, e.g. Ascend's General + 6am Crew), with gym label + post counts; select a forum → view/delete posts (`GET /api/site-admin/forums/posts?forumId=`, existing DELETE). Replaces the belt-forum-only view.
+### [x] 50.6 — Belt forums retired: removed belt section from public `/forum` list; deleted belt `ForumModerationClient`. (belt.ts kept for belt badges/post-permissions; belt-posts/init APIs left orphaned/unused.)
+### [x] 50.7 — Forum visibility split — DONE. "General" renamed **"DMV Jiu-Jitsu"** + made public (`gymId=null`, shown to ALL users by default). **6am Crew** kept under Ascend; forum list now renders a section headed by the **gym name** for gym-scoped forums. Public no-gym forums always default-shown. (Browser-verified.) **Reddit-style note:** when migrating public forums to a communities UX, add a `slug` field (e.g. `j/dmv`).
+
+---
+
 ## SESSION LOG
+
+**2026-06-05 (cont. 6) — Forum visibility: public "DMV Jiu-Jitsu" + 6am Crew under Ascend**
+- Renamed "General" → **DMV Jiu-Jitsu**, set `gymId=null` (platform-wide public, default-shown to all). **6am Crew** stays under Ascend; forum list groups gym-scoped forums under a gym-name section. (Phase 50.7 done.) Data change is live on the shared cluster; UI grouping code NOT pushed yet (until pushed, prod shows both in "General").
+
+**2026-06-05 (cont. 5) — Phase 50 site-admin user management + forum moderation rework**
+- Built login tracking (`lastLoginAt` + `LoginEvent`, recorded on sign-in) → powers admin stats.
+- New **Users** tab: list (search + gym filter + last-login + 30d logins) → user detail with stats + full edit (incl. roles/gym) via site-admin API. Gym-detail member names now clickable.
+- Reworked **Forums** tab into moderation of all non-participating-gym forums (view/delete posts); **retired belt forums** (removed from public forum list + deleted belt moderation client).
+- Confirmed General + 6am Crew forums already gymId=Ascend Jiu Jitsu (shown with gym label in moderation list).
+- Schema pushed; typecheck + production build clean. **NOT committed/pushed** (user handles pushes).
+
+**2026-06-03/05 (cont. 4) — Weight class removal, gallery restore, beta notice, Phase 49 forum galleries**
+- **Profile weight class removed** from bio (edit form + own + public profile). Tournament/competition weight classes untouched. `User.weightClass` column kept.
+- **Gallery demo pics restored** — re-ran `prisma/seed-gallery.ts` (12 Pexels photos, assigned to Admin User). Uploads already off platform-wide (`galleryUploadEnabled=false`) so gallery is **view-only** for non-admins; admins still upload.
+- **Beta notice** (`app/components/BetaNotice.tsx`): site-wide **footer** banner + **help-page** box — "AscendIt is in active testing," lists available features, links **"Message AscendIt Admin"** → DM with the **`admin@ascendit.app`** account (the site_admin named "AscendIt Admin", id `cmpx7uwqu000004lgehyt7lrd`). Renamed `admin@gym.com` back to "Admin User" to avoid duplicate names. (Real mailbox for admin@ascendit.app to be created later via Resend.)
+- **Phase 49 — per-forum galleries** built + verified (see above).
+- **Test student** `student1@gym.com` / `student1234` recreated (un-onboarded) via `scripts/add-test-student.ts` for manual onboarding testing; idempotent reset.
+- **Prod deploy confirmed working** by user earlier. **NOTE: not yet committed/pushed at time of this entry** — user was about to `commit and push all changes`.
 
 **2026-06-02 (cont. 3) — Soft-release cleanup, forum edit/like, QR gating, navbar toggles, 'ScendIt, beta prep + PUSHED**
 - **Data purge (soft release)** — ran `scripts/soft-release-cleanup.ts` against the live CockroachDB cluster. Result: **4 users** (admin@gym.com [admin/site_admin], instructor1@gym.com [Marcus Silva], geof.hoffman.ascend@gmail.com, geof.hoffman@gmail.com [site_admin, gymless]); **1 gym "Ascend Jiu Jitsu"** (slug `ascend`, **non-participating/free**); **2 forums** General + 6am Crew (members subscribed); 0 posts; all test classes/sessions/tournaments/media/messages purged. Deleted instructor2 + 26 others + 4 junk gyms.

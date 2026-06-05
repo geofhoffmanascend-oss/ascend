@@ -77,7 +77,7 @@ export default async function SiteAdminGymDetailPage({ params }: { params: Promi
               <tbody className="divide-y divide-smoke">
                 {members.map(m => (
                   <tr key={m.id}>
-                    <td className="py-2 text-ink">{m.user.name ?? '—'}</td>
+                    <td className="py-2"><Link href={`/site-admin/users/${m.user.id}`} className="text-brand-red font-medium hover:underline">{m.user.name ?? '—'}</Link></td>
                     <td className="py-2 text-ash">{m.user.email}</td>
                     <td className="py-2 text-ash capitalize">{m.user.belt}</td>
                     <td className="py-2 text-ash">{(m.user.roles as string[]).join(', ')}</td>

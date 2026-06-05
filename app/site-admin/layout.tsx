@@ -5,6 +5,7 @@ import Link from 'next/link'
 
 const NAV = [
   { href: '/site-admin', label: 'Dashboard' },
+  { href: '/site-admin/users', label: 'Users' },
   { href: '/site-admin/gyms', label: 'Gyms' },
   { href: '/site-admin/events', label: 'Events' },
   { href: '/site-admin/forums', label: 'Forums' },

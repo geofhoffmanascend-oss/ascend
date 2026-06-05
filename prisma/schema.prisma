@@ -233,6 +233,8 @@ model User {
   following            Follow[]    @relation("Following")
   followers            Follow[]    @relation("Followers")
   postLikes            PostLike[]
+  lastLoginAt          DateTime?
+  loginEvents          LoginEvent[]
   goalsAsStudent       StudentGoal[]
   competitions         Competition[]
   rankHistory          RankPromotion[]   @relation("StudentRank")
@@ -484,6 +486,16 @@ model ForumSubscription {
   forum Forum @relation(fields: [forumId], references: [id], onDelete: Cascade)
 
   @@unique([userId, forumId])
+}
+
+// One login record per sign-in. Powers admin "logins in last 30 days" stats.
+model LoginEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 // One-way user→user follow (no approval). Drives the activity feed + post notifications.

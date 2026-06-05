@@ -104,6 +104,13 @@ export const authOptions: NextAuthOptions = {
   events: {
     async signIn({ user, account }) {
       console.log('[auth] signIn provider=%s userId=%s', account?.provider, user.id)
+      // Record login for admin stats (last login + 30-day count). Best-effort.
+      try {
+        await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } })
+        await prisma.loginEvent.create({ data: { userId: user.id } })
+      } catch (err) {
+        console.error('[auth] login tracking error:', err)
+      }
       if (account?.provider === 'google') {
         try {
           const dbUser = await prisma.user.findUnique({ where: { id: user.id } })

@@ -630,13 +630,17 @@ Schema pushed: new `GymFeatures` model (`gymId @unique`, 6 booleans, cascade). K
 ---
 
 ## PHASE 38 — Registration & Onboarding Separation (Owner vs Individual)
+**Guide:** `guides/phase38-owner-onboarding.md` (DONE — intent branch, admin-role grant wiring, owner setup flow, dup detection). §2 = CONFIRMED decisions; §6 = build order; §10 = autonomous-session execution mode + decisions log. **Restart prompt for a skip-permissions session:** `guides/phase38-RESTART-PROMPT.md`.
 **Problem (confirmed):** both `/register` and `/gyms/register?returnTo=onboarding` funnel everyone into the **student** wizard (`OnboardingWizard.tsx`). Gym owners get a student experience, not an owner setup flow. Owners should register as themselves, then add/claim a facility, then get a paid-tier setup tour. Address during the feature audit.
+**Core gap (guide §0/§1):** creating a gym (`POST /api/gyms`) never grants the creator the `admin` role, and `/onboarding/admin` is unreachable without it — so no self-signup owner ever reaches owner tooling. "Gym admin" = global `admin` role + `User.gymId`.
 
-### [ ] 38.1 — Branch registration intent: landing + `/register` offer "Join as an athlete" vs "Register or claim a gym". Athletes → student onboarding; owners → owner path (register self, then add/claim facility). Don't force owners through the student wizard.
-### [ ] 38.2 — Tier-separated owner onboarding: walk the **free-tier** options first (profile, gym forum, communication under their banner), THEN offer the **14-day trial** (Phase 30 D8) and prompt to load schedule, instructors, logo, forums, payment. Assumption: owners won't enter student data unless on a paid tier using the management side.
-### [ ] 38.3 — In-app guided paid-tier setup (distinct from the marketing `/tour/admin`): interactive checklist/tour showing how to add schedule, instructors, personal/gym logo, and student list. Tracks completion.
-### [ ] 38.4 — During owner registration, show users already associated with the gym (count + roster preview) so the owner sees existing members before importing.
-### [ ] 38.5 — Duplicate / similar-gym handling: same name different location, students switching gyms, and accidental duplicate-gym creation. Define merge/claim guard rails and a canonical-gym resolution rule.
+**Decisions confirmed (2026-06-06, guide §2):** D-AUTH owner-context gym create **instantly grants `admin` + `instructor`** (no verification gate — testing only; revisit at launch) · D-PROFILE owner onboarding is **gym-only** (no athlete profile in it; personal profile built later via `/profile/edit`) · D-TRIAL **no money/tier mention during testing** (all features free) · D-DONE finish → `onboardedRoles += admin` (+instructor), `onboardingDone=true`.
+
+### [ ] 38.1 — Branch registration intent: landing + `/register` offer "Join as an athlete" vs "Register or claim a gym" (carry `?intent=owner`). Athletes → student onboarding; owners → `/onboarding/owner`. Don't force owners through the student wizard. *Blocks the rest.*
+### [ ] 38.2 — Owner onboarding flow (`/onboarding/owner`): **gym-only, full-feature, no money/tier talk.** Owner-context `POST /api/gyms` (`asOwner:true`) instantly grants `admin` + `instructor`, sets `gymId`, active membership. Finish marks both roles onboarded + `onboardingDone=true`. Don't bounce into student/instructor wizards.
+### [ ] 38.3 — In-app guided setup checklist (distinct from marketing `/tour/admin`): add schedule, instructors, gym logo, student list. Tracks completion via `Gym.setupProgress Json?`; "Finish setting up" card on `/admin`.
+### [ ] 38.4 — During owner onboarding, show users already associated with the gym (count + roster preview) so the owner sees existing members before importing. Reuse `GET /api/gyms/[id]/members`.
+### [ ] 38.5 — Duplicate / similar-gym detection + warn-and-fork (name+state loose / name+zip tight): "this gym may already exist — [Claim it] / [create new]". Detection + fork only; claim mechanics → Phase 39. Canonical-gym rule defined in guide §3.5.
 
 ---
 
@@ -730,6 +734,7 @@ Participating (paid) gyms can customize the new-student onboarding for members j
 ## GUIDES NEEDED (before building the above phases)
 
 - [ ] `guides/phase24-multi-gym-architecture.md` — schema redesign, model changes, migration plan
+- [x] `guides/phase38-owner-onboarding.md` — DONE (owner-vs-individual registration split, admin-grant wiring, owner setup flow, dup detection)
 - [x] `guides/phase30-payment-system.md` — DONE (Stripe Connect/Billing framework, spec-vs-schema reconciliation, phased task list)
 - [ ] `guides/phase32-tournament-system.md` — bracket formats, scoring, real-time updates
 - [x] `guides/phase35-ux-audit.md` — DONE (per-role UI walkthrough; ordered fix list → Phase 36)
@@ -777,6 +782,16 @@ Guide: `guides/phase49-forum-galleries.md`. Photos attached to a forum post/repl
 ### [x] 50.5 — Forum moderation rework: `/site-admin/forums` now lists ALL forums NOT controlled by a participating gym (platform + free/non-participating gym forums, e.g. Ascend's General + 6am Crew), with gym label + post counts; select a forum → view/delete posts (`GET /api/site-admin/forums/posts?forumId=`, existing DELETE). Replaces the belt-forum-only view.
 ### [x] 50.6 — Belt forums retired: removed belt section from public `/forum` list; deleted belt `ForumModerationClient`. (belt.ts kept for belt badges/post-permissions; belt-posts/init APIs left orphaned/unused.)
 ### [x] 50.7 — Forum visibility split — DONE. "General" renamed **"DMV Jiu-Jitsu"** + made public (`gymId=null`, shown to ALL users by default). **6am Crew** kept under Ascend; forum list now renders a section headed by the **gym name** for gym-scoped forums. Public no-gym forums always default-shown. (Browser-verified.) **Reddit-style note:** when migrating public forums to a communities UX, add a `slug` field (e.g. `j/dmv`).
+
+---
+
+## PHASE 51 — Organization Identity ("acting as" the gym vs. yourself)
+Surfaced from Phase 38 (guide §9). An owner/instructor (and possibly other authorized members) should be able to interact with forums and app features either **as their individual profile** or **on behalf of the gym/organization**. Needs its own guide before building.
+
+### [ ] 51.1 — Posting-identity model: author attribution that can be a user OR a gym/org; decide schema (e.g. `authorGymId` on Post + render rules).
+### [ ] 51.2 — Identity switcher in composers (forum post/reply, DMs?, events): choose "Post as {me}" / "Post as {Gym}".
+### [ ] 51.3 — Permissions: who may post as the org (gym `admin` always; delegate to instructors?). Audit trail of which real user posted as the org.
+### [ ] 51.4 — Display: org posts show the gym name + logo (links to `/gyms/[slug]`); make clear it's the organization, not a person.
 
 ---
 

@@ -82,7 +82,7 @@ export default async function AttendanceReportPage({ searchParams }: { searchPar
     { key: 'records',    label: 'Records' },
     { key: 'class',      label: 'By Class' },
     { key: 'instructor', label: 'By Instructor' },
-    { key: 'student',    label: 'By Student' },
+    { key: 'student',    label: 'By Member' },
   ]
 
   function tabUrl(key: string) {

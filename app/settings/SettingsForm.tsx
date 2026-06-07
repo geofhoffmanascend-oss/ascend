@@ -22,19 +22,25 @@ type Prefs = {
 
 type ForumRow = { id: string; title: string; type: string; classGroup: string | null; subscribed: boolean }
 
+type ClassGroupRow = { id: string; name: string; description: string | null }
+
 type Props = {
   userId: string
   initial: Prefs
   forums: ForumRow[]
   hiddenClassGroups: ClassGroup[]
+  classGroups: ClassGroupRow[]
+  hiddenProgramIds: string[]
   currentGym: { id: string; name: string } | null
 }
 
 const CATEGORY_LABELS = { wellness: 'Wellness', training: 'Training', reflection: 'Reflection' }
 
-export function SettingsForm({ userId, initial, forums: initialForums, hiddenClassGroups: initialHidden, currentGym }: Props) {
+export function SettingsForm({ userId, initial, forums: initialForums, hiddenClassGroups: initialHidden, classGroups, hiddenProgramIds: initialHiddenPrograms, currentGym }: Props) {
   const [prefs, setPrefs] = useState<Prefs>(initial)
   const [hiddenGroups, setHiddenGroups] = useState<ClassGroup[]>(initialHidden)
+  const [hiddenPrograms, setHiddenPrograms] = useState<string[]>(initialHiddenPrograms)
+  const useProgramGroups = classGroups.length > 0
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
@@ -103,6 +109,11 @@ export function SettingsForm({ userId, initial, forums: initialForums, hiddenCla
     setSaved(false)
   }
 
+  function toggleHiddenProgram(id: string) {
+    setHiddenPrograms(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id])
+    setSaved(false)
+  }
+
   async function handleSave() {
     setSaving(true)
     await Promise.all([
@@ -114,7 +125,7 @@ export function SettingsForm({ userId, initial, forums: initialForums, hiddenCla
       fetch('/api/user/class-preferences', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hiddenClassGroups: hiddenGroups }),
+        body: JSON.stringify(useProgramGroups ? { hiddenProgramIds: hiddenPrograms } : { hiddenClassGroups: hiddenGroups }),
       }),
     ])
     setSaving(false)
@@ -206,20 +217,35 @@ export function SettingsForm({ userId, initial, forums: initialForums, hiddenCla
           <p className="text-xs text-ash mt-1">Hide class groups you don't attend — they won't appear on your schedule. This only affects your view; admins can independently restrict your registration access.</p>
         </div>
         <div className="flex flex-col gap-3">
-          {ALL_GROUPS.map(group => (
-            <label key={group} className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={!hiddenGroups.includes(group)}
-                onChange={() => toggleHiddenGroup(group)}
-                className="mt-0.5 accent-brand-red"
-              />
-              <div>
-                <p className="text-sm text-ink font-medium">{GROUP_LABELS[group]}</p>
-                <p className="text-xs text-ash">{GROUP_DESCRIPTIONS[group]}</p>
-              </div>
-            </label>
-          ))}
+          {useProgramGroups
+            ? classGroups.map(g => (
+                <label key={g.id} className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!hiddenPrograms.includes(g.id)}
+                    onChange={() => toggleHiddenProgram(g.id)}
+                    className="mt-0.5 accent-brand-red"
+                  />
+                  <div>
+                    <p className="text-sm text-ink font-medium">{g.name}</p>
+                    {g.description && <p className="text-xs text-ash">{g.description}</p>}
+                  </div>
+                </label>
+              ))
+            : ALL_GROUPS.map(group => (
+                <label key={group} className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!hiddenGroups.includes(group)}
+                    onChange={() => toggleHiddenGroup(group)}
+                    className="mt-0.5 accent-brand-red"
+                  />
+                  <div>
+                    <p className="text-sm text-ink font-medium">{GROUP_LABELS[group]}</p>
+                    <p className="text-xs text-ash">{GROUP_DESCRIPTIONS[group]}</p>
+                  </div>
+                </label>
+              ))}
         </div>
       </section>
 

@@ -224,6 +224,7 @@ export default async function DashboardPage() {
         <ZoneLabel>You</ZoneLabel>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <Tile href="/profile" icon="👤" accent="steel" title="My Profile" subtitle="Belt, goals, history" />
+          <Tile href="/invite" icon="✉️" accent="steel" title="Invite Friends" subtitle="Share your link" />
           {features.journal && <Tile href="/journal" icon="📓" accent="steel" title="Journal" subtitle="Log your training" />}
           {features.privateLessons && <Tile href="/lessons" icon="🎯" accent="steel" title="Private Lessons" subtitle="Request or view" />}
         </div>

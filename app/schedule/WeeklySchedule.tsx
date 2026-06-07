@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { BeltBadge } from '@/app/components/BeltBadge'
@@ -65,10 +65,9 @@ function timeBucket(time: string): 'am' | 'noon' | 'pm' {
 }
 
 function applyFilters(sessions: Session[], filters: Filters): Session[] {
-  return sessions.filter(s => {
-    if (s.class.type === 'open_mat') return false
-    return filters.types.includes(s.class.type) && filters.times.includes(timeBucket(s.class.startTime))
-  })
+  return sessions.filter(s =>
+    filters.types.includes(s.class.type) && filters.times.includes(timeBucket(s.class.startTime))
+  )
 }
 
 type SlotGroup = { label: string; sessions: Session[] }
@@ -164,8 +163,6 @@ export function WeeklySchedule({ days, currentMonday, filters, blockedClassGroup
     }
   }
 
-  const allOpenMats = days.flatMap(d => d.sessions.filter(s => s.class.type === 'open_mat'))
-
   function renderCard(s: Session) {
     const live = sessions[s.id] ?? s
     const committed = !!live.myCommitment
@@ -209,36 +206,54 @@ export function WeeklySchedule({ days, currentMonday, filters, blockedClassGroup
         </button>
       </div>
 
-      {/* Desktop grid */}
-      <div className="hidden md:grid grid-cols-7 gap-2">
-        {days.map((day, i) => {
-          const today = isToday(day.date)
+      {/* Desktop grid — row-major so classes at the same time align across days.
+          Each row is a time slot; a day with no class in that slot leaves a gap. */}
+      {(() => {
+        const dayGroups = days.map((day, i) => {
           const filtered = applyFilters(day.sessions, filters)
           const isWeekend = i >= 5
-          const groups = groupBySlot(filtered, isWeekend)
-          return (
-            <div key={day.date}>
-              <div className={`mb-2 pb-1 border-b ${today ? 'border-brand-red' : 'border-smoke'}`}>
-                <p className={`text-xs font-bold uppercase tracking-widest ${today ? 'text-brand-red' : 'text-steel'}`}>
-                  {DAY_LABELS[i]}
-                </p>
+          const map = new Map(groupBySlot(filtered, isWeekend).map(g => [g.label, g.sessions]))
+          return { day, today: isToday(day.date), map }
+        })
+
+        // Ordered list of slot rows present this week (weekday slots first, then weekend type labels).
+        const SLOT_ORDER = ['6am', 'Noon', 'PM', 'Comp']
+        const present = new Set<string>()
+        dayGroups.forEach(d => d.map.forEach((_v, label) => present.add(label)))
+        const rowLabels = [
+          ...SLOT_ORDER.filter(l => present.has(l)),
+          ...Array.from(present).filter(l => !SLOT_ORDER.includes(l)).sort(),
+        ]
+
+        return (
+          <div className="hidden md:grid gap-x-2" style={{ gridTemplateColumns: 'minmax(2.5rem, auto) repeat(7, minmax(0, 1fr))' }}>
+            {/* Header row */}
+            <div />
+            {dayGroups.map(({ day, today }, i) => (
+              <div key={day.date} className={`mb-2 pb-1 border-b ${today ? 'border-brand-red' : 'border-smoke'}`}>
+                <p className={`text-xs font-bold uppercase tracking-widest ${today ? 'text-brand-red' : 'text-steel'}`}>{DAY_LABELS[i]}</p>
                 <p className="text-xs text-ash">{formatDate(day.date)}</p>
               </div>
-              <div className="flex flex-col gap-1">
-                {filtered.length === 0 && (
-                  <p className="text-xs text-ash italic">—</p>
-                )}
-                {groups.map(group => (
-                  <div key={group.label}>
-                    <p className="text-xs text-ash uppercase tracking-wider mt-2 mb-1 leading-none">{group.label}</p>
-                    <div className="flex flex-col gap-1">{group.sessions.map(renderCard)}</div>
+            ))}
+
+            {rowLabels.length === 0 && (
+              <div className="col-span-8 text-xs text-ash italic py-2">No classes this week.</div>
+            )}
+
+            {/* Slot rows */}
+            {rowLabels.map(label => (
+              <Fragment key={label}>
+                <div className="text-xs text-ash uppercase tracking-wider pt-2 pr-1 leading-tight">{label}</div>
+                {dayGroups.map(({ day, map }) => (
+                  <div key={day.date} className="flex flex-col gap-1 pt-2">
+                    {(map.get(label) ?? []).map(renderCard)}
                   </div>
                 ))}
-              </div>
-            </div>
-          )
-        })}
-      </div>
+              </Fragment>
+            ))}
+          </div>
+        )
+      })()}
 
       {/* Mobile list */}
       <div className="md:hidden flex flex-col gap-4">
@@ -268,56 +283,6 @@ export function WeeklySchedule({ days, currentMonday, filters, blockedClassGroup
         })}
       </div>
 
-      {/* Open Mat section */}
-      {allOpenMats.length > 0 && (
-        <div className="mt-8 border-t border-smoke pt-6">
-          <p className="text-xs font-bold uppercase tracking-widest text-steel mb-4">Open Mat</p>
-          <div className="flex flex-wrap gap-3">
-            {allOpenMats.map(s => {
-              const live = sessions[s.id] ?? s
-              const committed = !!live.myCommitment
-              return (
-                <div
-                  key={s.id}
-                  className={`border bg-paper p-3 flex flex-col gap-2 min-w-48 ${
-                    committed ? 'border-l-2 border-l-brand-red border-t-smoke border-r-smoke border-b-smoke' : 'border-smoke'
-                  }`}
-                >
-                  <div>
-                    <p className="text-xs font-bold text-ink">{DAY_LABELS[days.findIndex(d => d.date === s.date)]} · {formatDate(s.date)}</p>
-                    <p className="text-xs text-ash mt-0.5">{s.class.startTime}–{s.class.endTime}</p>
-                  </div>
-                  <div className="flex items-center justify-between pt-1 border-t border-smoke">
-                    <button
-                      onClick={() => toggleCommit(live)}
-                      className={`text-xs font-bold uppercase tracking-wide transition-colors ${
-                        committed ? 'text-brand-red hover:text-brand-red-dark' : 'text-steel hover:text-ink'
-                      }`}
-                    >
-                      {committed ? 'Registered ✓' : 'Register'}
-                    </button>
-                    {!committed && live.committedCount > 0 && (
-                      <span className="text-xs text-ash">{live.committedCount} going</span>
-                    )}
-                  </div>
-                  {committed && isInCheckinWindow(live.date, live.class.startTime) && (
-                    live.myCheckedIn ? (
-                      <span className="text-xs font-bold text-green-600 uppercase tracking-wide">Checked In ✓</span>
-                    ) : (
-                      <button
-                        onClick={() => handleCheckin(live)}
-                        className="text-xs font-bold uppercase tracking-wide text-steel hover:text-brand-red transition-colors"
-                      >
-                        Check In
-                      </button>
-                    )
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

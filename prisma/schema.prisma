@@ -237,6 +237,8 @@ model User {
   forumReads           ForumRead[]
   following            Follow[]    @relation("Following")
   followers            Follow[]    @relation("Followers")
+  sentInvitations      Invitation[] @relation("InviteInviter")
+  instructorRequestedAt DateTime?   // Phase 40 — set when an "approve-after" instructor invite is accepted; cleared when the admin grants/denies
   postLikes            PostLike[]
   lastLoginAt          DateTime?
   loginEvents          LoginEvent[]
@@ -527,6 +529,38 @@ model LoginEvent {
 }
 
 // One-way user→user follow (no approval). Drives the activity feed + post notifications.
+// Phase 40 — invitations
+enum InviteKind {
+  friend
+  gym_member
+  gym_instructor
+}
+
+model Invitation {
+  id           String     @id @default(cuid())
+  token        String     @unique
+  inviterId    String
+  inviter      User       @relation("InviteInviter", fields: [inviterId], references: [id], onDelete: Cascade)
+  kind         InviteKind
+  gymId        String?    // for gym_member / gym_instructor
+  grantOnAccept Boolean   @default(true) // instructor: true = single-use grant; false = approve-after
+  maxUses      Int?       // null = unlimited (reusable friend link)
+  usedCount    Int        @default(0)
+  expiresAt    DateTime?
+  createdAt    DateTime   @default(now())
+  redemptions  InviteRedemption[]
+}
+
+model InviteRedemption {
+  id           String     @id @default(cuid())
+  invitationId String
+  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  userId       String     // redeemer (no relation needed)
+  createdAt    DateTime   @default(now())
+
+  @@unique([invitationId, userId])
+}
+
 model Follow {
   id          String   @id @default(cuid())
   followerId  String

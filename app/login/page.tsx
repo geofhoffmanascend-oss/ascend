@@ -24,15 +24,26 @@ export default function LoginPage() {
       redirect: false,
     })
 
-    setLoading(false)
-
     if (res?.error) {
+      setLoading(false)
       setError('Invalid email or password.')
-    } else {
-      // /start routes to /admin or /dashboard based on role
-      router.push('/start')
-      router.refresh()
+      return
     }
+
+    // If they arrived from an invite link, apply it now (mutual follow + any grant).
+    const inviteToken = new URLSearchParams(window.location.search).get('invite')
+    if (inviteToken) {
+      await fetch(`/api/invites/${inviteToken}/accept`, { method: 'POST' }).catch(() => {})
+      setLoading(false)
+      router.push('/dashboard')
+      router.refresh()
+      return
+    }
+
+    setLoading(false)
+    // /start routes to /admin or /dashboard based on role
+    router.push('/start')
+    router.refresh()
   }
 
   return (

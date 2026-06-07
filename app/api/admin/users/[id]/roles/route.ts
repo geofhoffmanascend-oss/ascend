@@ -27,7 +27,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   await prisma.user.update({
     where: { id },
-    data: { roles: finalRoles as Role[] },
+    data: {
+      roles: finalRoles as Role[],
+      // Clear any pending instructor request once the role is granted.
+      ...(finalRoles.includes('instructor') && { instructorRequestedAt: null }),
+    },
   })
 
   // Auto-subscribe to instructor forum when instructor role is added

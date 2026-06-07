@@ -29,7 +29,7 @@ export default async function HelpPage() {
 
       {/* Student sections — always shown */}
       <div className="mb-6">
-        <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">For Students</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">For Members</p>
         <div className="flex flex-col gap-px">
           <HelpSection title="Getting Started" defaultOpen>
             The onboarding wizard walks you through profile setup. Complete your belt, weight class,

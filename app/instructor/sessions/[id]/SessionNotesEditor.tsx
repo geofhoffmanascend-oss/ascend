@@ -51,7 +51,7 @@ export function SessionNotesEditor({
       />
       <div className="flex items-center justify-between mt-3">
         <p className="text-xs text-ash">
-          {pub ? 'Students committed to this session can read these notes.' : 'Only you can see these notes.'}
+          {pub ? 'Members committed to this session can read these notes.' : 'Only you can see these notes.'}
         </p>
         <button
           onClick={save}

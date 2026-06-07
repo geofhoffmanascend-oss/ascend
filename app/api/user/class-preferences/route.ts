@@ -10,16 +10,27 @@ export async function PUT(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { hiddenClassGroups } = await req.json() as { hiddenClassGroups: string[] }
+  const { hiddenClassGroups, hiddenProgramIds } = await req.json() as { hiddenClassGroups?: string[]; hiddenProgramIds?: string[] }
 
-  if (!Array.isArray(hiddenClassGroups) || hiddenClassGroups.some(g => !VALID_GROUPS.includes(g as ClassGroup))) {
-    return NextResponse.json({ error: 'Invalid groups' }, { status: 400 })
+  const data: { hiddenClassGroups?: ClassGroup[]; hiddenProgramIds?: string[] } = {}
+
+  if (hiddenClassGroups !== undefined) {
+    if (!Array.isArray(hiddenClassGroups) || hiddenClassGroups.some(g => !VALID_GROUPS.includes(g as ClassGroup))) {
+      return NextResponse.json({ error: 'Invalid groups' }, { status: 400 })
+    }
+    data.hiddenClassGroups = hiddenClassGroups as ClassGroup[]
   }
 
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: { hiddenClassGroups: hiddenClassGroups as ClassGroup[] },
-  })
+  // hiddenProgramIds: member's own gym-defined class groups to hide from their
+  // schedule. Only affects their own visibility, so no gym-ownership check needed.
+  if (hiddenProgramIds !== undefined) {
+    if (!Array.isArray(hiddenProgramIds) || hiddenProgramIds.some(id => typeof id !== 'string')) {
+      return NextResponse.json({ error: 'Invalid class groups' }, { status: 400 })
+    }
+    data.hiddenProgramIds = hiddenProgramIds
+  }
+
+  await prisma.user.update({ where: { id: session.user.id }, data })
 
   return NextResponse.json({ success: true })
 }

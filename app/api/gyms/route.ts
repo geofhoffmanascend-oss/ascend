@@ -112,6 +112,13 @@ export async function POST(req: NextRequest) {
             status: 'active',
           },
         },
+        // Every gym gets a general (non-class-group) community forum.
+        forums: {
+          create: {
+            type: 'gym_forum',
+            title: 'General',
+          },
+        },
       },
     })
 

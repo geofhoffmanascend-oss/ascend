@@ -114,7 +114,7 @@ export function ForumListClient({ general, belt, group, cls, noClasses }: Props)
     <>
       {gen.length > 0 && (
         <section>
-          <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">General</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">Public</p>
           <div className="flex flex-col gap-2">{gen.map(f => <ForumRow key={f.id} f={f} />)}</div>
         </section>
       )}

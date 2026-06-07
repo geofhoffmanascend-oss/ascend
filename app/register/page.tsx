@@ -11,6 +11,7 @@ function RegisterForm() {
   const searchParams = useSearchParams()
   const intent = searchParams.get('intent') === 'owner' ? 'owner' : 'athlete'
   const isOwner = intent === 'owner'
+  const inviteToken = searchParams.get('invite')
   const onboardingPath = isOwner ? '/onboarding/owner' : '/onboarding'
 
   const [form, setForm] = useState({ name: '', email: '', password: '' })
@@ -44,6 +45,11 @@ function RegisterForm() {
       password: form.password,
       redirect: false,
     })
+
+    // Apply an invite if they came through one (mutual follow + any gym/instructor grant).
+    if (inviteToken) {
+      await fetch(`/api/invites/${inviteToken}/accept`, { method: 'POST' }).catch(() => {})
+    }
 
     router.push(onboardingPath)
     router.refresh()

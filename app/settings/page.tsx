@@ -28,7 +28,9 @@ export default async function SettingsPage() {
         allowMediaTagging:     true,
         defaultJournalPrompts: true,
         hiddenClassGroups:     true,
+        hiddenProgramIds:      true,
         blockedClassGroups:    true,
+        blockedProgramIds:     true,
         gymId:                 true,
         gym:                   { select: { id: true, name: true } },
       },
@@ -44,6 +46,16 @@ export default async function SettingsPage() {
   ])
 
   if (!user) redirect('/login')
+
+  // The member's gym class groups (Phase 53) — schedule visibility toggles use
+  // these when the gym has defined any; otherwise fall back to the fixed groups.
+  const classGroups = user.gymId
+    ? await prisma.classProgram.findMany({
+        where: { gymId: user.gymId, id: { notIn: (user.blockedProgramIds ?? []) as string[] } },
+        orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+        select: { id: true, name: true, description: true },
+      })
+    : []
 
   const subscribedIds = new Set(subscriptions.map(s => s.forumId))
   const blocked = (user.blockedClassGroups ?? []) as ClassGroup[]
@@ -80,6 +92,8 @@ export default async function SettingsPage() {
         initial={user}
         forums={forums}
         hiddenClassGroups={(user.hiddenClassGroups ?? []) as ClassGroup[]}
+        classGroups={classGroups}
+        hiddenProgramIds={(user.hiddenProgramIds ?? []) as string[]}
         currentGym={user.gym ?? null}
       />
     </div>

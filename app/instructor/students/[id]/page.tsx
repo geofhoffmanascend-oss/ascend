@@ -68,7 +68,7 @@ export default async function InstructorStudentPage({ params }: { params: Promis
         )}
         <div>
           <div className="inline-block bg-brand-red px-3 py-1 mb-2">
-            <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Student</span>
+            <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Member</span>
           </div>
           <h1 className="font-display text-2xl text-ink">{student.name ?? 'Unknown'}</h1>
           <div className="mt-1"><BeltBadge belt={student.belt as Belt} stripes={student.stripes} /></div>

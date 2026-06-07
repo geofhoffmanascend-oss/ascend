@@ -101,12 +101,12 @@ export function NewLessonForm() {
   return (
     <form onSubmit={submit} className="flex flex-col gap-5">
       <div>
-        <label className="block text-xs font-bold uppercase tracking-widest text-steel mb-2">Primary Student *</label>
+        <label className="block text-xs font-bold uppercase tracking-widest text-steel mb-2">Primary Member *</label>
         <StudentSearch label="student" value={student} onChange={setStudent} />
       </div>
 
       <div>
-        <label className="block text-xs font-bold uppercase tracking-widest text-steel mb-2">Second Student (optional)</label>
+        <label className="block text-xs font-bold uppercase tracking-widest text-steel mb-2">Second Member (optional)</label>
         <StudentSearch label="second student" value={uke} onChange={setUke} />
       </div>
 

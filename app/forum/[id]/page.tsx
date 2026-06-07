@@ -108,7 +108,7 @@ export default async function ForumPage({ params }: { params: Promise<{ id: stri
     : true
 
   const FORUM_LABELS: Record<string, string> = {
-    general: 'General', announcement: 'Announcements',
+    general: forum.gymId ? 'General' : 'Public', announcement: 'Announcements',
     class_forum: 'Class Forum', private_lesson: 'Private Lessons',
     instructor_only: 'Instructor Forum', gym_forum: 'Gym Community',
     program_forum: 'Class Group',

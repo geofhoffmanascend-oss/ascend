@@ -43,7 +43,7 @@ export function NotifyButton({
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 px-4">
           <div className="bg-paper border border-smoke w-full max-w-sm p-6">
-            <p className="font-display text-base font-bold text-ink mb-1">Notify Registered Students</p>
+            <p className="font-display text-base font-bold text-ink mb-1">Notify Registered Members</p>
             <p className="text-xs text-ash mb-4">
               Sends a push notification and in-app alert to {studentCount} registered student{studentCount !== 1 ? 's' : ''}.
             </p>

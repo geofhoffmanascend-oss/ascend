@@ -110,7 +110,7 @@ export default async function InstructorHomePage() {
         </Link>
         <Link href="/instructor/feedback" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Feedback</p>
-          <p className="text-slate text-sm">Student feedback for your classes</p>
+          <p className="text-slate text-sm">Member feedback for your classes</p>
         </Link>
         <Link href="/instructor/scan" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">QR Check-in</p>

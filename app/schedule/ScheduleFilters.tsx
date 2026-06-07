@@ -4,7 +4,7 @@ import { useRef, useEffect, useState } from 'react'
 
 export const ALL_TYPES = [
   'gi', 'nogi', 'muay_thai', 'wrestling', 'self_defense',
-  'fundamentals', 'nogi_fundamentals', 'competition_prep', 'kids', 'seminar',
+  'fundamentals', 'nogi_fundamentals', 'competition_prep', 'kids', 'seminar', 'open_mat',
 ]
 
 export const ALL_TIMES = ['am', 'noon', 'pm'] as const
@@ -30,6 +30,7 @@ const TYPE_OPTIONS = [
   { key: 'competition_prep', label: 'Comp Prep' },
   { key: 'kids',             label: 'Kids' },
   { key: 'seminar',          label: 'Seminar' },
+  { key: 'open_mat',         label: 'Open Mat' },
 ]
 
 const TIME_OPTIONS = [

@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/adminAuth'
+import { requireAdminForUser } from '@/lib/adminAuth'
 import prisma from '@/lib/database'
 
 export async function PUT(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error, session } = await requireAdmin()
-  if (error) return error
-
   const { id } = await params
+  const { error, session } = await requireAdminForUser(id)
+  if (error) return error
 
   const user = await prisma.user.update({
     where: { id },
@@ -24,10 +23,9 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error } = await requireAdmin()
-  if (error) return error
-
   const { id } = await params
+  const { error } = await requireAdminForUser(id)
+  if (error) return error
 
   const user = await prisma.user.update({
     where: { id },

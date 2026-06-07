@@ -1,13 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { PasswordInput } from '@/app/components/PasswordInput'
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const intent = searchParams.get('intent') === 'owner' ? 'owner' : 'athlete'
+  const isOwner = intent === 'owner'
+  const onboardingPath = isOwner ? '/onboarding/owner' : '/onboarding'
+
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -40,7 +45,7 @@ export default function RegisterPage() {
       redirect: false,
     })
 
-    router.push('/onboarding')
+    router.push(onboardingPath)
     router.refresh()
   }
 
@@ -50,10 +55,41 @@ export default function RegisterPage() {
         <div className="mb-8">
           <div className="inline-block bg-brand-red px-3 py-1 mb-4">
             <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">
-              New Account
+              {isOwner ? 'Register a Gym' : 'New Account'}
             </span>
           </div>
-          <h1 className="font-display text-2xl text-ink">Join AscendIt</h1>
+          <h1 className="font-display text-2xl text-ink">
+            {isOwner ? 'Register or claim your gym' : 'Join AscendIt'}
+          </h1>
+          <p className="text-slate text-sm mt-2">
+            {isOwner
+              ? "First create your account, then you'll add your gym and set it up."
+              : 'Create your account to connect with your team and track your journey.'}
+          </p>
+
+          {/* Intent switch */}
+          <div className="mt-4 flex gap-2 text-xs">
+            <Link
+              href="/register"
+              className={`px-3 py-1.5 border transition-colors ${
+                !isOwner
+                  ? 'border-brand-red text-ink font-semibold'
+                  : 'border-smoke text-slate hover:border-steel hover:text-ink'
+              }`}
+            >
+              Join as an athlete
+            </Link>
+            <Link
+              href="/register?intent=owner"
+              className={`px-3 py-1.5 border transition-colors ${
+                isOwner
+                  ? 'border-brand-red text-ink font-semibold'
+                  : 'border-smoke text-slate hover:border-steel hover:text-ink'
+              }`}
+            >
+              Register a gym
+            </Link>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -103,7 +139,7 @@ export default function RegisterPage() {
         </div>
 
         <button
-          onClick={() => signIn('google', { callbackUrl: '/onboarding' })}
+          onClick={() => signIn('google', { callbackUrl: onboardingPath })}
           className="mt-4 w-full py-3 border border-smoke text-steel text-sm font-medium hover:border-steel hover:text-ink transition-colors"
         >
           Continue with Google
@@ -117,5 +153,13 @@ export default function RegisterPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-full bg-paper" />}>
+      <RegisterForm />
+    </Suspense>
   )
 }

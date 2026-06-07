@@ -43,10 +43,18 @@ export function Header({ initialSession, features }: { initialSession?: Session 
   // when absent (shouldn't happen for a logged-in user) default to showing the link.
   const show = (key: keyof EffectiveFeatures) => features?.[key] !== false
 
+  // Gym admins land on their admin dashboard by default; everyone else on the
+  // personal dashboard. (Their personal dashboard is still reachable from /admin.)
+  const homeHref = !session
+    ? '/'
+    : session.user.roles?.includes('admin')
+      ? '/admin'
+      : '/dashboard'
+
   return (
     <header className="bg-ink-soft border-b border-steel/30">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-        <Link href={session ? '/dashboard' : '/'} className="flex items-center gap-2 shrink-0">
+        <Link href={homeHref} className="flex items-center gap-2 shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="AscendIt" width={36} height={36} className="object-contain" />
           <span className="hidden sm:block font-display font-bold text-paper text-lg tracking-tight">AscendIt</span>

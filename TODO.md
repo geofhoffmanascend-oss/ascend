@@ -284,6 +284,8 @@ Schema pushed: `ClassGroup` enum (`grappling | striking | kids | competition | s
 
 These items are code-complete but require manual steps to fully activate:
 
+- **Phase 38 `prisma db push` — ✅ DONE 2026-06-06.** The additive `Gym.setupProgress Json?` field is pushed and the schema is in sync. (Earlier in the day the push was blocked by the CockroachDB cluster hitting its monthly Request Unit limit; the cluster is back online and the push succeeded.) The `/admin` setup-checklist card and `GET/PUT /api/admin/gym-setup` are now live.
+
 - **Vercel env vars (Phase 19):** ✅ `RESEND_API_KEY` added to Vercel **Production + Preview** (2026-06-01, new rotated key; also updated in `.env.local`). ⚠️ Still need to add **`EMAIL_FROM=onboarding@resend.dev`** to Vercel (Production + Preview) — not yet pushed. Also: old Resend key `re_UaUtDYNk…` is still active on Resend's side — revoke it in the Resend dashboard if this was a security rotation.
 - **Group forum seeding (Phase 17):** One-time setup — while logged in as admin, POST to `/api/admin/init-group-forums` (e.g. from browser devtools or a REST client) to create the 5 group forums in the database.
 - **Belt forum seeding (Phase 27):** One-time setup — while logged in as site_admin, POST to `/api/site-admin/belt-forums/init` to create the 5 belt forums. Safe to run multiple times (idempotent).
@@ -629,18 +631,15 @@ Schema pushed: new `GymFeatures` model (`gymId @unique`, 6 booleans, cascade). K
 
 ---
 
-## PHASE 38 — Registration & Onboarding Separation (Owner vs Individual)
-**Guide:** `guides/phase38-owner-onboarding.md` (DONE — intent branch, admin-role grant wiring, owner setup flow, dup detection). §2 = CONFIRMED decisions; §6 = build order; §10 = autonomous-session execution mode + decisions log. **Restart prompt for a skip-permissions session:** `guides/phase38-RESTART-PROMPT.md`.
-**Problem (confirmed):** both `/register` and `/gyms/register?returnTo=onboarding` funnel everyone into the **student** wizard (`OnboardingWizard.tsx`). Gym owners get a student experience, not an owner setup flow. Owners should register as themselves, then add/claim a facility, then get a paid-tier setup tour. Address during the feature audit.
-**Core gap (guide §0/§1):** creating a gym (`POST /api/gyms`) never grants the creator the `admin` role, and `/onboarding/admin` is unreachable without it — so no self-signup owner ever reaches owner tooling. "Gym admin" = global `admin` role + `User.gymId`.
+## PHASE 38 — Registration & Onboarding Separation (Owner vs Individual) — DONE
+All tasks complete — moved to `guides/DO_NOT_REVIEW/COMPLETED_TASKS.md`. Owner intent branch, admin+instructor grant wiring (`asOwner`), `/onboarding/owner` wizard, member preview, dup detection, and the `/admin` setup checklist (`Gym.setupProgress`) are built and typecheck/build-clean.
+`Gym.setupProgress Json?` was pushed (✅ 2026-06-06) — schema in sync, checklist card/API live.
 
-**Decisions confirmed (2026-06-06, guide §2):** D-AUTH owner-context gym create **instantly grants `admin` + `instructor`** (no verification gate — testing only; revisit at launch) · D-PROFILE owner onboarding is **gym-only** (no athlete profile in it; personal profile built later via `/profile/edit`) · D-TRIAL **no money/tier mention during testing** (all features free) · D-DONE finish → `onboardedRoles += admin` (+instructor), `onboardingDone=true`.
-
-### [ ] 38.1 — Branch registration intent: landing + `/register` offer "Join as an athlete" vs "Register or claim a gym" (carry `?intent=owner`). Athletes → student onboarding; owners → `/onboarding/owner`. Don't force owners through the student wizard. *Blocks the rest.*
-### [ ] 38.2 — Owner onboarding flow (`/onboarding/owner`): **gym-only, full-feature, no money/tier talk.** Owner-context `POST /api/gyms` (`asOwner:true`) instantly grants `admin` + `instructor`, sets `gymId`, active membership. Finish marks both roles onboarded + `onboardingDone=true`. Don't bounce into student/instructor wizards.
-### [ ] 38.3 — In-app guided setup checklist (distinct from marketing `/tour/admin`): add schedule, instructors, gym logo, student list. Tracks completion via `Gym.setupProgress Json?`; "Finish setting up" card on `/admin`.
-### [ ] 38.4 — During owner onboarding, show users already associated with the gym (count + roster preview) so the owner sees existing members before importing. Reuse `GET /api/gyms/[id]/members`.
-### [ ] 38.5 — Duplicate / similar-gym detection + warn-and-fork (name+state loose / name+zip tight): "this gym may already exist — [Claim it] / [create new]". Detection + fork only; claim mechanics → Phase 39. Canonical-gym rule defined in guide §3.5.
+### [x] 38.1 — Branch registration intent: landing + `/register` offer "Join as an athlete" vs "Register or claim a gym" (carry `?intent=owner`). Athletes → student onboarding; owners → `/onboarding/owner`.
+### [x] 38.2 — Owner onboarding flow (`/onboarding/owner`): gym-only, full-feature, no money/tier talk. Owner-context `POST /api/gyms` (`asOwner:true`) instantly grants `admin` + `instructor`, sets `gymId`. Finish marks both onboarded + `onboardingDone=true`.
+### [x] 38.3 — In-app guided setup checklist; tracks completion via `Gym.setupProgress Json?`; "Finish setting up" card on `/admin`.
+### [x] 38.4 — During owner onboarding, show users already associated with the gym (count + roster preview).
+### [x] 38.5 — Duplicate / similar-gym detection + warn-and-fork (name+state loose / name+zip tight); claim mechanics → Phase 39.
 
 ---
 
@@ -795,7 +794,28 @@ Surfaced from Phase 38 (guide §9). An owner/instructor (and possibly other auth
 
 ---
 
+## PHASE 52 — Class Wizard + Gym-Defined Class Programs
+**Guide:** `guides/phase52-class-wizard-programs.md`. **Decisions confirmed (2026-06-06):** D1 grouping = gym-defined `ClassProgram` (custom names; the fixed `ClassGroup` enum stays for type/headers) · D2 multi-day = wizard day **checkboxes** create one `Class` per day (no `dayOfWeek` model change) · D3 access = per-user only, extended to programs (membership tiers deferred to Phase 30). Needs `prisma db push` (additive: `ClassProgram`, `Class.programId`, `Forum.programId` + `program_forum`, `User.blockedProgramIds`).
+
+### [x] 52.1 — Schema: `ClassProgram` model, `Class.programId`, `Forum` program support (`program_forum` + `programId`), `User.blockedProgramIds`; `prisma db push` (done) + client regenerated.
+### [x] 52.2 — Program CRUD: `GET/POST /api/admin/programs`, `PATCH/DELETE /api/admin/programs/[id]` (gym-scoped, `requireAdminForProgram`); `/admin/programs` management UI.
+### [x] 52.3 — Class wizard (`/admin/classes/wizard`): program select + **day-of-week checkboxes**; `POST /api/admin/classes/bulk` creates one class per day (per-day dup guard); "Create & Add Another" keeps program. Single New/Edit form + POST/PATCH also accept `programId`. Class list shows program badge + Programs/Add-Classes buttons.
+### [ ] 52.4 — Program forum: create on demand (`program_forum`, gym+program scoped — schema ready); option in program create + class wizard; show in `/forum`, access-gate in detail (mirror `group_forum`).
+### [ ] 52.5 — Per-user program access: extend `ClassAccessManager` + `class-access` API with `blockedProgramIds` (schema ready); enforce in schedule/day-view/check-in/commit + program-forum visibility (mirror `blockedClassGroups`).
+### [ ] 52.6 — Terminology (user request 2026-06-06): rename **UI label** "Program(s)" → "Class Group(s)" in the wizard, `/admin/programs`, the class form selector, and the class-list badge. Keep internal `ClassProgram`/`programId` model names. **DECIDE:** "class group" already means the fixed `ClassGroup` enum (grappling/striking/kids…) used by schedule headers + per-user `blockedClassGroups` — resolve how both read without confusing users (e.g. relabel the fixed enum, or distinguish "class type" vs "class group").
+### [ ] 52.7 — Per-class editability (user request 2026-06-06): ensure a class added as part of a group via the wizard can be **individually edited** (time/instructor/location/other) and **stays in its group** with attributes differing from siblings. Mostly already true (separate `Class` rows, each with its own `programId`, each editable) — verify the edit flow preserves `programId` and surface it clearly in the UI (e.g. group label on the edit page).
+
+---
+
 ## SESSION LOG
+
+**2026-06-06 — Phase 38 owner onboarding, multi-tenancy hardening, Phase 52 core**
+- **Phase 38 DONE** (autonomous run): intent branch, owner-context admin+instructor grant (`asOwner`), `/onboarding/owner` wizard, member preview, dup detection (`/api/gyms/similar`), `Gym.setupProgress` + `/admin` setup card. Gym-admin **logo URL** editing added (`/admin/settings` + `PATCH /api/admin/gym`). `prisma db push` for `setupProgress` was blocked mid-session by the CRDB monthly RU cap, then succeeded once the cluster came back.
+- **Default admin dashboard:** logo + login send admins to `/admin` (new `/start` redirect for Google OAuth); "My Dashboard" tile on `/admin` → `/dashboard`. `useSession().update()` after owner grant so middleware admits new roles without re-login.
+- **Multi-tenancy hardening:** gym-scoped every admin view/API to `session.user.gymId` (site_admin bypass). New guards `requireAdminForUser` / `requireAdminForClass` / `requireAdminForProgram`. Closed cross-gym IDOR on user roles/belt/class-access/promote/**email+password-reset**, classes edit, store orders, etc. Fixed `getGymSettings()` `findFirst()` cross-tenant bug → keyed on unique `gymId`. `/admin` stat "Total Students" → **"Total Members"**. Rule captured in memory [[project_tenancy_model]].
+- **Phase 52 core (52.1–52.3) DONE:** gym-defined `ClassProgram` (+ `Class.programId`, `Forum.programId`/`program_forum`, `User.blockedProgramIds` — all pushed); `/admin/programs` CRUD; class **wizard** `/admin/classes/wizard` with day-of-week checkboxes (`/api/admin/classes/bulk`, one class/day) + "Create & Add Another"; single form + classes POST/PATCH accept `programId`; program badge on class list.
+- **NEXT SESSION:** Phase **52.4** (program forums) + **52.5** (per-user program access) — schema already in place. See `guides/phase52-class-wizard-programs.md` §4–§5.
+- All work typecheck + `npm run build` clean (136 pages). NOT browser-tested (no dev server up). **NOT committed/pushed** — user handles git.
 
 **2026-06-05 (cont. 6) — Forum visibility: public "DMV Jiu-Jitsu" + 6am Crew under Ascend**
 - Renamed "General" → **DMV Jiu-Jitsu**, set `gymId=null` (platform-wide public, default-shown to all). **6am Crew** stays under Ascend; forum list groups gym-scoped forums under a gym-name section. (Phase 50.7 done.) Data change is live on the shared cluster; UI grouping code NOT pushed yet (until pushed, prod shows both in "General").

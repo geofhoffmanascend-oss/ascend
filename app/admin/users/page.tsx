@@ -18,9 +18,13 @@ export default async function AdminUsersPage({
 
   const { role, belt, q } = await searchParams
 
+  // Scope the roster to THIS admin's gym (multi-tenancy).
+  const gymId = session.user.gymId ?? null
+
   const users = await prisma.user.findMany({
     where: {
-      ...(role && { role: role as 'admin' | 'instructor' | 'student' }),
+      gymId,
+      ...(role && { roles: { has: role as 'admin' | 'instructor' | 'student' } }),
       ...(belt && { belt: belt as 'white' | 'blue' | 'purple' | 'brown' | 'black' }),
       ...(q && {
         OR: [

@@ -4,9 +4,11 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 type Instructor = { id: string; name: string | null }
+type Program = { id: string; name: string }
 
 type Props = {
   instructors: Instructor[]
+  programs?: Program[]
   initial?: {
     id: string
     title: string
@@ -18,6 +20,7 @@ type Props = {
     instructorId: string
     maxStudents: string
     isActive: boolean
+    programId?: string
   }
 }
 
@@ -30,7 +33,7 @@ const TYPE_LABELS: Record<string, string> = {
   wrestling: 'Wrestling', self_defense: 'Self Defense',
 }
 
-export function ClassForm({ instructors, initial }: Props) {
+export function ClassForm({ instructors, programs = [], initial }: Props) {
   const router = useRouter()
   const isEdit = !!initial?.id
   const [form, setForm] = useState({
@@ -43,6 +46,7 @@ export function ClassForm({ instructors, initial }: Props) {
     instructorId: initial?.instructorId ?? '',
     maxStudents: initial?.maxStudents ?? '',
     isActive: initial?.isActive ?? true,
+    programId: initial?.programId ?? '',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -113,6 +117,17 @@ export function ClassForm({ instructors, initial }: Props) {
           {instructors.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
         </select>
       </div>
+
+      {programs.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-bold uppercase tracking-widest text-steel">Program</label>
+          <select value={form.programId} onChange={e => update('programId', e.target.value)}
+            className="w-full px-4 py-3 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors">
+            <option value="">No program (ungrouped)</option>
+            {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">

@@ -6,6 +6,8 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
 import { getMondayOfWeek } from '@/lib/generateSessions'
+import { getGymSetup } from '@/lib/gymSetup'
+import { GymSetupCard } from './GymSetupCard'
 
 export const metadata = { title: 'Admin' }
 
@@ -13,6 +15,8 @@ export default async function AdminHomePage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
   if (!session.user.roles?.includes('admin')) redirect('/dashboard')
+
+  const setupProgress = await getGymSetup(session.user.gymId)
 
   const monday = getMondayOfWeek(new Date())
   const sunday = new Date(monday)
@@ -27,11 +31,14 @@ export default async function AdminHomePage() {
   const todayEnd = new Date(today)
   todayEnd.setUTCHours(23, 59, 59, 999)
 
-  const [totalStudents, totalInstructors, todaySessions, newSignups] = await Promise.all([
-    prisma.user.count({ where: { roles: { has: 'student' } } }),
-    prisma.user.count({ where: { roles: { hasSome: ['instructor', 'admin'] } } }),
-    prisma.classSession.count({ where: { date: { gte: today, lte: todayEnd }, class: { isActive: true } } }),
-    prisma.user.count({ where: { createdAt: { gte: weekAgo } } }),
+  // Scope all dashboard stats to THIS admin's gym (multi-tenancy).
+  const gymId = session.user.gymId ?? null
+
+  const [totalMembers, totalInstructors, todaySessions, newSignups] = await Promise.all([
+    prisma.user.count({ where: { gymId } }),
+    prisma.user.count({ where: { gymId, roles: { hasSome: ['instructor', 'admin'] } } }),
+    prisma.classSession.count({ where: { date: { gte: today, lte: todayEnd }, class: { isActive: true, gymId } } }),
+    prisma.user.count({ where: { gymId, createdAt: { gte: weekAgo } } }),
   ])
 
   return (
@@ -43,10 +50,13 @@ export default async function AdminHomePage() {
         <h1 className="font-display text-2xl text-ink">Admin Dashboard</h1>
       </div>
 
+      {/* Phase 38.3 — owner setup checklist (hides itself once complete) */}
+      <GymSetupCard initial={setupProgress} />
+
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Total Students', value: totalStudents },
+          { label: 'Total Members', value: totalMembers },
           { label: 'Instructors', value: totalInstructors },
           { label: 'Classes Today', value: todaySessions },
           { label: 'New This Week', value: newSignups },
@@ -94,6 +104,10 @@ export default async function AdminHomePage() {
         <Link href="/instructor" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Instructor View</p>
           <p className="text-slate text-sm">Today's sessions and rosters</p>
+        </Link>
+        <Link href="/dashboard" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel">My Dashboard</p>
+          <p className="text-slate text-sm">Your personal athlete dashboard — training, schedule, journal</p>
         </Link>
       </div>
     </div>

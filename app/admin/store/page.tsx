@@ -8,9 +8,17 @@ export default async function AdminStorePage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.roles?.includes('admin')) redirect('/dashboard')
 
+  // Multi-tenancy: show this gym's products plus platform-wide products (gymId null);
+  // orders are limited to this gym.
+  const gymId = session.user.gymId ?? null
+
   const [products, orders] = await Promise.all([
-    prisma.product.findMany({ orderBy: { createdAt: 'desc' } }),
+    prisma.product.findMany({
+      where: { OR: [{ gymId }, { gymId: null }] },
+      orderBy: { createdAt: 'desc' },
+    }),
     prisma.order.findMany({
+      where: { gymId },
       include: {
         user:  { select: { id: true, name: true, email: true } },
         items: { include: { product: { select: { id: true, name: true } } } },

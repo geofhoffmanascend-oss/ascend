@@ -29,7 +29,8 @@ export default function LoginPage() {
     if (res?.error) {
       setError('Invalid email or password.')
     } else {
-      router.push('/dashboard')
+      // /start routes to /admin or /dashboard based on role
+      router.push('/start')
       router.refresh()
     }
   }
@@ -95,7 +96,7 @@ export default function LoginPage() {
         </div>
 
         <button
-          onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+          onClick={() => signIn('google', { callbackUrl: '/start' })}
           className="mt-4 w-full py-3 border border-smoke text-steel text-sm font-medium hover:border-steel hover:text-ink transition-colors"
         >
           Continue with Google

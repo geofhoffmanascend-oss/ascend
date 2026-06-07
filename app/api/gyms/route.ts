@@ -66,10 +66,27 @@ export async function POST(req: NextRequest) {
   const {
     name, address, city, state, zip, phone, website,
     logoUrl, headInstructorName, description,
+    asOwner, // Phase 38 — owner context: instantly grant admin + instructor
   } = body
 
   if (!name || typeof name !== 'string') {
     return NextResponse.json({ error: 'name is required' }, { status: 400 })
+  }
+
+  // Phase 38.2 / §8 — owner-context guard: an owner administers exactly one gym
+  // (admin role + gymId). Block creating a second one in owner context so we
+  // don't orphan their existing gym by moving gymId.
+  if (asOwner === true) {
+    const me = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { gymId: true, roles: true },
+    })
+    if (me?.gymId && (me.roles ?? []).includes('admin')) {
+      return NextResponse.json(
+        { error: 'You already administer a gym. Managing multiple gyms is not yet supported.' },
+        { status: 409 },
+      )
+    }
   }
 
   const slug = await uniqueSlug(generateBaseSlug(name))
@@ -98,11 +115,28 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // Set creator's gymId if they don't have one yet
-    await prisma.user.updateMany({
-      where: { id: session.user.id, gymId: null },
-      data: { gymId: gym.id },
-    })
+    if (asOwner === true) {
+      // Owner context (Phase 38, D-AUTH): instantly grant admin + instructor and
+      // point gymId at the new gym in the same write. Instant grant, no
+      // verification gate — testing only; revisit before public launch (§8).
+      // NEVER reached from the student "Add my gym" path (no asOwner flag).
+      const me = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { roles: true },
+      })
+      const roles = me?.roles ?? []
+      const nextRoles = Array.from(new Set([...roles, 'admin', 'instructor'])) as typeof roles
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { roles: nextRoles, gymId: gym.id },
+      })
+    } else {
+      // Student "Add my gym" path: member only. Set gymId only if unset.
+      await prisma.user.updateMany({
+        where: { id: session.user.id, gymId: null },
+        data: { gymId: gym.id },
+      })
+    }
 
     // Notify all site_admin users
     try {

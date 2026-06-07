@@ -7,16 +7,18 @@ import { FeedbackRow } from '@/app/components/FeedbackRow'
 type SearchParams = { sentiment?: string; classId?: string }
 
 export default async function AdminFeedbackPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  await requireAdmin()
+  const { session } = await requireAdmin()
+  const gymId = session?.user.gymId ?? null
 
   const { sentiment, classId } = await searchParams
 
-  const classes = await prisma.class.findMany({ select: { id: true, title: true }, orderBy: { title: 'asc' } })
+  const classes = await prisma.class.findMany({ where: { gymId }, select: { id: true, title: true }, orderBy: { title: 'asc' } })
 
   const feedback = await prisma.classFeedback.findMany({
     where: {
+      // Scope to THIS gym's classes (multi-tenancy).
+      classSession: { class: { gymId, ...(classId && { id: classId }) } },
       ...(sentiment && { sentiment: sentiment as FeedbackSentiment }),
-      ...(classId && { classSession: { classId } }),
     },
     include: {
       user: { select: { name: true, belt: true } },

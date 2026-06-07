@@ -20,7 +20,11 @@ export default async function AttendanceReportPage({ searchParams }: { searchPar
     ? (() => { const d = new Date(to); d.setUTCHours(23,59,59,999); return d })()
     : new Date()
 
+  // Scope all attendance data to THIS admin's gym (multi-tenancy).
+  const gymId = session.user.gymId ?? null
+
   const classes = await prisma.class.findMany({
+    where: { gymId },
     select: { id: true, title: true, instructor: { select: { id: true, name: true } } },
     orderBy: { title: 'asc' },
   })
@@ -29,7 +33,7 @@ export default async function AttendanceReportPage({ searchParams }: { searchPar
     where: {
       classSession: {
         date: { gte: fromDate, lte: toDate },
-        ...(classId && { classId }),
+        class: { gymId, ...(classId && { id: classId }) },
       },
     },
     include: {

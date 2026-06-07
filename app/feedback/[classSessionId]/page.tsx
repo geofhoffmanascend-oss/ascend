@@ -20,7 +20,7 @@ export default async function FeedbackPage({ params }: { params: Promise<{ class
       where: { userId_classSessionId: { userId: session.user.id, classSessionId } },
       select: { id: true },
     }),
-    getGymSettings(),
+    getGymSettings(session.user.gymId),
   ])
 
   if (!classSession) notFound()

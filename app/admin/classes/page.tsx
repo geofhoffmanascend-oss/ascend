@@ -19,7 +19,8 @@ export default async function AdminClassesPage() {
   if (!session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const classes = await prisma.class.findMany({
-    include: { instructor: { select: { name: true } } },
+    where: { gymId: session.user.gymId ?? null },
+    include: { instructor: { select: { name: true } }, program: { select: { name: true } } },
     orderBy: [{ isActive: 'desc' }, { dayOfWeek: 'asc' }, { startTime: 'asc' }],
   })
 
@@ -35,9 +36,17 @@ export default async function AdminClassesPage() {
           </div>
           <h1 className="font-display text-2xl text-ink">Classes</h1>
         </div>
-        <Link href="/admin/classes/new" className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors">
-          + New Class
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/programs" className="px-4 py-2 border border-smoke text-steel text-sm font-medium hover:border-steel hover:text-ink transition-colors">
+            Programs
+          </Link>
+          <Link href="/admin/classes/new" className="px-4 py-2 border border-smoke text-steel text-sm font-medium hover:border-steel hover:text-ink transition-colors">
+            + Single Class
+          </Link>
+          <Link href="/admin/classes/wizard" className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors">
+            + Add Classes
+          </Link>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -50,6 +59,7 @@ export default async function AdminClassesPage() {
             <div>
               <div className="flex items-center gap-2">
                 <p className="font-medium text-ink">{cls.title}</p>
+                {cls.program && <span className="px-1.5 py-0.5 text-xs bg-mist text-steel font-bold uppercase tracking-wide">{cls.program.name}</span>}
                 {!cls.isActive && <span className="px-1.5 py-0.5 text-xs bg-mist text-ash font-bold uppercase">Inactive</span>}
               </div>
               <p className="text-sm text-ash mt-0.5">

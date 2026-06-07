@@ -13,9 +13,13 @@ export default async function PromotePage({ params }: { params: Promise<{ id: st
   const { id } = await params
   const user = await prisma.user.findUnique({
     where: { id },
-    select: { id: true, name: true, belt: true, stripes: true },
+    select: { id: true, name: true, belt: true, stripes: true, gymId: true },
   })
   if (!user) notFound()
+
+  // Multi-tenancy: a gym admin may only promote users in their own gym (site_admin bypasses).
+  const isSiteAdmin = session.user.roles?.includes('site_admin')
+  if (!isSiteAdmin && user.gymId !== session.user.gymId) notFound()
 
   return (
     <div className="max-w-md mx-auto px-4 py-10">

@@ -15,7 +15,8 @@ export async function GET(req: Request) {
 
   const orders = await prisma.order.findMany({
     where: {
-      ...(isAdmin ? {} : { userId: session.user.id }),
+      // Admins/instructors see only THIS gym's orders (multi-tenancy); students see their own.
+      ...(isAdmin ? { gymId: session.user.gymId ?? null } : { userId: session.user.id }),
       ...(status ? { status: status as never } : {}),
     },
     include: {

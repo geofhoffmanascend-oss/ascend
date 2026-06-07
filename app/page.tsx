@@ -34,13 +34,13 @@ export default function HomePage() {
               href="/register"
               className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors"
             >
-              Join AscendIt
+              Join as an athlete
             </Link>
             <Link
-              href="/login"
-              className="px-6 py-3 border border-smoke text-steel text-sm font-medium hover:border-steel hover:text-ink transition-colors"
+              href="/register?intent=owner"
+              className="px-6 py-3 border border-steel text-ink text-sm font-semibold hover:bg-mist transition-colors"
             >
-              Sign In
+              Register or claim a gym
             </Link>
           </div>
           <div className="flex flex-col items-center gap-1.5">
@@ -49,6 +49,9 @@ export default function HomePage() {
             </Link>
             <Link href="/tour/admin" className="text-ash hover:text-slate text-xs transition-colors">
               Managing a gym? See the owner tour →
+            </Link>
+            <Link href="/login" className="text-ash hover:text-slate text-xs transition-colors">
+              Already have an account? Sign in →
             </Link>
           </div>
         </div>

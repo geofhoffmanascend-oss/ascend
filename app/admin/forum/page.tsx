@@ -9,7 +9,10 @@ export default async function AdminForumPage() {
   if (!session?.user?.id) redirect('/login')
   if (!session.user.roles?.includes('admin')) redirect('/dashboard')
 
+  // Scope to THIS gym's forums (multi-tenancy). Global forums (belt/group, gymId
+  // null) are moderated by site_admin, not gym admins.
   const forums = await prisma.forum.findMany({
+    where: { gymId: session.user.gymId ?? null },
     include: {
       _count: { select: { posts: true, subscriptions: true } },
       posts: {

@@ -3,14 +3,17 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
-import { ClassForm } from '../ClassForm'
+import { ClassWizard } from './ClassWizard'
 
-export default async function NewClassPage() {
+export const metadata = { title: 'Add Classes' }
+
+export default async function ClassWizardPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
   if (!session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const gymId = session.user.gymId ?? null
+
   const [instructors, programs] = await Promise.all([
     prisma.user.findMany({
       where: { gymId, roles: { hasSome: ['instructor', 'admin'] } },
@@ -18,7 +21,11 @@ export default async function NewClassPage() {
       orderBy: { name: 'asc' },
     }),
     gymId
-      ? prisma.classProgram.findMany({ where: { gymId }, orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }], select: { id: true, name: true } })
+      ? prisma.classProgram.findMany({
+          where: { gymId },
+          orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+          select: { id: true, name: true },
+        })
       : Promise.resolve([]),
   ])
 
@@ -31,9 +38,13 @@ export default async function NewClassPage() {
         <div className="inline-block bg-brand-red px-3 py-1 mb-3">
           <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Admin</span>
         </div>
-        <h1 className="font-display text-2xl text-ink">New Class</h1>
+        <h1 className="font-display text-2xl text-ink">Add Classes</h1>
+        <p className="text-slate text-sm mt-2">
+          Pick the days a class runs and we'll create one for each. Group it into a program to keep your schedule organized.
+        </p>
       </div>
-      <ClassForm instructors={instructors} programs={programs} />
+
+      <ClassWizard instructors={instructors} programs={programs} />
     </div>
   )
 }

@@ -96,6 +96,7 @@ enum ForumType {
   group_forum
   gym_forum
   belt_forum
+  program_forum
 }
 
 enum PostType {
@@ -198,6 +199,8 @@ model User {
 
   // Class access (admin-controlled membership restrictions)
   blockedClassGroups    ClassGroup[] @default([])
+  // Phase 52 — admin-controlled access to gym-defined class programs (program ids)
+  blockedProgramIds     String[]     @default([])
   // Schedule preferences (user-controlled visibility)
   hiddenClassGroups     ClassGroup[] @default([])
 
@@ -310,14 +313,33 @@ model Class {
   isActive     Boolean     @default(true)
   maxStudents  Int?
   gymId        String?
+  programId    String?     // Phase 52 — gym-defined class program (Basics/Advanced/…)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
   instructor   User        @relation("ClassInstructor", fields: [instructorId], references: [id])
   gym          Gym?        @relation(fields: [gymId], references: [id], onDelete: SetNull)
+  program      ClassProgram? @relation(fields: [programId], references: [id], onDelete: SetNull)
   sessions     ClassSession[]
   forum        Forum?
   lessonPlans  LessonPlan[]
+}
+
+// Phase 52 — a gym-defined grouping of classes (e.g. Basics, Advanced, Comp Team).
+// Distinct from the fixed ClassGroup enum (which categorizes by class type).
+model ClassProgram {
+  id          String   @id @default(cuid())
+  gymId       String
+  gym         Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  sortOrder   Int      @default(0)
+  classes     Class[]
+  forum       Forum?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([gymId, name])
 }
 
 model ClassSession {
@@ -428,6 +450,7 @@ model Forum {
   classId     String?    @unique
   classGroup  ClassGroup?
   gymId       String?
+  programId   String?    @unique  // Phase 52 — dedicated forum for a ClassProgram
   beltLevel   Belt?
   title       String
   description String?
@@ -435,6 +458,7 @@ model Forum {
 
   class         Class?             @relation(fields: [classId], references: [id], onDelete: Cascade)
   gym           Gym?               @relation(fields: [gymId], references: [id], onDelete: SetNull)
+  program       ClassProgram?      @relation(fields: [programId], references: [id], onDelete: Cascade)
   posts         Post[]
   subscriptions ForumSubscription[]
   reads         ForumRead[]
@@ -774,6 +798,7 @@ model Gym {
   description         String?
   participatingStatus GymTier   @default(free)
   paymentTerms        Json?
+  setupProgress       Json?     // Phase 38.3 — owner setup checklist completion, e.g. {schedule:true,instructors:false,logo:true,roster:false}
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
@@ -788,6 +813,7 @@ model Gym {
   publicEvents PublicEvent[]
   tournaments  Tournament[]
   features     GymFeatures?
+  classPrograms ClassProgram[]
 }
 
 // Per-gym feature toggles (Phase 37). Gym admins turn optional features on/off

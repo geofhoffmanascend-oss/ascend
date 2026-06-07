@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/adminAuth'
+import { requireAdminForUser } from '@/lib/adminAuth'
 import prisma from '@/lib/database'
 import { Role } from '@prisma/client'
 
 const VALID_ROLES = ['admin', 'instructor', 'student', 'vendor'] as const
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAdmin()
+  const { id } = await params
+  const { error } = await requireAdminForUser(id)
   if (error) return error
 
-  const { id } = await params
   const { roles } = await req.json() as { roles: string[] }
 
   if (!Array.isArray(roles) || roles.some(r => !VALID_ROLES.includes(r as any))) {

@@ -3,19 +3,29 @@ import { requireAdmin } from '@/lib/adminAuth'
 import prisma from '@/lib/database'
 
 export async function GET() {
-  await requireAdmin()
-  const settings = await prisma.gymSettings.findFirst()
+  const { error, session } = await requireAdmin()
+  if (error) return error
+
+  const gymId = session!.user.gymId ?? null
+  const settings = gymId ? await prisma.gymSettings.findUnique({ where: { gymId } }) : null
   return NextResponse.json(settings ?? { reviewUrl: null })
 }
 
 export async function PATCH(req: NextRequest) {
-  await requireAdmin()
+  const { error, session } = await requireAdmin()
+  if (error) return error
+
+  const gymId = session!.user.gymId
+  if (!gymId) return NextResponse.json({ error: 'You are not assigned to a gym.' }, { status: 400 })
+
   const { reviewUrl } = await req.json()
 
-  const existing = await prisma.gymSettings.findFirst()
-  const settings = existing
-    ? await prisma.gymSettings.update({ where: { id: existing.id }, data: { reviewUrl: reviewUrl ?? null } })
-    : await prisma.gymSettings.create({ data: { reviewUrl: reviewUrl ?? null } })
+  // Scope to THIS gym's settings row (gymId is @unique).
+  const settings = await prisma.gymSettings.upsert({
+    where: { gymId },
+    update: { reviewUrl: reviewUrl ?? null },
+    create: { gymId, reviewUrl: reviewUrl ?? null },
+  })
 
   return NextResponse.json(settings)
 }

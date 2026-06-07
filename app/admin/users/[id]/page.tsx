@@ -40,6 +40,10 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
 
   if (!user) notFound()
 
+  // Multi-tenancy: a gym admin may only view users in their own gym (site_admin bypasses).
+  const isSiteAdmin = session.user.roles?.includes('site_admin')
+  if (!isSiteAdmin && user.gymId !== session.user.gymId) notFound()
+
   const verifier = user.beltVerifiedBy
     ? await prisma.user.findUnique({ where: { id: user.beltVerifiedBy }, select: { name: true } })
     : null

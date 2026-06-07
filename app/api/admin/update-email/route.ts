@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/adminAuth'
+import { requireAdminForUser } from '@/lib/adminAuth'
 import prisma from '@/lib/database'
 import { sendEmailChangeConfirmation } from '@/lib/email'
 import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
-  const { error: authError } = await requireAdmin()
-  if (authError) return authError
-
   const { userId, newEmail } = await req.json()
   if (!userId || !newEmail) return NextResponse.json({ error: 'userId and newEmail required' }, { status: 400 })
+
+  const { error: authError } = await requireAdminForUser(userId)
+  if (authError) return authError
 
   const user = await prisma.user.findUnique({
     where: { id: userId },

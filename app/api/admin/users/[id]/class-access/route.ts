@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/adminAuth'
+import { requireAdminForUser } from '@/lib/adminAuth'
 import prisma from '@/lib/database'
 import { ClassGroup } from '@prisma/client'
 import { GROUP_FORUM_IDS } from '@/lib/classGroups'
@@ -7,10 +7,10 @@ import { GROUP_FORUM_IDS } from '@/lib/classGroups'
 const VALID_GROUPS = Object.values(ClassGroup)
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { error } = await requireAdmin()
+  const { id } = await params
+  const { error } = await requireAdminForUser(id)
   if (error) return error
 
-  const { id } = await params
   const { blockedClassGroups } = await req.json() as { blockedClassGroups: string[] }
 
   if (!Array.isArray(blockedClassGroups) || blockedClassGroups.some(g => !VALID_GROUPS.includes(g as ClassGroup))) {

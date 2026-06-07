@@ -14,11 +14,21 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
   const cls = await prisma.class.findUnique({ where: { id } })
   if (!cls) notFound()
 
-  const instructors = await prisma.user.findMany({
-    where: { roles: { hasSome: ['instructor', 'admin'] } },
-    select: { id: true, name: true },
-    orderBy: { name: 'asc' },
-  })
+  // Multi-tenancy: a gym admin may only edit classes in their own gym (site_admin bypasses).
+  const isSiteAdmin = session.user.roles?.includes('site_admin')
+  if (!isSiteAdmin && cls.gymId !== session.user.gymId) notFound()
+
+  const gymId = session.user.gymId ?? null
+  const [instructors, programs] = await Promise.all([
+    prisma.user.findMany({
+      where: { gymId, roles: { hasSome: ['instructor', 'admin'] } },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+    gymId
+      ? prisma.classProgram.findMany({ where: { gymId }, orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }], select: { id: true, name: true } })
+      : Promise.resolve([]),
+  ])
 
   return (
     <div className="max-w-lg mx-auto px-4 py-10">
@@ -33,6 +43,7 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
       </div>
       <ClassForm
         instructors={instructors}
+        programs={programs}
         initial={{
           id: cls.id,
           title: cls.title,
@@ -44,6 +55,7 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
           instructorId: cls.instructorId,
           maxStudents: cls.maxStudents ? String(cls.maxStudents) : '',
           isActive: cls.isActive,
+          programId: cls.programId ?? '',
         }}
       />
     </div>

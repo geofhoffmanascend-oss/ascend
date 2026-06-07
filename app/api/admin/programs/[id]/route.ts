@@ -13,7 +13,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if (body.name !== undefined) {
     const name = typeof body.name === 'string' ? body.name.trim() : ''
-    if (!name) return NextResponse.json({ error: 'Program name is required' }, { status: 400 })
+    if (!name) return NextResponse.json({ error: 'Class group name is required' }, { status: 400 })
     data.name = name
   }
   if (body.description !== undefined) {
@@ -28,7 +28,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ program })
   } catch (err: any) {
     if (err?.code === 'P2002') {
-      return NextResponse.json({ error: 'A program with that name already exists.' }, { status: 409 })
+      return NextResponse.json({ error: 'A class group with that name already exists.' }, { status: 409 })
     }
     console.error('[api/admin/programs/[id] PATCH]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

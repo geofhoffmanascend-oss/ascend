@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
   const student = await prisma.user.findUnique({
     where: { qrToken },
-    select: { id: true, name: true, blockedClassGroups: true },
+    select: { id: true, name: true, blockedClassGroups: true, blockedProgramIds: true },
   })
   if (!student) return NextResponse.json({ error: 'Unknown QR code' }, { status: 404 })
 
@@ -41,13 +41,16 @@ export async function POST(req: NextRequest) {
 
   const classSession = await prisma.classSession.findUnique({
     where: { id: resolvedSessionId },
-    include: { class: { select: { startTime: true, title: true, type: true } } },
+    include: { class: { select: { startTime: true, title: true, type: true, programId: true } } },
   })
   if (!classSession) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
 
   const group = classTypeToGroup(classSession.class.type)
-  if (group && student.blockedClassGroups?.includes(group as any)) {
-    return NextResponse.json({ error: `${student.name} does not have access to this class type.` }, { status: 403 })
+  const progId = classSession.class.programId
+  const blockedByGroup = group ? !!student.blockedClassGroups?.includes(group as any) : false
+  const blockedByProgram = progId ? !!student.blockedProgramIds?.includes(progId) : false
+  if (blockedByGroup || blockedByProgram) {
+    return NextResponse.json({ error: `${student.name} does not have access to this class.` }, { status: 403 })
   }
 
   if (!isInCheckinWindow(classSession.date)) {

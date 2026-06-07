@@ -57,6 +57,16 @@ export default async function ForumPage({ params }: { params: Promise<{ id: stri
     if (user?.blockedClassGroups?.includes(forum.classGroup as any)) redirect('/forum')
   }
 
+  // Class-group (program) forum: require matching gym + not blocked from the group
+  if ((forum.type as string) === 'program_forum') {
+    const isSiteAdmin = session.user.roles?.includes('site_admin')
+    if (!isSiteAdmin) {
+      if (session.user.gymId !== forum.gymId) redirect('/forum')
+      const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedProgramIds: true } })
+      if (forum.programId && user?.blockedProgramIds?.includes(forum.programId)) redirect('/forum')
+    }
+  }
+
   // Gym forum: require matching gymId (site_admin can bypass)
   if ((forum.type as string) === 'gym_forum') {
     const isSiteAdmin = session.user.roles?.includes('site_admin')
@@ -101,6 +111,7 @@ export default async function ForumPage({ params }: { params: Promise<{ id: stri
     general: 'General', announcement: 'Announcements',
     class_forum: 'Class Forum', private_lesson: 'Private Lessons',
     instructor_only: 'Instructor Forum', gym_forum: 'Gym Community',
+    program_forum: 'Class Group',
   }
 
   const isGymForum = (forum.type as string) === 'gym_forum'

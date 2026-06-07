@@ -23,6 +23,7 @@ type Session = {
     id: string
     title: string
     type: string
+    programId?: string | null
     startTime: string
     endTime: string
     location: string | null
@@ -98,7 +99,7 @@ function groupBySlot(sessions: Session[], isWeekend: boolean): SlotGroup[] {
   return groups
 }
 
-export function WeeklySchedule({ days, currentMonday, filters, blockedClassGroups = [] }: { days: Day[]; currentMonday: string; filters: Filters; blockedClassGroups?: string[] }) {
+export function WeeklySchedule({ days, currentMonday, filters, blockedClassGroups = [], blockedProgramIds = [] }: { days: Day[]; currentMonday: string; filters: Filters; blockedClassGroups?: string[]; blockedProgramIds?: string[] }) {
   const router = useRouter()
   const [sessions, setSessions] = useState<Record<string, Session>>(() => {
     const map: Record<string, Session> = {}
@@ -169,7 +170,9 @@ export function WeeklySchedule({ days, currentMonday, filters, blockedClassGroup
     const live = sessions[s.id] ?? s
     const committed = !!live.myCommitment
     const group = classTypeToGroup(live.class.type)
-    const isBlocked = group !== null && blockedClassGroups.includes(group)
+    const isBlocked =
+      (group !== null && blockedClassGroups.includes(group)) ||
+      (!!live.class.programId && blockedProgramIds.includes(live.class.programId))
     return (
       <SessionCard
         key={s.id}

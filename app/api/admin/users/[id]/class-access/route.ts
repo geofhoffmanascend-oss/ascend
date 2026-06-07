@@ -8,11 +8,35 @@ const VALID_GROUPS = Object.values(ClassGroup)
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { error } = await requireAdminForUser(id)
+  const { error, session } = await requireAdminForUser(id)
   if (error) return error
 
-  const { blockedClassGroups } = await req.json() as { blockedClassGroups: string[] }
+  const body = await req.json() as { blockedClassGroups?: string[]; blockedProgramIds?: string[] }
 
+  // Phase 52.5 — gym-defined class groups (blockedProgramIds). Validate the ids
+  // belong to the admin's gym.
+  if (body.blockedProgramIds !== undefined) {
+    const ids = body.blockedProgramIds
+    if (!Array.isArray(ids)) return NextResponse.json({ error: 'Invalid class groups' }, { status: 400 })
+    const gymId = session.user.gymId
+    if (!gymId) return NextResponse.json({ error: 'You are not assigned to a gym.' }, { status: 400 })
+    const valid = await prisma.classProgram.findMany({ where: { id: { in: ids }, gymId }, select: { id: true } })
+    if (valid.length !== ids.length) return NextResponse.json({ error: 'Invalid class group' }, { status: 400 })
+
+    const prev = await prisma.user.findUnique({ where: { id }, select: { blockedProgramIds: true } })
+    const nowBlocked = ids.filter(p => !(prev?.blockedProgramIds ?? []).includes(p))
+    if (nowBlocked.length > 0) {
+      const forums = await prisma.forum.findMany({ where: { programId: { in: nowBlocked } }, select: { id: true } })
+      if (forums.length > 0) {
+        await prisma.forumSubscription.deleteMany({ where: { userId: id, forumId: { in: forums.map(f => f.id) } } })
+      }
+    }
+    await prisma.user.update({ where: { id }, data: { blockedProgramIds: ids } })
+    return NextResponse.json({ success: true })
+  }
+
+  // Legacy fixed-enum class groups (demo gym)
+  const blockedClassGroups = body.blockedClassGroups
   if (!Array.isArray(blockedClassGroups) || blockedClassGroups.some(g => !VALID_GROUPS.includes(g as ClassGroup))) {
     return NextResponse.json({ error: 'Invalid groups' }, { status: 400 })
   }
@@ -23,7 +47,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const prevBlocked = user.blockedClassGroups as ClassGroup[]
   const newBlocked = blockedClassGroups as ClassGroup[]
 
-  // Groups newly being blocked — remove forum subscriptions
   const nowBlocked = newBlocked.filter(g => !prevBlocked.includes(g))
   if (nowBlocked.length > 0) {
     const forumIds = nowBlocked.map(g => GROUP_FORUM_IDS[g])

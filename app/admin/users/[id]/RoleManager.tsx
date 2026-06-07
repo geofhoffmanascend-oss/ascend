@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { roleLabel } from '@/lib/roles'
 
 const ALL_ROLES = ['student', 'instructor', 'vendor', 'admin'] as const
 type Role = typeof ALL_ROLES[number]
@@ -49,13 +50,13 @@ export function RoleManager({ userId, currentRoles }: { userId: string; currentR
               key={role}
               onClick={() => toggle(role)}
               disabled={locked}
-              className={`px-4 py-2 text-sm font-medium border transition-colors capitalize ${
+              className={`px-4 py-2 text-sm font-medium border transition-colors ${
                 active
                   ? 'bg-ink text-paper border-ink'
                   : 'bg-paper text-steel border-smoke hover:border-steel'
               } ${locked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
             >
-              {role}
+              {roleLabel(role)}
               {locked && <span className="ml-1 text-xs opacity-60">(required)</span>}
             </button>
           )

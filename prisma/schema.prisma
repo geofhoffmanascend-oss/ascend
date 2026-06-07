@@ -203,6 +203,8 @@ model User {
   blockedProgramIds     String[]     @default([])
   // Schedule preferences (user-controlled visibility)
   hiddenClassGroups     ClassGroup[] @default([])
+  // Phase 53 — member-hidden gym-defined class groups (schedule visibility, by program id)
+  hiddenProgramIds      String[]     @default([])
 
   // Onboarding tracking — roles for which the onboarding wizard has been completed
   onboardedRoles        Role[]       @default([])
@@ -458,7 +460,9 @@ model Forum {
 
   class         Class?             @relation(fields: [classId], references: [id], onDelete: Cascade)
   gym           Gym?               @relation(fields: [gymId], references: [id], onDelete: SetNull)
-  program       ClassProgram?      @relation(fields: [programId], references: [id], onDelete: Cascade)
+  // Class-group forum survives if its class group is deleted (Phase 52) — it just
+  // detaches (programId → null) and remains until an admin deletes it.
+  program       ClassProgram?      @relation(fields: [programId], references: [id], onDelete: SetNull)
   posts         Post[]
   subscriptions ForumSubscription[]
   reads         ForumRead[]

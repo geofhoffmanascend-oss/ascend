@@ -26,7 +26,7 @@ export function ClassWizard({ instructors, programs }: { instructors: Instructor
   const router = useRouter()
   const [programId, setProgramId] = useState('')
   const [form, setForm] = useState({
-    title: '', type: 'gi', startTime: '18:00', endTime: '19:30', location: '', instructorId: '', maxStudents: '',
+    title: '', description: '', type: 'gi', startTime: '18:00', endTime: '19:30', location: '', instructorId: '', maxStudents: '',
   })
   const [days, setDays] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
@@ -59,7 +59,7 @@ export function ClassWizard({ instructors, programs }: { instructors: Instructor
       const skipNote = skipped.length ? ` (skipped ${skipped.map(d => DAY_SHORT[d] ?? d).join(', ')} — already existed)` : ''
 
       if (addAnother) {
-        setNotice(`Created ${data.created} class${data.created !== 1 ? 'es' : ''}${skipNote}. Add another below — program kept.`)
+        setNotice(`Created ${data.created} class${data.created !== 1 ? 'es' : ''}${skipNote}. Add another below — class group kept.`)
         setForm(f => ({ ...f, title: '' }))
         setDays([])
         setSaving(false)
@@ -75,16 +75,16 @@ export function ClassWizard({ instructors, programs }: { instructors: Instructor
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Program */}
+      {/* Class Group */}
       <div className="flex flex-col gap-1">
-        <label className={labelCls}>Program</label>
+        <label className={labelCls}>Class Group</label>
         <select value={programId} onChange={e => setProgramId(e.target.value)} className={inputCls}>
-          <option value="">No program (ungrouped)</option>
+          <option value="">No class group (ungrouped)</option>
           {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
         <p className="text-xs text-ash">
-          {programs.length === 0 ? 'No programs yet. ' : ''}
-          <Link href="/admin/programs" className="text-brand-red hover:underline">Manage programs →</Link>
+          {programs.length === 0 ? 'No class groups yet. ' : ''}
+          <Link href="/admin/programs" className="text-brand-red hover:underline">Manage class groups →</Link>
         </p>
       </div>
 
@@ -92,6 +92,12 @@ export function ClassWizard({ instructors, programs }: { instructors: Instructor
       <div className="flex flex-col gap-1">
         <label className={labelCls}>Title <span className="text-brand-red">*</span></label>
         <input value={form.title} onChange={e => update('title', e.target.value)} className={inputCls} placeholder="e.g. Evening Gi" />
+      </div>
+
+      {/* Description */}
+      <div className="flex flex-col gap-1">
+        <label className={labelCls}>Description <span className="normal-case font-normal text-ash">(optional)</span></label>
+        <textarea value={form.description} onChange={e => update('description', e.target.value)} rows={2} className={`${inputCls} resize-none`} placeholder="What this class covers…" />
       </div>
 
       {/* Days */}

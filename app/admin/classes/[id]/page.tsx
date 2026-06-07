@@ -47,6 +47,7 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
         initial={{
           id: cls.id,
           title: cls.title,
+          description: cls.description ?? '',
           type: cls.type,
           dayOfWeek: cls.dayOfWeek,
           startTime: cls.startTime,

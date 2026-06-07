@@ -29,19 +29,23 @@ export async function POST(req: NextRequest) {
   const [user, classSession] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { weightClass: true, blockedClassGroups: true },
+      select: { weightClass: true, blockedClassGroups: true, blockedProgramIds: true },
     }),
     prisma.classSession.findUnique({
       where: { id: classSessionId },
       select: {
         date: true,
-        class: { select: { title: true, startTime: true, type: true, forum: { select: { id: true } } } },
+        class: { select: { title: true, startTime: true, type: true, programId: true, forum: { select: { id: true } } } },
       },
     }),
   ])
 
+  // Class-group access: legacy fixed group (demo gym) OR gym-defined class group.
   const group = classSession ? classTypeToGroup(classSession.class.type) : null
-  if (group && user?.blockedClassGroups?.includes(group as any)) {
+  const progId = classSession?.class.programId ?? null
+  const blockedByGroup = group ? !!user?.blockedClassGroups?.includes(group as any) : false
+  const blockedByProgram = progId ? !!user?.blockedProgramIds?.includes(progId) : false
+  if (blockedByGroup || blockedByProgram) {
     return NextResponse.json({ error: 'This class is not included in your membership.' }, { status: 403 })
   }
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { roleLabel } from '@/lib/roles'
 
 const BELTS = ['white', 'blue', 'purple', 'brown', 'black']
 const ROLES = ['instructor', 'admin', 'vendor', 'site_admin'] as const
@@ -97,12 +98,12 @@ export function SiteUserEditClient({ initial, gyms }: { initial: Initial; gyms: 
       </label>
 
       <div className="flex flex-col gap-1">
-        <label className={label}>Roles <span className="text-ash normal-case font-normal">(student always on)</span></label>
+        <label className={label}>Roles <span className="text-ash normal-case font-normal">(member always on)</span></label>
         <div className="flex flex-wrap gap-3">
           {ROLES.map(r => (
             <label key={r} className="flex items-center gap-1.5 text-sm text-steel border border-smoke px-2 py-1">
               <input type="checkbox" checked={form.roles.has(r)} onChange={() => toggleRole(r)} />
-              {r}
+              {roleLabel(r)}
             </label>
           ))}
         </div>

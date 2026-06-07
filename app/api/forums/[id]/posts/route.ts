@@ -20,13 +20,29 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const forum = await prisma.forum.findUnique({ where: { id: forumId }, select: { type: true, gymId: true, beltLevel: true } })
+  const forum = await prisma.forum.findUnique({ where: { id: forumId }, select: { type: true, gymId: true, programId: true, beltLevel: true } })
 
   // Gym forum: verify caller belongs to this gym
   if (forum && (forum.type as string) === 'gym_forum') {
     const isSiteAdmin = session.user.roles?.includes('site_admin')
     if (!isSiteAdmin && session.user.gymId !== forum.gymId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  }
+
+  // Class-group (program) forum: verify caller's gym + not blocked from the group
+  if (forum && (forum.type as string) === 'program_forum') {
+    const isSiteAdmin = session.user.roles?.includes('site_admin')
+    if (!isSiteAdmin) {
+      if (session.user.gymId !== forum.gymId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+      if (forum.programId) {
+        const u = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedProgramIds: true } })
+        if (u?.blockedProgramIds?.includes(forum.programId)) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+      }
     }
   }
 

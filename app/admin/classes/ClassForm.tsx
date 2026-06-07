@@ -12,6 +12,7 @@ type Props = {
   initial?: {
     id: string
     title: string
+    description?: string
     type: string
     dayOfWeek: string
     startTime: string
@@ -38,6 +39,7 @@ export function ClassForm({ instructors, programs = [], initial }: Props) {
   const isEdit = !!initial?.id
   const [form, setForm] = useState({
     title: initial?.title ?? '',
+    description: initial?.description ?? '',
     type: initial?.type ?? 'gi',
     dayOfWeek: initial?.dayOfWeek ?? 'monday',
     startTime: initial?.startTime ?? '18:00',
@@ -53,6 +55,17 @@ export function ClassForm({ instructors, programs = [], initial }: Props) {
 
   function update(field: string, value: string | boolean) {
     setForm(f => ({ ...f, [field]: value }))
+  }
+
+  async function handleDelete() {
+    if (!isEdit) return
+    if (!confirm('Delete this class permanently? This removes the class, its own discussion forum, and all of its sessions, registrations, and attendance history. Its class group (and the class group\'s forum) are not affected. To keep history, uncheck "Active" instead.')) return
+    setSaving(true)
+    setError('')
+    const res = await fetch(`/api/admin/classes/${initial!.id}`, { method: 'DELETE' })
+    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? 'Failed to delete.'); setSaving(false); return }
+    router.push('/admin/classes')
+    router.refresh()
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -80,6 +93,13 @@ export function ClassForm({ instructors, programs = [], initial }: Props) {
         <input type="text" value={form.title} onChange={e => update('title', e.target.value)}
           className="w-full px-4 py-3 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors"
           placeholder="e.g. Monday Night Gi" />
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-xs font-bold uppercase tracking-widest text-steel">Description <span className="normal-case font-normal text-ash">(optional)</span></label>
+        <textarea value={form.description} onChange={e => update('description', e.target.value)} rows={2}
+          className="w-full px-4 py-3 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors resize-none"
+          placeholder="What this class covers…" />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -120,10 +140,10 @@ export function ClassForm({ instructors, programs = [], initial }: Props) {
 
       {programs.length > 0 && (
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-bold uppercase tracking-widest text-steel">Program</label>
+          <label className="text-xs font-bold uppercase tracking-widest text-steel">Class Group</label>
           <select value={form.programId} onChange={e => update('programId', e.target.value)}
             className="w-full px-4 py-3 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors">
-            <option value="">No program (ungrouped)</option>
+            <option value="">No class group (ungrouped)</option>
             {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
         </div>
@@ -167,6 +187,12 @@ export function ClassForm({ instructors, programs = [], initial }: Props) {
           className="px-6 py-3 border border-smoke text-steel text-sm font-medium hover:border-steel hover:text-ink transition-colors">
           Cancel
         </button>
+        {isEdit && (
+          <button type="button" onClick={handleDelete} disabled={saving}
+            className="ml-auto px-6 py-3 border border-brand-red text-brand-red text-sm font-medium hover:bg-brand-red hover:text-paper transition-colors disabled:opacity-60">
+            Delete Class
+          </button>
+        )}
       </div>
     </form>
   )

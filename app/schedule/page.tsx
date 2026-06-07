@@ -28,14 +28,18 @@ export default async function SchedulePage({
 
   const userAccess = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { blockedClassGroups: true, hiddenClassGroups: true },
+    select: { blockedClassGroups: true, hiddenClassGroups: true, blockedProgramIds: true, hiddenProgramIds: true },
   })
   const blocked = (userAccess?.blockedClassGroups ?? []) as ClassGroup[]
   const hidden  = (userAccess?.hiddenClassGroups  ?? []) as ClassGroup[]
+  const blockedPrograms = (userAccess?.blockedProgramIds ?? []) as string[]
+  const hiddenPrograms  = (userAccess?.hiddenProgramIds  ?? []) as string[]
 
-  function isHidden(classType: string) {
+  function isHidden(classType: string, programId?: string | null) {
     const g = classTypeToGroup(classType)
-    return g !== null && hidden.includes(g)
+    if (g !== null && hidden.includes(g)) return true
+    if (programId && hiddenPrograms.includes(programId)) return true
+    return false
   }
 
   const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
@@ -59,7 +63,7 @@ export default async function SchedulePage({
     const rawSessions = await prisma.classSession.findMany({
       where: { date: { gte: firstDay, lte: lastDay }, class: { isActive: true } },
       include: {
-        class: { select: { title: true, type: true, startTime: true } },
+        class: { select: { title: true, type: true, programId: true, startTime: true } },
         commitments: { where: { userId: session.user.id }, select: { id: true } },
         attendance: { where: { userId: session.user.id }, select: { checkedInAt: true } },
       },
@@ -67,7 +71,7 @@ export default async function SchedulePage({
     })
 
     const monthSessions = rawSessions
-      .filter(s => !isHidden(s.class.type))
+      .filter(s => !isHidden(s.class.type, s.class.programId))
       .map(s => ({
         id: s.id,
         date: s.date.toISOString().split('T')[0],
@@ -117,7 +121,7 @@ export default async function SchedulePage({
     include: {
       class: {
         select: {
-          id: true, title: true, type: true,
+          id: true, title: true, type: true, programId: true,
           startTime: true, endTime: true, location: true,
           instructor: { select: { name: true } },
         },
@@ -142,7 +146,7 @@ export default async function SchedulePage({
     const dateStr = date.toISOString().split('T')[0]
 
     const daySessions = sessions
-      .filter(s => s.date.toISOString().split('T')[0] === dateStr && !isHidden(s.class.type))
+      .filter(s => s.date.toISOString().split('T')[0] === dateStr && !isHidden(s.class.type, s.class.programId))
       .map(s => {
         const myCommitment = s.commitments.find(c => c.userId === session.user.id)
         return {
@@ -161,6 +165,7 @@ export default async function SchedulePage({
             id: s.class.id,
             title: s.class.title,
             type: s.class.type as string,
+            programId: s.class.programId,
             startTime: s.class.startTime,
             endTime: s.class.endTime,
             location: s.class.location,
@@ -204,6 +209,7 @@ export default async function SchedulePage({
         nextUrl={`/schedule?view=week&week=${nextWeekStr}`}
         periodLabel={weekPeriodLabel}
         blockedClassGroups={blocked}
+        blockedProgramIds={blockedPrograms}
         days={days}
         currentMonday={mondayStr}
       />

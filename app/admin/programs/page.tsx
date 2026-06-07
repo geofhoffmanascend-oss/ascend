@@ -5,7 +5,7 @@ import Link from 'next/link'
 import prisma from '@/lib/database'
 import { ProgramsClient } from './ProgramsClient'
 
-export const metadata = { title: 'Class Programs' }
+export const metadata = { title: 'Class Groups' }
 
 export default async function AdminProgramsPage() {
   const session = await getServerSession(authOptions)
@@ -17,7 +17,7 @@ export default async function AdminProgramsPage() {
     ? await prisma.classProgram.findMany({
         where: { gymId },
         orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-        include: { _count: { select: { classes: true } } },
+        include: { _count: { select: { classes: true } }, forum: { select: { id: true } } },
       })
     : []
 
@@ -26,6 +26,7 @@ export default async function AdminProgramsPage() {
     name: p.name,
     description: p.description,
     classCount: p._count.classes,
+    forumId: p.forum?.id ?? null,
   }))
 
   return (
@@ -37,9 +38,9 @@ export default async function AdminProgramsPage() {
         <div className="inline-block bg-brand-red px-3 py-1 mb-3">
           <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Admin</span>
         </div>
-        <h1 className="font-display text-2xl text-ink">Class Programs</h1>
+        <h1 className="font-display text-2xl text-ink">Class Groups</h1>
         <p className="text-slate text-sm mt-2">
-          Group classes into programs (e.g. Basics, Advanced, Comp Team). Assign classes to a program in the class wizard.
+          Organize your classes into groups (e.g. Basics, Advanced, Comp Team). Assign classes to a group in the class wizard.
         </p>
       </div>
 

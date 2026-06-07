@@ -9,6 +9,7 @@ import { ClassAccessManager } from './ClassAccessManager'
 import { EmailActions } from './EmailActions'
 import { BeltVerification } from './BeltVerification'
 import { ClassGroup } from '@prisma/client'
+import { roleLabel } from '@/lib/roles'
 
 type Belt = 'white' | 'blue' | 'purple' | 'brown' | 'black' | 'coral' | 'red'
 
@@ -48,6 +49,16 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
     ? await prisma.user.findUnique({ where: { id: user.beltVerifiedBy }, select: { name: true } })
     : null
 
+  // Phase 52.5 — the gym's class groups for the access toggles (falls back to
+  // the legacy fixed groups when the gym hasn't defined any).
+  const classGroups = session.user.gymId
+    ? await prisma.classProgram.findMany({
+        where: { gymId: session.user.gymId },
+        orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+        select: { id: true, name: true, description: true },
+      })
+    : []
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
       <div className="mb-2">
@@ -62,7 +73,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
           <p className="text-ash text-sm mt-1">{user.email}</p>
           <div className="flex flex-wrap gap-1 mt-1">
             {(user.roles as string[]).map((r: string) => (
-              <span key={r} className="text-xs px-2 py-0.5 bg-mist text-steel font-medium capitalize">{r}</span>
+              <span key={r} className="text-xs px-2 py-0.5 bg-mist text-steel font-medium">{roleLabel(r)}</span>
             ))}
           </div>
           <div className="mt-2"><BeltBadge belt={user.belt as Belt} stripes={user.stripes} /></div>
@@ -85,7 +96,12 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
         <RoleManager userId={user.id} currentRoles={user.roles as string[]} />
 
         {/* Class Access */}
-        <ClassAccessManager userId={user.id} blocked={user.blockedClassGroups as ClassGroup[]} />
+        <ClassAccessManager
+          userId={user.id}
+          blocked={user.blockedClassGroups as ClassGroup[]}
+          programs={classGroups}
+          blockedProgramIds={(user.blockedProgramIds ?? []) as string[]}
+        />
 
         {/* Email / Account Actions */}
         <EmailActions userId={user.id} currentEmail={user.email ?? ''} />

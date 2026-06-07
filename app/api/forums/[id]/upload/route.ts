@@ -15,16 +15,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id: forumId } = await params
   const forum = await prisma.forum.findUnique({
     where: { id: forumId },
-    select: { type: true, gymId: true, classGroup: true, beltLevel: true },
+    select: { type: true, gymId: true, classGroup: true, programId: true, beltLevel: true },
   })
   if (!forum) return NextResponse.json({ error: 'Forum not found' }, { status: 404 })
 
   let blockedGroups: string[] = []
-  if (forum.type === 'group_forum') {
-    const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedClassGroups: true } })
+  let blockedProgramIds: string[] = []
+  if (forum.type === 'group_forum' || forum.type === 'program_forum') {
+    const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedClassGroups: true, blockedProgramIds: true } })
     blockedGroups = (user?.blockedClassGroups ?? []) as string[]
+    blockedProgramIds = (user?.blockedProgramIds ?? []) as string[]
   }
-  if (!canPostForum(session, forum, blockedGroups)) {
+  if (!canPostForum(session, forum, blockedGroups, blockedProgramIds)) {
     return NextResponse.json({ error: 'You cannot post in this forum' }, { status: 403 })
   }
 

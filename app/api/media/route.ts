@@ -50,15 +50,17 @@ export async function GET(req: NextRequest) {
     if (forumId) {
       const forum = await prisma.forum.findUnique({
         where: { id: forumId },
-        select: { type: true, gymId: true, classGroup: true, beltLevel: true },
+        select: { type: true, gymId: true, classGroup: true, programId: true, beltLevel: true },
       })
       if (!forum) return null
       let blockedGroups: string[] = []
-      if (forum.type === 'group_forum') {
-        const u = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedClassGroups: true } })
+      let blockedProgramIds: string[] = []
+      if (forum.type === 'group_forum' || forum.type === 'program_forum') {
+        const u = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedClassGroups: true, blockedProgramIds: true } })
         blockedGroups = (u?.blockedClassGroups ?? []) as string[]
+        blockedProgramIds = (u?.blockedProgramIds ?? []) as string[]
       }
-      if (!canReadForum(session, forum, blockedGroups)) return 'forbidden'
+      if (!canReadForum(session, forum, blockedGroups, blockedProgramIds)) return 'forbidden'
       return { forumId }
     }
     // main gallery: visibility tiers + exclude forum-scoped media

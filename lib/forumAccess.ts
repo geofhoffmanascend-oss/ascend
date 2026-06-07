@@ -5,13 +5,20 @@ export type ForumLite = {
   type: string
   gymId: string | null
   classGroup: string | null
+  programId?: string | null
   beltLevel: string | null
 }
 
 // Can the user VIEW this forum (and thus its gallery)? Mirrors the gates in
-// /forum/[id]/page.tsx. `blockedGroups` = the user's blockedClassGroups (only
-// needed for group forums; pass [] otherwise).
-export function canReadForum(session: Session | null, forum: ForumLite, blockedGroups: string[] = []): boolean {
+// /forum/[id]/page.tsx. `blockedGroups` = the user's blockedClassGroups (fixed
+// enum, legacy); `blockedProgramIds` = the user's blocked gym-defined class
+// groups. Pass [] when not relevant.
+export function canReadForum(
+  session: Session | null,
+  forum: ForumLite,
+  blockedGroups: string[] = [],
+  blockedProgramIds: string[] = [],
+): boolean {
   if (!session?.user?.id) return false
   const roles = session.user.roles ?? []
   const isStaff = roles.includes('instructor') || roles.includes('admin')
@@ -20,13 +27,19 @@ export function canReadForum(session: Session | null, forum: ForumLite, blockedG
     case 'instructor_only': return isStaff
     case 'gym_forum':       return isSiteAdmin || session.user.gymId === forum.gymId
     case 'group_forum':     return !forum.classGroup || !blockedGroups.includes(forum.classGroup)
+    case 'program_forum':   return isSiteAdmin || (session.user.gymId === forum.gymId && !(forum.programId && blockedProgramIds.includes(forum.programId)))
     default:                return true // general, announcement, class_forum, belt_forum, private_lesson
   }
 }
 
 // Can the user POST/upload here? Read access + belt-level rule for belt forums.
-export function canPostForum(session: Session | null, forum: ForumLite, blockedGroups: string[] = []): boolean {
-  if (!canReadForum(session, forum, blockedGroups)) return false
+export function canPostForum(
+  session: Session | null,
+  forum: ForumLite,
+  blockedGroups: string[] = [],
+  blockedProgramIds: string[] = [],
+): boolean {
+  if (!canReadForum(session, forum, blockedGroups, blockedProgramIds)) return false
   if (forum.type === 'belt_forum' && forum.beltLevel) {
     return canPostInBeltForum(session?.user?.belt ?? 'white', forum.beltLevel)
   }

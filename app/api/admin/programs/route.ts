@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json()
   const name = typeof body.name === 'string' ? body.name.trim() : ''
-  if (!name) return NextResponse.json({ error: 'Program name is required' }, { status: 400 })
+  if (!name) return NextResponse.json({ error: 'Class group name is required' }, { status: 400 })
 
   const description = typeof body.description === 'string' && body.description.trim() ? body.description.trim() : null
   const sortOrder = Number.isFinite(body.sortOrder) ? Number(body.sortOrder) : 0
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ program }, { status: 201 })
   } catch (err: any) {
     if (err?.code === 'P2002') {
-      return NextResponse.json({ error: `A program named "${name}" already exists.` }, { status: 409 })
+      return NextResponse.json({ error: `A class group named "${name}" already exists.` }, { status: 409 })
     }
     console.error('[api/admin/programs POST]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

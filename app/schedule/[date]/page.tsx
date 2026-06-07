@@ -30,7 +30,7 @@ export default async function DayViewPage({ params }: { params: Promise<{ date: 
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { blockedClassGroups: true, hiddenClassGroups: true },
+    select: { blockedClassGroups: true, hiddenClassGroups: true, blockedProgramIds: true, hiddenProgramIds: true },
   })
 
   const sessions = await prisma.classSession.findMany({
@@ -38,7 +38,7 @@ export default async function DayViewPage({ params }: { params: Promise<{ date: 
     include: {
       class: {
         select: {
-          title: true, type: true, startTime: true, endTime: true,
+          title: true, type: true, programId: true, startTime: true, endTime: true,
           location: true, instructor: { select: { name: true } },
         },
       },
@@ -57,11 +57,15 @@ export default async function DayViewPage({ params }: { params: Promise<{ date: 
   })
 
   const blocked = (user?.blockedClassGroups ?? []) as string[]
+  const blockedPrograms = (user?.blockedProgramIds ?? []) as string[]
   const hidden = (user?.hiddenClassGroups ?? []) as string[]
+  const hiddenPrograms = (user?.hiddenProgramIds ?? []) as string[]
 
   const visibleSessions = sessions.filter(s => {
     const group = classTypeToGroup(s.class.type as any)
-    return group === null || !hidden.includes(group)
+    if (group !== null && hidden.includes(group)) return false
+    if (s.class.programId && hiddenPrograms.includes(s.class.programId)) return false
+    return true
   })
 
   const formatted = day.toLocaleDateString('en-US', {
@@ -100,7 +104,9 @@ export default async function DayViewPage({ params }: { params: Promise<{ date: 
           const myCommitment = s.commitments.find(c => c.userId === session.user.id)
           const myCheckedIn = s.attendance?.[0]?.attended ?? false
           const group = classTypeToGroup(s.class.type as any)
-          const isBlocked = group !== null && blocked.includes(group)
+          const isBlocked =
+            (group !== null && blocked.includes(group)) ||
+            (!!s.class.programId && blockedPrograms.includes(s.class.programId))
           return (
             <div
               key={s.id}

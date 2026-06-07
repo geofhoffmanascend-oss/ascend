@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
 import { BeltBadge } from '@/app/components/BeltBadge'
+import { formatRoles } from '@/lib/roles'
 
 type Belt = 'white' | 'blue' | 'purple' | 'brown' | 'black' | 'coral' | 'red'
 
@@ -61,7 +62,7 @@ export default async function AdminUsersPage({
         />
         <select name="role" defaultValue={role ?? ''} className="px-4 py-2 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors">
           <option value="">All roles</option>
-          <option value="student">Student</option>
+          <option value="student">Member</option>
           <option value="instructor">Instructor</option>
           <option value="admin">Admin</option>
         </select>
@@ -99,7 +100,7 @@ export default async function AdminUsersPage({
             </div>
             <div className="flex items-center gap-3">
               <BeltBadge belt={u.belt as Belt} stripes={u.stripes} />
-              <span className="text-xs text-ash capitalize">{u.roles.join(', ')}</span>
+              <span className="text-xs text-ash">{formatRoles(u.roles)}</span>
             </div>
           </Link>
         ))}

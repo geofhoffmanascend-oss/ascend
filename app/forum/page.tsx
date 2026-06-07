@@ -21,7 +21,7 @@ export default async function ForumListPage() {
   const [user, allForums, subscriptions, reads, gym] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
-      select: { blockedClassGroups: true, hiddenClassGroups: true },
+      select: { blockedClassGroups: true, hiddenClassGroups: true, blockedProgramIds: true },
     }),
     prisma.forum.findMany({
       include: {
@@ -36,6 +36,7 @@ export default async function ForumListPage() {
       : Promise.resolve(null),
   ])
 
+  const blockedPrograms = (user?.blockedProgramIds ?? []) as string[]
   const blocked = (user?.blockedClassGroups ?? []) as ClassGroup[]
   const hidden = (user?.hiddenClassGroups ?? []) as ClassGroup[]
   const subscribedIds = new Set(subscriptions.map(s => s.forumId))
@@ -82,7 +83,11 @@ export default async function ForumListPage() {
   // like "6am Crew"), shown under the gym's name to members.
   const gymForums: ForumVM[] = gymId
     ? allForums
-        .filter(f => f.gymId === gymId && ['gym_forum', 'general', 'announcement'].includes(f.type as string))
+        .filter(f => f.gymId === gymId && (
+          ['gym_forum', 'general', 'announcement'].includes(f.type as string) ||
+          // Class-group (program) forums — shown to members not blocked from the group
+          (f.type === 'program_forum' && !(f.programId && blockedPrograms.includes(f.programId)))
+        ))
         .map(f => baseVM(f, true))
     : []
 

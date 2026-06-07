@@ -3,6 +3,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
+import { DeleteForumButton } from './DeleteForumButton'
 
 export default async function AdminForumPage() {
   const session = await getServerSession(authOptions)
@@ -52,9 +53,12 @@ export default async function AdminForumPage() {
                 <p className="font-medium text-ink">{f.title}</p>
                 <p className="text-xs text-ash">{FORUM_LABELS[f.type] ?? f.type} · {f._count.posts} posts · {f._count.subscriptions} subscribers</p>
               </div>
-              <Link href={`/forum/${f.id}`} className="text-xs text-brand-red hover:text-brand-red-dark transition-colors">
-                Open Forum →
-              </Link>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <Link href={`/forum/${f.id}`} className="text-xs text-brand-red hover:text-brand-red-dark transition-colors">
+                  Open Forum →
+                </Link>
+                <DeleteForumButton forumId={f.id} title={f.title} />
+              </div>
             </div>
             {f.posts.length > 0 && (
               <div className="border-t border-smoke pt-3 flex flex-col gap-2">

@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const gymId = session!.user.gymId ?? null
 
   const body = await req.json()
-  const { title, type, startTime, endTime, location, instructorId, maxStudents, isActive, programId, days } = body
+  const { title, description, type, startTime, endTime, location, instructorId, maxStudents, isActive, programId, days } = body
 
   if (!title?.trim() || !type || !startTime || !endTime || !instructorId) {
     return NextResponse.json({ error: 'Required fields missing' }, { status: 400 })
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   if (programId) {
     const program = await prisma.classProgram.findUnique({ where: { id: programId }, select: { gymId: true } })
     if (!program || program.gymId !== gymId) {
-      return NextResponse.json({ error: 'Invalid program' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid class group' }, { status: 400 })
     }
     resolvedProgramId = programId
   }
@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
       prisma.class.create({
         data: {
           title: cleanTitle,
+          description: description?.trim() || null,
           type,
           dayOfWeek: day,
           startTime,

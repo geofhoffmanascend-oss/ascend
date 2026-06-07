@@ -22,13 +22,16 @@ export async function POST(req: NextRequest) {
 
   const classSession = await prisma.classSession.findUnique({
     where: { id: classSessionId },
-    include: { class: { select: { startTime: true, type: true } } },
+    include: { class: { select: { startTime: true, type: true, programId: true } } },
   })
   if (!classSession) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
 
-  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedClassGroups: true } })
+  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedClassGroups: true, blockedProgramIds: true } })
   const group = classTypeToGroup(classSession.class.type)
-  if (group && user?.blockedClassGroups?.includes(group as any)) {
+  const progId = classSession.class.programId
+  const blockedByGroup = group ? !!user?.blockedClassGroups?.includes(group as any) : false
+  const blockedByProgram = progId ? !!user?.blockedProgramIds?.includes(progId) : false
+  if (blockedByGroup || blockedByProgram) {
     return NextResponse.json({ error: 'This class is not included in your membership.' }, { status: 403 })
   }
 

@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
 import { getEffectiveFeatures } from '@/lib/features'
+import { SharedWithMe } from './SharedWithMe'
 
 export const metadata = { title: 'Training Journal' }
 
@@ -16,14 +17,33 @@ export default async function JournalPage() {
   const { journal } = await getEffectiveFeatures(session)
   if (!journal) redirect('/dashboard')
 
-  const logs = await prisma.trainingLog.findMany({
-    where: { userId: session.user.id },
-    include: {
-      classSession: { select: { date: true, class: { select: { title: true } } } },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 100,
-  })
+  const [logs, sharedRows] = await Promise.all([
+    prisma.trainingLog.findMany({
+      where: { userId: session.user.id },
+      include: { classSession: { select: { date: true, class: { select: { title: true } } } } },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    }),
+    // Phase 54 — entries shared with me (active) + pending share requests.
+    prisma.journalShare.findMany({
+      where: { toUserId: session.user.id },
+      include: { trainingLog: { select: { id: true, userId: true, title: true, createdAt: true, classSession: { select: { class: { select: { title: true } } } } } } },
+      orderBy: { createdAt: 'desc' },
+    }),
+  ])
+
+  const ownerNames = new Map(
+    (await prisma.user.findMany({ where: { id: { in: sharedRows.map(s => s.trainingLog.userId) } }, select: { id: true, name: true } }))
+      .map(u => [u.id, u.name ?? 'Someone'])
+  )
+  const sharedItems = sharedRows.map(s => ({
+    id: s.id,
+    logId: s.trainingLog.id,
+    title: s.trainingLog.title || s.trainingLog.classSession?.class.title || 'Journal Entry',
+    ownerName: ownerNames.get(s.trainingLog.userId) ?? 'Someone',
+    status: s.status as 'active' | 'pending',
+    date: new Date(s.trainingLog.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+  }))
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
@@ -41,6 +61,8 @@ export default async function JournalPage() {
           + New Entry
         </Link>
       </div>
+
+      <SharedWithMe items={sharedItems} />
 
       {logs.length === 0 ? (
         <div className="border border-smoke bg-paper p-10 text-center">

@@ -5,6 +5,8 @@ import Link from 'next/link'
 import prisma from '@/lib/database'
 import { JOURNAL_PROMPTS, GuidedResponse } from '@/lib/journalPrompts'
 import { JournalForm } from '../JournalForm'
+import { canViewLog } from '@/lib/journalShare'
+import { JournalShareControl } from './JournalShareControl'
 
 const CATEGORY_LABELS = { wellness: 'Wellness', training: 'Training', reflection: 'Reflection' }
 
@@ -28,7 +30,20 @@ export default async function JournalEntryPage({
     },
   })
 
-  if (!log || log.userId !== session.user.id) notFound()
+  if (!log) notFound()
+
+  // Visibility (Phase 54): owner, an active-share recipient, or a same-gym
+  // instructor/admin for non-private entries.
+  const owner = await prisma.user.findUnique({ where: { id: log.userId }, select: { gymId: true, name: true } })
+  const isOwner = log.userId === session.user.id
+  if (!isOwner) {
+    const allowed = await canViewLog(
+      { id: session.user.id, roles: session.user.roles ?? [], gymId: session.user.gymId ?? null },
+      { id: log.id, userId: log.userId, isPrivate: log.isPrivate },
+      owner?.gymId ?? null,
+    )
+    if (!allowed) notFound()
+  }
 
   const guidedResponses = log.guidedResponses as GuidedResponse[] | null
 
@@ -40,7 +55,7 @@ export default async function JournalEntryPage({
     ? JSON.parse(user.defaultJournalPrompts)
     : JOURNAL_PROMPTS.map(p => p.key)
 
-  if (edit === '1') {
+  if (edit === '1' && isOwner) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-10">
         <div className="mb-2">
@@ -85,15 +100,20 @@ export default async function JournalEntryPage({
             {log.classSession
               ? new Date(log.classSession.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
               : new Date(log.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            {!isOwner && owner?.name && <> · by {owner.name}</>}
           </p>
         </div>
-        <Link
-          href={`/journal/${id}?edit=1`}
-          className="px-4 py-2 border border-smoke text-steel text-sm font-medium hover:border-steel hover:text-ink transition-colors"
-        >
-          Edit
-        </Link>
+        {isOwner && (
+          <Link
+            href={`/journal/${id}?edit=1`}
+            className="px-4 py-2 border border-smoke text-steel text-sm font-medium hover:border-steel hover:text-ink transition-colors"
+          >
+            Edit
+          </Link>
+        )}
       </div>
+
+      {isOwner && <JournalShareControl logId={log.id} instructorCanSee={!log.isPrivate} />}
 
       <div className="flex gap-2 mb-6">
         {log.isPrivate && (

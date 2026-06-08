@@ -743,6 +743,29 @@ model TrainingLog {
   guidedResponses Json?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+
+  shares          JournalShare[]
+}
+
+// Phase 54 — share a journal entry with specific people (training partners,
+// private/class instructors). active = visible to recipient; pending = recipient
+// has restricted DMs, must approve (mirrors message-request rules).
+enum JournalShareStatus {
+  active
+  pending
+}
+
+model JournalShare {
+  id            String             @id @default(cuid())
+  trainingLogId String
+  trainingLog   TrainingLog        @relation(fields: [trainingLogId], references: [id], onDelete: Cascade)
+  fromUserId    String             // entry owner (sharer)
+  toUserId      String             // recipient
+  status        JournalShareStatus @default(active)
+  createdAt     DateTime           @default(now())
+
+  @@unique([trainingLogId, toUserId])
+  @@index([toUserId])
 }
 
 // ── Class Feedback ─────────────────────────────────────────────────────────────

@@ -104,6 +104,10 @@ export default async function InstructorHomePage() {
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Lesson Availability</p>
           <p className="text-slate text-sm">Set your private-lesson windows</p>
         </Link>
+        <Link href="/instructor/journals" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel">Member Journals</p>
+          <p className="text-slate text-sm">Shared entries &amp; members' notes</p>
+        </Link>
         <Link href="/instructor/sub-requests" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Sub Requests</p>
           <p className="text-slate text-sm">Release a class or cover for a colleague</p>

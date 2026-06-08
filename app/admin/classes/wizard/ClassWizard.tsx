@@ -83,6 +83,9 @@ export function ClassWizard({ instructors, programs }: { instructors: Instructor
           {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
         <p className="text-xs text-ash">
+          Group classes by time slot, skill level, or program — e.g. 6am, Noon, Advanced No-Gi, Kids, or Wrestling. Each class group gets its own forum where its members can connect.
+        </p>
+        <p className="text-xs text-ash">
           {programs.length === 0 ? 'No class groups yet. ' : ''}
           <Link href="/admin/programs" className="text-brand-red hover:underline">Manage class groups →</Link>
         </p>

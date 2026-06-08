@@ -21,6 +21,9 @@ export default async function SchedulePage({
 
   await generateSessionsForRange(6)
 
+  // The schedule shows only the member's own gym's classes (multi-tenancy).
+  const gymId = session.user.gymId ?? null
+
   const params = await searchParams
   const viewMode = params.view === 'month' ? 'month' : 'week'
   const today = new Date()
@@ -61,7 +64,7 @@ export default async function SchedulePage({
     lastDay.setUTCHours(23, 59, 59, 999)
 
     const rawSessions = await prisma.classSession.findMany({
-      where: { date: { gte: firstDay, lte: lastDay }, class: { isActive: true } },
+      where: { date: { gte: firstDay, lte: lastDay }, class: { isActive: true, gymId } },
       include: {
         class: { select: { title: true, type: true, programId: true, startTime: true } },
         commitments: { where: { userId: session.user.id }, select: { id: true } },
@@ -117,7 +120,7 @@ export default async function SchedulePage({
   sunday.setUTCHours(23, 59, 59, 999)
 
   const sessions = await prisma.classSession.findMany({
-    where: { date: { gte: monday, lte: sunday }, class: { isActive: true } },
+    where: { date: { gte: monday, lte: sunday }, class: { isActive: true, gymId } },
     include: {
       class: {
         select: {

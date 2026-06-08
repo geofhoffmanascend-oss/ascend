@@ -22,11 +22,14 @@ export async function POST(req: NextRequest) {
 
   const classSession = await prisma.classSession.findUnique({
     where: { id: classSessionId },
-    include: { class: { select: { startTime: true, type: true, programId: true } } },
+    include: { class: { select: { startTime: true, type: true, programId: true, gymId: true } } },
   })
   if (!classSession) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
 
-  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedClassGroups: true, blockedProgramIds: true } })
+  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { gymId: true, blockedClassGroups: true, blockedProgramIds: true } })
+  if (classSession.class.gymId !== (user?.gymId ?? null)) {
+    return NextResponse.json({ error: 'This class is not at your gym.' }, { status: 403 })
+  }
   const group = classTypeToGroup(classSession.class.type)
   const progId = classSession.class.programId
   const blockedByGroup = group ? !!user?.blockedClassGroups?.includes(group as any) : false

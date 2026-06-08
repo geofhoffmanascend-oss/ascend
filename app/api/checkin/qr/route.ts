@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
   const student = await prisma.user.findUnique({
     where: { qrToken },
-    select: { id: true, name: true, blockedClassGroups: true, blockedProgramIds: true },
+    select: { id: true, name: true, gymId: true, blockedClassGroups: true, blockedProgramIds: true },
   })
   if (!student) return NextResponse.json({ error: 'Unknown QR code' }, { status: 404 })
 
@@ -41,9 +41,13 @@ export async function POST(req: NextRequest) {
 
   const classSession = await prisma.classSession.findUnique({
     where: { id: resolvedSessionId },
-    include: { class: { select: { startTime: true, title: true, type: true, programId: true } } },
+    include: { class: { select: { startTime: true, title: true, type: true, programId: true, gymId: true } } },
   })
   if (!classSession) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
+
+  if (classSession.class.gymId !== (student.gymId ?? null)) {
+    return NextResponse.json({ error: `${student.name} is not a member of this gym.` }, { status: 403 })
+  }
 
   const group = classTypeToGroup(classSession.class.type)
   const progId = classSession.class.programId

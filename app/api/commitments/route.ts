@@ -29,16 +29,21 @@ export async function POST(req: NextRequest) {
   const [user, classSession] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { weightClass: true, blockedClassGroups: true, blockedProgramIds: true },
+      select: { weightClass: true, gymId: true, blockedClassGroups: true, blockedProgramIds: true },
     }),
     prisma.classSession.findUnique({
       where: { id: classSessionId },
       select: {
         date: true,
-        class: { select: { title: true, startTime: true, type: true, programId: true, forum: { select: { id: true } } } },
+        class: { select: { title: true, startTime: true, type: true, programId: true, gymId: true, forum: { select: { id: true } } } },
       },
     }),
   ])
+
+  // Multi-tenancy: members may only register for their own gym's classes.
+  if (classSession && classSession.class.gymId !== (user?.gymId ?? null)) {
+    return NextResponse.json({ error: 'This class is not at your gym.' }, { status: 403 })
+  }
 
   // Class-group access: legacy fixed group (demo gym) OR gym-defined class group.
   const group = classSession ? classTypeToGroup(classSession.class.type) : null

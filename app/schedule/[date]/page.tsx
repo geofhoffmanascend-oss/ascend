@@ -34,7 +34,7 @@ export default async function DayViewPage({ params }: { params: Promise<{ date: 
   })
 
   const sessions = await prisma.classSession.findMany({
-    where: { date: { gte: day, lte: dayEnd }, class: { isActive: true } },
+    where: { date: { gte: day, lte: dayEnd }, class: { isActive: true, gymId: session.user.gymId ?? null } },
     include: {
       class: {
         select: {

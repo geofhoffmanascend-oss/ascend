@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
+import { ViewAsButton } from '@/app/components/ViewAsButton'
 
 export const metadata: Metadata = { title: 'Users — Site Admin' }
 
@@ -72,7 +73,7 @@ export default async function SiteAdminUsersPage({
           <tbody>
             {users.map(u => (
               <tr key={u.id} className="border-b border-smoke/60 hover:bg-mist/50">
-                <td className="px-3 py-2"><Link href={`/site-admin/users/${u.id}`} className="text-brand-red font-medium hover:underline">{u.name ?? '—'}</Link></td>
+                <td className="px-3 py-2"><div className="flex items-center gap-2"><Link href={`/site-admin/users/${u.id}`} className="text-brand-red font-medium hover:underline">{u.name ?? '—'}</Link><ViewAsButton userId={u.id} /></div></td>
                 <td className="px-3 py-2 text-ash">{u.email}</td>
                 <td className="px-3 py-2 text-steel">{u.gym?.name ?? '—'}</td>
                 <td className="px-3 py-2 text-ash text-xs">{(u.roles ?? []).join(', ')}</td>

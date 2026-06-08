@@ -5,6 +5,7 @@ import Link from 'next/link'
 import prisma from '@/lib/database'
 import { BeltBadge } from '@/app/components/BeltBadge'
 import { formatRoles } from '@/lib/roles'
+import { ViewAsButton } from '@/app/components/ViewAsButton'
 import { InviteInstructor } from './InviteInstructor'
 import { InviteMember } from './InviteMember'
 
@@ -135,6 +136,7 @@ export default async function AdminUsersPage({
             <div className="flex items-center gap-3">
               <BeltBadge belt={u.belt as Belt} stripes={u.stripes} />
               <span className="text-xs text-ash">{formatRoles(u.roles)}</span>
+              <ViewAsButton userId={u.id} />
             </div>
           </Link>
         ))}

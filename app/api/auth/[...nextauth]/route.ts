@@ -64,7 +64,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session: updateData }) {
       if (user) {
         token.id = user.id
         token.roles = (user as any).roles ?? ['student']
@@ -89,6 +89,29 @@ export const authOptions: NextAuthOptions = {
           console.error('[auth] jwt role refresh error for token.id', token.id, err)
         }
       }
+
+      // Phase 53 — read-only "view as" start/exit (token.id always the real admin).
+      if (trigger === 'update' && updateData && 'viewAs' in (updateData as any)) {
+        const targetId = (updateData as any).viewAs as string | null
+        if (!targetId) {
+          delete token.viewAs
+          delete token.viewBySiteAdmin
+        } else {
+          const roles = (token.roles ?? []) as string[]
+          const isSite = roles.includes('site_admin')
+          const isGymAdmin = roles.includes('admin')
+          let allowed = false
+          if (isSite) allowed = true
+          else if (isGymAdmin && token.gymId) {
+            const target = await prisma.user.findUnique({ where: { id: targetId }, select: { gymId: true } }).catch(() => null)
+            allowed = !!target && target.gymId === token.gymId
+          }
+          if (allowed && targetId !== token.id) {
+            token.viewAs = targetId
+            token.viewBySiteAdmin = isSite
+          }
+        }
+      }
       return token
     },
     async session({ session, token }) {
@@ -97,6 +120,23 @@ export const authOptions: NextAuthOptions = {
         session.user.roles = token.roles ?? ['student']
         session.user.gymId = token.gymId ?? null
         session.user.belt = token.belt ?? null
+      }
+      // Phase 53 — when viewing-as, session.user reflects the VIEWED user.
+      if (token.viewAs && session.user) {
+        try {
+          const viewed = await prisma.user.findUnique({ where: { id: token.viewAs }, select: { id: true, name: true, roles: true, gymId: true, belt: true } })
+          if (viewed) {
+            const realName = session.user.name ?? null
+            session.user.id = viewed.id
+            session.user.name = viewed.name
+            session.user.roles = viewed.roles as any
+            session.user.gymId = viewed.gymId ?? null
+            session.user.belt = viewed.belt ?? null
+            session.viewAs = { realId: token.id, realName, viewedId: viewed.id, viewedName: viewed.name, bySiteAdmin: !!token.viewBySiteAdmin }
+          }
+        } catch (err) {
+          console.error('[auth] viewAs session error', err)
+        }
       }
       return session
     },

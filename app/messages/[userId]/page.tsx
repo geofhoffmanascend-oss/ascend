@@ -7,6 +7,9 @@ import { MessageThread } from './MessageThread'
 export default async function ConversationPage({ params }: { params: Promise<{ userId: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
+  if (session.viewAs && !session.viewAs.bySiteAdmin) {
+    return <div className="max-w-3xl mx-auto px-4 py-16 text-center"><p className="text-sm text-slate">Direct messages aren&apos;t available while viewing as another user.</p></div>
+  }
 
   const { userId: otherId } = await params
   const myId = session.user.id

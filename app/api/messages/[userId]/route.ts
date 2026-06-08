@@ -7,6 +7,7 @@ import { createNotification } from '@/lib/notify'
 export async function GET(req: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (session.viewAs && !session.viewAs.bySiteAdmin) return NextResponse.json({ error: 'Not available in view-as.' }, { status: 403 })
 
   const { userId: otherId } = await params
   const myId = session.user.id

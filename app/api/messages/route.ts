@@ -6,6 +6,7 @@ import prisma from '@/lib/database'
 export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (session.viewAs && !session.viewAs.bySiteAdmin) return NextResponse.json([])
 
   const userId = session.user.id
 

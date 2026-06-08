@@ -8,6 +8,7 @@ import { getEffectiveFeatures } from '@/lib/features'
 import { Providers } from './providers'
 import { Header } from './components/Header'
 import { Footer } from './components/Footer'
+import { ViewAsBanner } from './components/ViewAsBanner'
 import { ServiceWorkerRegistration } from './components/ServiceWorkerRegistration'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -45,6 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body suppressHydrationWarning>
         <Providers session={session}>
           <div className="min-h-screen flex flex-col">
+            <ViewAsBanner />
             <Header initialSession={session} features={features} />
             <main className="flex-1">{children}</main>
             <Footer />

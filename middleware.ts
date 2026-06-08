@@ -7,6 +7,17 @@ export default withAuth(
     const { pathname } = req.nextUrl
     const roles: string[] = (token?.roles as string[]) ?? []
 
+    // Phase 53 — read-only "view as": block every write from the viewed account
+    // (except NextAuth, which is needed to exit view-as). GETs pass through.
+    if (
+      token?.viewAs &&
+      pathname.startsWith('/api/') &&
+      !pathname.startsWith('/api/auth') &&
+      !['GET', 'HEAD', 'OPTIONS'].includes(req.method)
+    ) {
+      return NextResponse.json({ error: 'Read-only — you are viewing as another user.' }, { status: 403 })
+    }
+
     if (pathname.startsWith('/admin') && !roles.includes('admin')) {
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }

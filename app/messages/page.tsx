@@ -13,6 +13,15 @@ export default async function MessagesPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
 
+  // Phase 53 — gym admins can't read DMs while viewing as a user (site admins can).
+  if (session.viewAs && !session.viewAs.bySiteAdmin) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-16 text-center">
+        <p className="text-sm text-slate">Direct messages aren&apos;t available while viewing as another user.</p>
+      </div>
+    )
+  }
+
   const userId = session.user.id
 
   const [messages, pendingRequestCount] = await Promise.all([

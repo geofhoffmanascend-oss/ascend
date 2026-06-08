@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
 import { getEffectiveFeatures } from '@/lib/features'
+import { InstructorSearch } from './InstructorSearch'
 
 const STATUS_STYLES: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-700',
@@ -23,16 +24,20 @@ export default async function LessonsPage() {
   const { privateLessons } = await getEffectiveFeatures(session)
   if (!privateLessons) redirect('/dashboard')
 
-  const lessons = await prisma.privateLesson.findMany({
-    where: {
-      OR: [{ requesterId: session.user.id }, { instructorId: session.user.id }],
-    },
-    include: {
-      requester: { select: { name: true } },
-      instructor: { select: { name: true } },
-    },
-    orderBy: { scheduledAt: 'desc' },
-  })
+  const gymId = session.user.gymId ?? null
+  const [lessons, instructors] = await Promise.all([
+    prisma.privateLesson.findMany({
+      where: { OR: [{ requesterId: session.user.id }, { instructorId: session.user.id }] },
+      include: { requester: { select: { name: true } }, instructor: { select: { name: true } } },
+      orderBy: { scheduledAt: 'desc' },
+    }),
+    // Instructors at the member's gym, offering private lessons.
+    prisma.user.findMany({
+      where: { gymId, roles: { hasSome: ['instructor', 'admin'] }, id: { not: session.user.id } },
+      select: { id: true, name: true, belt: true, avatarUrl: true, _count: { select: { availability: true } } },
+      orderBy: { name: 'asc' },
+    }),
+  ])
 
   const pending = lessons.filter(l => l.status === 'pending')
   const confirmed = lessons.filter(l => l.status === 'confirmed')
@@ -76,6 +81,33 @@ export default async function LessonsPage() {
           + Request
         </Link>
       </div>
+
+      {/* Instructors offering private lessons */}
+      <section className="mb-8">
+        <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel">Instructors</p>
+          <InstructorSearch />
+        </div>
+        {instructors.length === 0 && <p className="text-ash text-sm italic mb-2">No instructors at your gym yet — search beyond your gym above.</p>}
+        <div className="flex flex-col gap-2">
+            {instructors.map(i => (
+              <div key={i.id} className="border border-smoke bg-paper p-4 flex items-center justify-between gap-3">
+                <Link href={`/lessons/new?instructor=${i.id}`} className="flex items-center gap-3 min-w-0 group">
+                  {i.avatarUrl
+                    ? <img src={i.avatarUrl} alt="" className="w-9 h-9 rounded-full object-cover border border-smoke flex-shrink-0" />
+                    : <div className="w-9 h-9 rounded-full bg-mist border border-smoke flex-shrink-0" />}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-ink group-hover:text-brand-red transition-colors truncate">{i.name ?? 'Instructor'}</p>
+                    <p className="text-xs text-ash">{i._count.availability > 0 ? 'View availability →' : 'Request a time →'}</p>
+                  </div>
+                </Link>
+                <Link href={`/lessons/new?instructor=${i.id}`} className="px-3 py-1.5 bg-brand-red text-paper font-bold text-xs tracking-wide hover:bg-brand-red-dark transition-colors flex-shrink-0">
+                  Request
+                </Link>
+              </div>
+            ))}
+        </div>
+      </section>
 
       <div className="flex flex-col gap-6">
         {pending.length > 0 && (

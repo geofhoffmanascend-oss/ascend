@@ -6,21 +6,25 @@ import prisma from '@/lib/database'
 import { getEffectiveFeatures } from '@/lib/features'
 import { NewLessonForm } from './NewLessonForm'
 
-export default async function NewLessonPage() {
+export default async function NewLessonPage({ searchParams }: { searchParams: Promise<{ instructor?: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
+
+  const { instructor: initialInstructorId } = await searchParams
 
   const { privateLessons } = await getEffectiveFeatures(session)
   if (!privateLessons) redirect('/dashboard')
 
+  // Default to the member's home gym instructors (Phase 42.3; global radius search comes later).
+  const gymId = session.user.gymId ?? null
   const [instructors, students] = await Promise.all([
     prisma.user.findMany({
-      where: { roles: { hasSome: ['instructor', 'admin'] } },
+      where: { gymId, roles: { hasSome: ['instructor', 'admin'] }, id: { not: session.user.id } },
       select: { id: true, name: true },
       orderBy: { name: 'asc' },
     }),
     prisma.user.findMany({
-      where: { roles: { has: 'student' }, id: { not: session.user.id } },
+      where: { gymId, roles: { has: 'student' }, id: { not: session.user.id } },
       select: { id: true, name: true },
       orderBy: { name: 'asc' },
     }),
@@ -37,7 +41,7 @@ export default async function NewLessonPage() {
         </div>
         <h1 className="font-display text-2xl text-ink">Request a Lesson</h1>
       </div>
-      <NewLessonForm instructors={instructors} students={students} />
+      <NewLessonForm instructors={instructors} students={students} initialInstructorId={initialInstructorId ?? ''} />
     </div>
   )
 }

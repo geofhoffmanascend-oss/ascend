@@ -59,9 +59,27 @@ export function EditProfileForm({ userId, initial, profilePrivacy: initialPrivac
   const [privacy, setPrivacy] = useState<Record<string, string>>(initialPrivacy)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [uploading, setUploading] = useState(false)
 
   function update(field: string, value: string) {
     setForm(f => ({ ...f, [field]: value }))
+  }
+
+  async function uploadAvatar(file: File) {
+    setError('')
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/profile/avatar', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Upload failed')
+      update('avatarUrl', data.url)
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setUploading(false)
+    }
   }
 
   function updatePrivacy(field: string, value: string) {
@@ -144,14 +162,29 @@ export function EditProfileForm({ userId, initial, profilePrivacy: initialPrivac
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-xs font-bold uppercase tracking-widest text-steel">Avatar URL</label>
+      <div className="flex flex-col gap-2">
+        <label className="text-xs font-bold uppercase tracking-widest text-steel">Profile Picture</label>
+        <div className="flex items-center gap-4">
+          {form.avatarUrl
+            ? <img src={form.avatarUrl} alt="Avatar preview" className="w-16 h-16 rounded-full object-cover border border-smoke flex-shrink-0" />
+            : <div className="w-16 h-16 rounded-full bg-mist border border-smoke flex-shrink-0" />}
+          <div className="flex flex-col gap-2">
+            <label className="px-4 py-2 border border-smoke text-steel text-sm font-medium hover:border-steel hover:text-ink transition-colors cursor-pointer self-start">
+              {uploading ? 'Uploading…' : 'Upload a photo'}
+              <input type="file" accept="image/*" className="hidden" disabled={uploading}
+                onChange={e => { const f = e.target.files?.[0]; if (f) uploadAvatar(f) }} />
+            </label>
+            {form.avatarUrl && (
+              <button type="button" onClick={() => update('avatarUrl', '')} className="text-xs text-brand-red hover:underline self-start">Remove</button>
+            )}
+          </div>
+        </div>
         <input
           type="url"
           value={form.avatarUrl}
           onChange={e => update('avatarUrl', e.target.value)}
           className="w-full px-4 py-3 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors"
-          placeholder="https://…"
+          placeholder="…or paste an image URL"
         />
       </div>
 

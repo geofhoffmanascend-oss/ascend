@@ -239,6 +239,8 @@ model User {
   followers            Follow[]    @relation("Followers")
   sentInvitations      Invitation[] @relation("InviteInviter")
   instructorRequestedAt DateTime?   // Phase 40 — set when an "approve-after" instructor invite is accepted; cleared when the admin grants/denies
+  acceptsOutsideOrg    Boolean      @default(false) // Phase 42 — instructor accepts private-lesson requests from outside their gym
+  availability         InstructorAvailability[]
   postLikes            PostLike[]
   lastLoginAt          DateTime?
   loginEvents          LoginEvent[]
@@ -415,6 +417,28 @@ model Attendance {
 }
 
 // ── Private Lessons ────────────────────────────────────────────────────────────
+
+// Phase 42 — instructor private-lesson availability
+enum AvailabilityKind {
+  recurring // weekly window (uses dayOfWeek)
+  oneoff    // single dated bookable window (uses date)
+  block     // exception that removes availability (uses date)
+}
+
+model InstructorAvailability {
+  id           String           @id @default(cuid())
+  instructorId String
+  instructor   User             @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  kind         AvailabilityKind
+  dayOfWeek    DayOfWeek?       // recurring
+  date         DateTime?        // oneoff / block
+  startTime    String           // "HH:mm"
+  endTime      String           // "HH:mm"
+  gymId        String?          // gym this availability is offered at
+  createdAt    DateTime         @default(now())
+
+  @@index([instructorId])
+}
 
 model PrivateLesson {
   id           String        @id @default(cuid())
@@ -837,6 +861,8 @@ model Gym {
   participatingStatus GymTier   @default(free)
   paymentTerms        Json?
   setupProgress       Json?     // Phase 38.3 — owner setup checklist completion, e.g. {schedule:true,instructors:false,logo:true,roster:false}
+  lat                 Float?    // Phase 42 — geocoded (Google Maps) for radius search
+  lng                 Float?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 

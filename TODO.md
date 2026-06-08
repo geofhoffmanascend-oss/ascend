@@ -645,6 +645,8 @@ All tasks complete — moved to `guides/DO_NOT_REVIEW/COMPLETED_TASKS.md`. Owner
 
 ## PHASE 39 — Gym Claiming & Forum Adoption
 Extends Phase 26.4 (which only allows claiming on upgrade-to-participating).
+**Seeded (2026-06-07):** 102 DMV-area gyms imported as **claimable** community gyms (free tier, no owner, geocoded). These are the gyms an owner can claim.
+**🔖 MARKETING NOTE (for when we start marketing):** the claim-verification step is a **paid-services / outreach opportunity** — when an owner claims their listed gym, site-admin verification = a touchpoint to upsell participating-tier/paid features. Build the claim → site-admin verify flow (39.x) with that funnel in mind.
 
 ### [ ] 39.1 — Owner-initiated claim: searchable list of unclaimed gyms / community gym forums; an owner can claim one if their student created it OR it matches their name/address/phone/website. Requires a verification step before transfer of control.
 ### [ ] 39.2 — On successful claim: assign owner as gym admin/moderator, allow rename + rules, notify existing affiliated members (reuse 26.3/26.4 notification path).
@@ -672,8 +674,11 @@ Phase 17 gives 5 fixed `ClassGroup` enum forums; this adds **owner-defined** gro
 
 ## PHASE 42 — Private Lesson Availability & Provider Approval
 Today `/lessons/new` is just an instructor dropdown + free `datetime-local` (no availability, no slots).
+**Guide:** `guides/phase42-private-instructor.md`. **Decisions (2026-06-07):** availability = recurring + one-off + blocks; global search = radius (needs geocoding — confirm geocoder before wiring); **independent providers + approval DEFERRED** (v1 = gym instructors only); per-instructor "accept requests from outside my organization" toggle. **Build order §5:** schema → `lib/availability.ts` slot calc → availability editor+API → slot-based request UX → search (home-gym then radius). Schema: `InstructorAvailability`, `User.acceptsOutsideOrg`, `Gym.lat/lng`.
 
-### [ ] 42.1 — Instructor availability: instructors enter recurring/one-off availability windows for private instruction.
+### [x] 42.3 — Search beyond home gym: DONE — `GET /api/instructors/search?location=&miles=` (geocode origin via Google → gyms within radius via haversine → instructors there with `acceptsOutsideOrg=true`); `InstructorSearch` UI on `/lessons`. Gyms auto-geocode on `POST /api/gyms`. **102 DMV gyms imported + geocoded** (`scripts/import-dmv-gyms.ts` from `scripts/dmv-gyms.json`; claimable community gyms, free tier, no owner — onboarding search finds them; Ascend updated w/ address). 42.4 independent providers still deferred.
+### [~] 42.1 — Instructor availability: DONE — schema (`InstructorAvailability` recurring/oneoff/block, `User.acceptsOutsideOrg`, `Gym.lat/lng`, pushed), `GET/POST/PUT /api/instructor/availability` + `DELETE /[id]`, editor at `/instructor/availability` (+ "Lesson Availability" card on `/instructor`) with the accept-outside-org toggle. **Remaining Phase 42:** `lib/availability.ts` slot computation (expand recurring + one-offs − blocks − booked); slot-based `/lessons/new` request UX (42.2); home-gym + Google-Maps radius search (42.3); independent providers + approval deferred (42.4). **NOT browser-tested.**
+**Geocoding = Google Maps** — shared `lib/geocode.ts` (`GOOGLE_MAPS_API_KEY`), reused by find-instructor + future gym-finder + events-near-me (Phase 28). User to add `GOOGLE_MAPS_API_KEY` to .env.local + Vercel.
 ### [ ] 42.2 — Request UX: selecting an instructor shows that instructor's **available slots**; reuse the schedule calendar to show days where instructors are available.
 ### [ ] 42.3 — "Only show instructors from my home gym" toggle (**default on**); turning it off surfaces instructors from other gyms.
 ### [ ] 42.4 — Individual (non-gym) private-lesson providers must be **approved by a verified black belt** on the platform before they can offer lessons.

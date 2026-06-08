@@ -32,7 +32,7 @@ export default async function ProfilePage() {
       emergencyContact: true,
       avatarUrl: true,
       createdAt: true,
-      gym: { select: { participatingStatus: true } },
+      gym: { select: { participatingStatus: true, name: true, slug: true } },
       goalsAsStudent: {
         orderBy: { createdAt: 'desc' },
         select: { id: true, description: true, targetDate: true, completedAt: true },
@@ -133,6 +133,14 @@ export default async function ProfilePage() {
             <p className="text-xs text-ash">
               Member since {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </p>
+            {user.gym?.slug && (
+              <p className="text-xs text-ash">
+                Gym:{' '}
+                <Link href={`/gyms/${user.gym.slug}`} className="text-brand-red font-medium hover:underline">
+                  {user.gym.name}
+                </Link>
+              </p>
+            )}
           </div>
         </div>
 

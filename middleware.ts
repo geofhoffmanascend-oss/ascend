@@ -37,7 +37,7 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl
-        const publicPaths = ['/', '/about', '/login', '/register']
+        const publicPaths = ['/', '/about', '/login', '/register', '/terms', '/privacy']
         if (publicPaths.some(p => pathname === p)) return true
         if (pathname.startsWith('/checkin')) return true
         if (pathname.startsWith('/tour')) return true

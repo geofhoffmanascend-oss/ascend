@@ -136,6 +136,12 @@ function RegisterForm() {
           >
             {loading ? 'Creating account…' : 'Create Account'}
           </button>
+
+          <p className="text-xs text-ash text-center">
+            By creating an account you agree to our{' '}
+            <Link href="/terms" className="text-steel hover:text-ink underline underline-offset-2">Terms</Link> and{' '}
+            <Link href="/privacy" className="text-steel hover:text-ink underline underline-offset-2">Privacy Policy</Link>.
+          </p>
         </form>
 
         <div className="mt-4 flex items-center gap-3">

@@ -122,6 +122,15 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    // Geocode the address for map/radius features (best-effort; never blocks creation).
+    if (address || city || zip) {
+      try {
+        const { geocodeParts } = await import('@/lib/geocode')
+        const coords = await geocodeParts({ address, city, state, zip })
+        if (coords) await prisma.gym.update({ where: { id: gym.id }, data: { lat: coords.lat, lng: coords.lng } })
+      } catch (e) { console.error('[api/gyms POST] geocode', e) }
+    }
+
     if (asOwner === true) {
       // Owner context (Phase 38, D-AUTH): instantly grant admin + instructor and
       // point gymId at the new gym in the same write. Instant grant, no

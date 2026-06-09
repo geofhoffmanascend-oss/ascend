@@ -10,6 +10,7 @@ const NAV = [
   { href: '/site-admin/events', label: 'Events' },
   { href: '/site-admin/forums', label: 'Forums' },
   { href: '/site-admin/gyms/new-review', label: 'New Gyms' },
+  { href: '/site-admin/claims', label: 'Claims' },
   { href: '/site-admin/admins', label: 'Admins' },
   { href: '/site-admin/settings', label: 'Feature Toggles' },
 ]

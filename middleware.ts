@@ -54,7 +54,7 @@ export default withAuth(
         if (pathname.startsWith('/tour')) return true
         if (pathname.startsWith('/profile/')) return true
         if (pathname.startsWith('/invite/')) return true
-        if (pathname.startsWith('/gyms/') && !pathname.startsWith('/gyms/register')) return true
+        if (pathname.startsWith('/gyms/') && !pathname.startsWith('/gyms/register') && !pathname.startsWith('/gyms/claim')) return true
         if (pathname === '/events' || pathname.startsWith('/events/') && !pathname.startsWith('/events/new')) return true
         // Public tournament results (page self-gates on isPublic; detail page redirects anon to login)
         if (pathname.startsWith('/tournaments/')) return true

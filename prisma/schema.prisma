@@ -224,6 +224,7 @@ model User {
   // Gym relations
   gym            Gym?           @relation(fields: [gymId], references: [id], onDelete: SetNull)
   gymMemberships GymMembership[]
+  gymClaims      GymClaim[]     @relation("GymClaims")
 
   // App relations
   taughtClasses        Class[]           @relation("ClassInstructor")
@@ -901,6 +902,34 @@ model Gym {
   tournaments  Tournament[]
   features     GymFeatures?
   classPrograms ClassProgram[]
+  claims        GymClaim[]
+}
+
+// Phase 39 — owner claim of an unclaimed (no-admin) gym listing. Site-admin
+// verifies before control transfers. A gym is "claimed" when a user has the
+// `admin` role + `gymId` = that gym; this model only tracks the request/review.
+enum GymClaimStatus {
+  pending
+  approved
+  rejected
+}
+
+model GymClaim {
+  id           String         @id @default(cuid())
+  gymId        String
+  gym          Gym            @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User           @relation("GymClaims", fields: [userId], references: [id], onDelete: Cascade)
+  status       GymClaimStatus @default(pending)
+  note         String?
+  reviewNote   String?
+  reviewedById String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([gymId])
+  @@index([userId])
+  @@index([status])
 }
 
 // Per-gym feature toggles (Phase 37). Gym admins turn optional features on/off

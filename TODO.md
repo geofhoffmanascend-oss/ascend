@@ -694,13 +694,12 @@ All tasks complete — moved to `guides/DO_NOT_REVIEW/COMPLETED_TASKS.md`. Owner
 
 ---
 
-## PHASE 39 — Gym Claiming & Forum Adoption
-Extends Phase 26.4 (which only allows claiming on upgrade-to-participating).
-**Seeded (2026-06-07):** 102 DMV-area gyms imported as **claimable** community gyms (free tier, no owner, geocoded). These are the gyms an owner can claim.
-**🔖 MARKETING NOTE (for when we start marketing):** the claim-verification step is a **paid-services / outreach opportunity** — when an owner claims their listed gym, site-admin verification = a touchpoint to upsell participating-tier/paid features. Build the claim → site-admin verify flow (39.x) with that funnel in mind.
+## PHASE 39 — Gym Claiming & Forum Adoption — DONE 2026-06-09
+Guide: `guides/phase39-gym-claiming.md`. **Functional only — no upsell** (user 2026-06-09: free social network / "Yelp for gyms"; verification = anti-abuse gate, not a sales touchpoint; business model later). Schema pushed (additive `GymClaim` + `GymClaimStatus`). Browser-tested (Playwright + DB, 13/13 + rename).
+**Seeded (2026-06-07):** 102 DMV-area gyms imported as **claimable** community gyms (free tier, no owner, geocoded) — the gyms an owner can claim.
 
-### [ ] 39.1 — Owner-initiated claim: searchable list of unclaimed gyms / community gym forums; an owner can claim one if their student created it OR it matches their name/address/phone/website. Requires a verification step before transfer of control.
-### [ ] 39.2 — On successful claim: assign owner as gym admin/moderator, allow rename + rules, notify existing affiliated members (reuse 26.3/26.4 notification path).
+### [x] 39.1 — Owner-initiated claim — DONE. A gym is "claimed" when it has an admin user; **unclaimed** = no admin. `GET /api/gyms/claimable?q=` lists unclaimed gyms; `/gyms/claim` searchable picker → submit a justification note → `POST /api/gyms/[id]/claim` creates a **pending** `GymClaim` + notifies site_admins. Guards: gym already claimed (409), claimant already administers a gym (409), duplicate pending claim (409). Entry points: `/gyms/register` ("Already listed? Claim your gym"), `/gyms/[slug]` ("Is this your gym? Claim it" when unclaimed). `/gyms/claim` made auth-required in middleware.
+### [x] 39.2 — On successful claim — DONE. Site-admin queue `/site-admin/claims` (sidebar nav "Claims") + `PATCH /api/site-admin/claims/[id]` `{action:'approve'|'reject',reviewNote?}`. **Approve:** grants claimant `admin`+`instructor`, sets `gymId`, upserts active membership, marks claim approved, **auto-rejects other pending claims** for that gym, notifies claimant + all existing affiliated members (re-checks gym still unclaimed → 409 on race). **Reject:** records reviewNote + notifies claimant. **Rename + rules:** extended `PATCH /api/admin/gym` + `/admin/settings` "Gym Profile" form to edit gym **name + description** (logo already there); gym-forum control already available to admins.
 
 ---
 

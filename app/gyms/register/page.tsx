@@ -232,6 +232,11 @@ function GymRegisterForm() {
             ? 'Tell us about your gym. You\'ll be set up as its admin and can configure everything next.'
             : 'Registering is free.'}
         </p>
+        <p className="text-xs text-ash mt-2">
+          Already listed?{' '}
+          <a href="/gyms/claim" className="text-brand-red font-semibold hover:underline">Claim your gym</a>{' '}
+          instead of creating a duplicate.
+        </p>
       </div>
 
       <div className="flex flex-col gap-1">

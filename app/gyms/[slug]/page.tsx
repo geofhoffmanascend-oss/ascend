@@ -24,7 +24,7 @@ export default async function GymProfilePage(
   const gym = await prisma.gym.findUnique({ where: { slug } })
   if (!gym) notFound()
 
-  const [memberCount, membership, gymForum] = await Promise.all([
+  const [memberCount, membership, gymForum, gymAdmin] = await Promise.all([
     prisma.gymMembership.count({ where: { gymId: gym.id, status: 'active' } }),
     session?.user?.id
       ? prisma.gymMembership.findUnique({
@@ -36,10 +36,13 @@ export default async function GymProfilePage(
       where: { gymId: gym.id, type: 'gym_forum' },
       select: { id: true, title: true, _count: { select: { posts: true, subscriptions: true } } },
     }),
+    // Phase 39 — a gym is "claimed" once it has an admin user.
+    prisma.user.findFirst({ where: { gymId: gym.id, roles: { has: 'admin' } }, select: { id: true } }),
   ])
   const gymForumTyped = gymForum as typeof gymForum & { _count: { posts: number; subscriptions: number } } | null
 
   const isActiveMember = membership?.status === 'active'
+  const isClaimed = !!gymAdmin
 
   return (
     <div className="min-h-full bg-paper py-12 px-4">
@@ -115,6 +118,15 @@ export default async function GymProfilePage(
               isMember={!!membership}
               membershipStatus={membership?.status}
             />
+          )}
+
+          {/* Phase 39 — claim CTA for an unclaimed listing */}
+          {session?.user?.id && !isClaimed && (
+            <p className="mt-4 text-xs text-ash">
+              Is this your gym?{' '}
+              <Link href="/gyms/claim" className="text-brand-red font-semibold hover:underline">Claim it</Link>{' '}
+              to manage its schedule, forums, and roster.
+            </p>
           )}
 
           {/* Forum section — authenticated active members only */}

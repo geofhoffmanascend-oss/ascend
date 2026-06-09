@@ -43,7 +43,7 @@ export async function PUT(
   const {
     name, participatingStatus, paymentTerms,
     headInstructorName, description, logoUrl,
-    city, state, zip, phone, website,
+    address, city, state, zip, phone, website,
   } = body
 
   try {
@@ -59,6 +59,7 @@ export async function PUT(
         ...(headInstructorName !== undefined && { headInstructorName }),
         ...(description !== undefined && { description }),
         ...(logoUrl !== undefined && { logoUrl }),
+        ...(address !== undefined && { address }),
         ...(city !== undefined && { city }),
         ...(state !== undefined && { state }),
         ...(zip !== undefined && { zip }),
@@ -66,6 +67,20 @@ export async function PUT(
         ...(website !== undefined && { website }),
       },
     })
+
+    // Phase 42 — re-geocode for radius search when the location changed.
+    const locationChanged =
+      (address !== undefined && address !== existing.address) ||
+      (city !== undefined && city !== existing.city) ||
+      (state !== undefined && state !== existing.state) ||
+      (zip !== undefined && zip !== existing.zip)
+    if (locationChanged) {
+      try {
+        const { geocodeParts } = await import('@/lib/geocode')
+        const coords = await geocodeParts({ address: gym.address, city: gym.city, state: gym.state, zip: gym.zip })
+        if (coords) await prisma.gym.update({ where: { id }, data: { lat: coords.lat, lng: coords.lng } })
+      } catch (e) { console.error('[api/site-admin/gyms/[id] PUT] geocode', e) }
+    }
 
     // Notify gym admins when tier is upgraded to participating
     if (participatingStatus === 'participating' && existing.participatingStatus !== 'participating') {

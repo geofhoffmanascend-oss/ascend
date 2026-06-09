@@ -17,7 +17,7 @@ type Session = {
 type Day = { date: string; sessions: Session[] }
 type MonthSession = {
   id: string; date: string; cancelled: boolean; myCommitment: boolean; myCheckedIn: boolean
-  class: { title: string; startTime: string; type: string }
+  class: { title: string; startTime: string; type: string; programId: string | null }
 }
 
 export type { Day, MonthSession, Session }
@@ -164,7 +164,7 @@ export function ScheduleShell({
         <WeeklySchedule days={days} currentMonday={currentMonday} filters={filters} blockedClassGroups={blockedClassGroups} blockedProgramIds={blockedProgramIds} />
       )}
       {view === 'month' && monthSessions && currentMonth && (
-        <MonthCalendar sessions={monthSessions} currentMonth={currentMonth} filters={filters} />
+        <MonthCalendar sessions={monthSessions} currentMonth={currentMonth} filters={filters} blockedClassGroups={blockedClassGroups} blockedProgramIds={blockedProgramIds} />
       )}
     </div>
   )

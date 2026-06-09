@@ -155,7 +155,7 @@ export function ClassWizard({ instructors, programs }: { instructors: Instructor
           <input value={form.location} onChange={e => update('location', e.target.value)} className={inputCls} placeholder="Mat room…" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className={labelCls}>Max Students</label>
+          <label className={labelCls}>Max Members</label>
           <input type="number" value={form.maxStudents} onChange={e => update('maxStudents', e.target.value)} className={inputCls} placeholder="Unlimited" min="1" />
         </div>
       </div>

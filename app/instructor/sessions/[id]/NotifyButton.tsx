@@ -45,11 +45,11 @@ export function NotifyButton({
           <div className="bg-paper border border-smoke w-full max-w-sm p-6">
             <p className="font-display text-base font-bold text-ink mb-1">Notify Registered Members</p>
             <p className="text-xs text-ash mb-4">
-              Sends a push notification and in-app alert to {studentCount} registered student{studentCount !== 1 ? 's' : ''}.
+              Sends a push notification and in-app alert to {studentCount} registered member{studentCount !== 1 ? 's' : ''}.
             </p>
 
             {sent !== null ? (
-              <p className="text-sm text-green-700 font-medium py-4 text-center">✓ Sent to {sent} student{sent !== 1 ? 's' : ''}</p>
+              <p className="text-sm text-green-700 font-medium py-4 text-center">✓ Sent to {sent} member{sent !== 1 ? 's' : ''}</p>
             ) : (
               <>
                 <input

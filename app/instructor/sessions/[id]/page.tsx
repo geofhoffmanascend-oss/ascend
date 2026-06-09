@@ -126,7 +126,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
       {regularAbsentees.length > 0 && (
         <div className="mt-6 border border-smoke bg-paper p-6">
           <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Not Registered</p>
-          <p className="text-xs text-ash mb-4">These students have attended this class before but haven't registered this session.</p>
+          <p className="text-xs text-ash mb-4">These members have attended this class before but haven't registered this session.</p>
           <div className="flex flex-wrap gap-3">
             {regularAbsentees.map(u => (
               <Link

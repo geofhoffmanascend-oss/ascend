@@ -3,13 +3,14 @@
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { type Filters } from './ScheduleFilters'
+import { classTypeToGroup } from '@/lib/classGroups'
 
 type MonthSession = {
   id: string
   date: string
   cancelled: boolean
   myCommitment: boolean
-  class: { title: string; startTime: string; type: string }
+  class: { title: string; startTime: string; type: string; programId: string | null }
 }
 
 const DAY_HEADERS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -30,12 +31,24 @@ export function MonthCalendar({
   sessions,
   currentMonth,
   filters,
+  blockedClassGroups = [],
+  blockedProgramIds = [],
 }: {
   sessions: MonthSession[]
   currentMonth: string
   filters: Filters
+  blockedClassGroups?: string[]
+  blockedProgramIds?: string[]
 }) {
   const router = useRouter()
+
+  // A session is blocked (access-restricted) when its class group or program is
+  // on the user's blocked list — gray it out to match the week/day views.
+  function isBlocked(s: MonthSession) {
+    const group = classTypeToGroup(s.class.type)
+    return (group !== null && blockedClassGroups.includes(group)) ||
+      (!!s.class.programId && blockedProgramIds.includes(s.class.programId))
+  }
 
   const [year, monthNum] = currentMonth.split('-').map(Number)
   const firstDay = new Date(Date.UTC(year, monthNum - 1, 1))
@@ -143,7 +156,7 @@ export function MonthCalendar({
                             : s.myCommitment
                             ? 'bg-brand-red/10 text-brand-red font-medium'
                             : 'bg-mist text-steel'
-                        }`}
+                        } ${isBlocked(s) ? 'opacity-40' : ''}`}
                       >
                         <span className="hidden sm:inline">{s.class.startTime} </span>
                         {s.class.title}

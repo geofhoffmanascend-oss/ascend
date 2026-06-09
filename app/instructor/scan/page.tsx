@@ -31,7 +31,7 @@ export default async function QRScanPage() {
           </span>
         </div>
         <h1 className="font-display text-2xl text-ink">QR Check-in Scanner</h1>
-        <p className="text-sm text-ash mt-1">Scan or enter a student's QR token to check them in.</p>
+        <p className="text-sm text-ash mt-1">Scan or enter a member's QR token to check them in.</p>
       </div>
       <QRScanForm sessions={sessionOptions} />
     </div>

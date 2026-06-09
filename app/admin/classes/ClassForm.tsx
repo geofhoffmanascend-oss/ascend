@@ -157,7 +157,7 @@ export function ClassForm({ instructors, programs = [], initial }: Props) {
             placeholder="Mat room, etc." />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-bold uppercase tracking-widest text-steel">Max Students</label>
+          <label className="text-xs font-bold uppercase tracking-widest text-steel">Max Members</label>
           <input type="number" value={form.maxStudents} onChange={e => update('maxStudents', e.target.value)}
             className="w-full px-4 py-3 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors"
             placeholder="Leave blank for unlimited" min="1" />

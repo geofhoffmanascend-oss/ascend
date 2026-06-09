@@ -98,7 +98,7 @@ export default async function InstructorHomePage() {
         </Link>
         <Link href="/instructor/lessons/new" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Private Lessons</p>
-          <p className="text-slate text-sm">Schedule a lesson with students</p>
+          <p className="text-slate text-sm">Schedule a lesson with members</p>
         </Link>
         <Link href="/instructor/availability" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Lesson Availability</p>
@@ -122,11 +122,11 @@ export default async function InstructorHomePage() {
         </Link>
         <Link href="/instructor/scan" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">QR Check-in</p>
-          <p className="text-slate text-sm">Scan student QR codes at the door</p>
+          <p className="text-slate text-sm">Scan member QR codes at the door</p>
         </Link>
         <Link href="/dashboard" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Dashboard</p>
-          <p className="text-slate text-sm">Back to student view</p>
+          <p className="text-slate text-sm">Back to member view</p>
         </Link>
       </div>
     </div>

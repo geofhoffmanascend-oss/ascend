@@ -41,6 +41,57 @@
 
 ---
 
+## ⏭ NEXT SESSION — Status (updated 2026-06-09)
+
+**Done recently (pushed to git by user):**
+- **Phase 53 — Admin "View As"** (read-only): site_admin → any user (incl. DMs); gym admin → own-gym users (DMs hidden). Writes blocked in middleware; banner + Exit. Built, NOT browser-tested.
+- **Phase 54 — Journal sharing**: share entries with connections (gym/follows/lesson partners); DM-off → pending request; "Shared with me" in journal tab + `/instructor/journals`. Built, NOT browser-tested.
+- **Schedule multi-tenancy fix** (week/month/day scoped to member's gym) + user-search/commitment/check-in gym scoping.
+- **Help page accuracy pass**, **beta notice** (available/coming-soon, both variants), **Terms/Privacy** placeholder pages, **DMV gym import** (102 claimable, geocoded), **radius instructor search**, gym auto-geocode on create.
+- **Email infra**: `lib/email.ts` split into `fromNoReply` (no_reply@ascendit.app) + `fromAdmin` (admin@ascendit.app); test sends to geof.hoffman@gmail.com succeeded. Password-reset token system confirmed built & secure (32-byte, 1h, single-use).
+- **Vercel env push (project `ascend`)**: added Production `EMAIL_FROM_NAME`, `EMAIL_FROM_NOREPLY`, `EMAIL_FROM_ADMIN`, `EMAIL_FROM`, `NEXTAUTH_URL=https://ascendit.app`; updated `VAPID_SUBJECT`→`mailto:admin@ascendit.app` (Prod done; **Preview was removed + re-add in flight — VERIFY**). Real domain = **ascendit.app** (ascend.app/ascend.gym were placeholders; gym.com = test accounts only).
+
+**Pending verification / ops (user doing):**
+- Verify Vercel env in UI (esp. Preview `VAPID_SUBJECT`), then **redeploy** so email/NEXTAUTH_URL take effect.
+- After redeploy: test live `/forgot-password` end-to-end on ascendit.app.
+
+**Recommended next features (user to pick):**
+- **Phase 39 — Gym claiming** (owner claims a listed DMV gym → site-admin verify) = marketing/paid-services funnel.
+- **Email invites** (Phase 40) now that admin@ sender is live.
+- **Map display UI** (gym finder / events-near-me; geocoding groundwork done).
+- **Browser-test Phase 53 (view-as) + Phase 54 (journal sharing)** — neither is UI-tested yet.
+- Polish: month-view graying, auto-subscribe new class-group forum, site-admin forum-delete button, dynamic onboarding step numbers, remaining "student→member" copy.
+
+---
+
+## 🤖 AUTONOMOUS MODE — Operating Rules (for hands-off sessions)
+
+When started with the autonomous prompt, work the **Autonomous Queue** below top-to-bottom without waiting for the user, following these rules:
+
+1. **Begin where we left off.** Read this NEXT SESSION block + the Autonomous Queue, then start the first unchecked item.
+2. **Continue automatically** to the next queue item when one is done. Don't stop to ask "what's next" or for approval to proceed.
+3. **Decisions:** if a task *absolutely* requires a user decision (a real fork with no sensible default), DO NOT block. Write it under **"⏸ DECISIONS PARKED"** below (question + options + your recommendation), skip that task, and move to the next one. Use sensible defaults for minor choices and note them.
+4. **Verify each change:** `npx tsc --noEmit` and `npm run build` must pass before moving on. Fix what you break.
+5. **Schema:** additive `prisma db push` is allowed when a queued task needs it (regenerate client + restart dev after). No destructive DB ops, no seed wipes.
+6. **Do NOT commit or push to git** — the user does that. Do not deploy.
+7. **Keep docs current:** mark items `[x]` here as completed, update `memory/project_state.md`, and keep `todo.html` in sync.
+8. **Conserve tokens:** Grep over full-file reads; concise responses; subagents on haiku for simple search/edits.
+9. **Report at the end:** what got done, what's parked (decisions), what failed, and what's next.
+
+### Autonomous Queue (do in order)
+1. [x] **Browser-test Phase 53 (View As)** — DONE 2026-06-09. Playwright 10/10: site_admin (admin@gym.com) → View As member, banner shows read-only, POST /api/commitments blocked (403), site_admin DMs NOT hidden, Exit restores admin; gym-admin (throwaway Lions admin) → banner shows + DMs hidden in view-as. No bugs found. Test data cleaned up.
+2. [x] **Browser-test Phase 54 (Journal sharing)** — DONE 2026-06-09. Playwright 15/15: active share (DMs-on recipient) → "Shared with me" link + recipient opens entry; pending share (DMs-off recipient) → request prompt → Accept → active; instructor `/instructor/journals` shows shared + gym non-private entries. No bugs found. Test fixtures cleaned up. (Incidental fix: student2@gym.com password was not the documented `student1234` — reset it to match `guides/testCredentials.md`.)
+3. [x] **Polish — auto-subscribe** to class-group forum — DONE 2026-06-09. (a) On `POST /api/admin/programs/[id]/forum` (forum creation), all gym members not blocked from that program are auto-subscribed (`createMany` skipDuplicates). (b) In `PUT /api/admin/users/[id]/class-access`, when a program/group is now-UNblocked (access granted), the user is auto-subscribed to its forum — both the gym-defined `blockedProgramIds` branch and the legacy fixed-group branch. (Block already removed subscriptions; this adds the grant inverse.) tsc + build clean.
+4. [x] **Polish — site-admin forum-delete button** — DONE 2026-06-09. `ForumModerationList` now has a "Delete forum" button in the selected-forum header (shown even with 0 posts); calls existing `DELETE /api/forums/[id]` (site_admin allowed), confirms, removes from list + clears selection on success, surfaces API error otherwise. tsc + build clean.
+5. [x] **Polish — dynamic onboarding step numbers** — DONE 2026-06-09. `OnboardingWizard` now computes `displayStep`/`displayTotal` from `hasScheduleStep`: when there's no schedule step (independent users / gyms with no class groups), total = 4 and steps 4/5 render as "Step 3/4 of 4"; progress dots length is dynamic. tsc + build clean.
+6. [x] **Polish — "student → member" copy sweep** — DONE 2026-06-09. Swept visible copy across instructor/admin/help/site-admin UIs (~30 strings: attendance, session notes "Visible to members", NotifyButton, scan, lessons form labels + placeholders, admin hub/store/settings/programs/class-access, "Max Members" labels, help page, platform-settings descriptions). Kept `student` role value, routes (`/instructor/students`), code identifiers (`maxStudents`, `studentCount`, `StudentSearch`, `studentLogs`), and the "Student Notes" feature name. tsc + build clean.
+7. [x] **Polish — month-view schedule graying** — DONE 2026-06-09. `MonthCalendar` now takes `blockedClassGroups`/`blockedProgramIds`, computes `isBlocked` per session (via `classTypeToGroup` + programId), and grays blocked pills `opacity-40` to match week/day views. Threaded `programId` through `MonthSession` (page.tsx + ScheduleShell types) and passed blocked props through `ScheduleShell`. tsc + build clean.
+
+### ⏸ DECISIONS PARKED (autonomous sessions append here; user answers later)
+- _(none yet)_
+
+---
+
 ## PHASE 1 — Foundation
 All scaffolding complete. Database setup pending — see notes below.
 

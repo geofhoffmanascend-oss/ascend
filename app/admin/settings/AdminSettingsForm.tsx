@@ -24,7 +24,7 @@ export function AdminSettingsForm({ initial }: { initial: { reviewUrl: string } 
       <div className="border border-smoke bg-paper p-6 flex flex-col gap-4">
         <p className="text-xs font-bold uppercase tracking-widest text-steel">Public Review Link</p>
         <p className="text-xs text-ash -mt-2">
-          Where to send students who want to leave a public review. Recommend Google Business Profile —
+          Where to send members who want to leave a public review. Recommend Google Business Profile —
           it shows in search results and requires no app.
         </p>
         <div className="flex flex-col gap-1">

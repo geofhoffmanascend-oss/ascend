@@ -49,7 +49,7 @@ export function ClassAccessManager({
   return (
     <div className="border border-smoke bg-paper p-6">
       <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Class Access</p>
-      <p className="text-xs text-ash mb-4">Unchecked class groups are grayed out on the student's schedule — they cannot register or check in.</p>
+      <p className="text-xs text-ash mb-4">Unchecked class groups are grayed out on the member's schedule — they cannot register or check in.</p>
       <div className="flex flex-col gap-3 mb-4">
         {useProgramMode
           ? programs.map(p => {

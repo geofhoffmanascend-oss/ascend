@@ -57,7 +57,7 @@ export function AttendanceClient({
 
       <div className="flex flex-col gap-2 mb-4">
         {students.length === 0 && (
-          <p className="text-ash text-sm italic">No registered students.</p>
+          <p className="text-ash text-sm italic">No registered members.</p>
         )}
         {students.map(s => (
           <label key={s.userId} className="flex items-center gap-3 cursor-pointer group">

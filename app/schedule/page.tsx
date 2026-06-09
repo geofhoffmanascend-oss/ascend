@@ -81,7 +81,7 @@ export default async function SchedulePage({
         cancelled: s.cancelled,
         myCommitment: s.commitments.length > 0,
         myCheckedIn: s.attendance.length > 0 && s.attendance[0].checkedInAt !== null,
-        class: { title: s.class.title, startTime: s.class.startTime, type: s.class.type },
+        class: { title: s.class.title, startTime: s.class.startTime, type: s.class.type, programId: s.class.programId },
       }))
 
     const weekStr = getMondayOfWeek(today).toISOString().split('T')[0]
@@ -104,6 +104,7 @@ export default async function SchedulePage({
           nextUrl={`/schedule?view=month&month=${nextMonthStr}`}
           periodLabel={monthPeriodLabel}
           blockedClassGroups={blocked}
+          blockedProgramIds={blockedPrograms}
           monthSessions={monthSessions}
           currentMonth={currentMonth}
         />

@@ -11,9 +11,11 @@ const TYPE_LABEL: Record<string, string> = {
 }
 
 export function ForumModerationList({ forums }: { forums: Forum[] }) {
+  const [forumList, setForumList] = useState<Forum[]>(forums)
   const [selected, setSelected] = useState<Forum | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(false)
+  const [deletingForum, setDeletingForum] = useState(false)
 
   async function open(f: Forum) {
     setSelected(f); setLoading(true); setPosts([])
@@ -29,7 +31,21 @@ export function ForumModerationList({ forums }: { forums: Forum[] }) {
     if (res.ok) setPosts(p => p.filter(x => x.id !== id))
   }
 
-  if (forums.length === 0) {
+  async function delForum(f: Forum) {
+    if (!confirm(`Delete the entire "${f.title}" forum and all its posts? This cannot be undone.`)) return
+    setDeletingForum(true)
+    const res = await fetch(`/api/forums/${f.id}`, { method: 'DELETE' })
+    setDeletingForum(false)
+    if (res.ok) {
+      setForumList(list => list.filter(x => x.id !== f.id))
+      setSelected(null); setPosts([])
+    } else {
+      const data = await res.json().catch(() => ({}))
+      alert(data.error ?? 'Could not delete this forum.')
+    }
+  }
+
+  if (forumList.length === 0) {
     return <p className="text-ash text-sm italic">No community forums to moderate. (Participating gyms moderate their own.)</p>
   }
 
@@ -37,7 +53,7 @@ export function ForumModerationList({ forums }: { forums: Forum[] }) {
     <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6">
       {/* Forum list */}
       <div className="flex flex-col gap-2">
-        {forums.map(f => (
+        {forumList.map(f => (
           <button
             key={f.id}
             onClick={() => open(f)}
@@ -55,14 +71,19 @@ export function ForumModerationList({ forums }: { forums: Forum[] }) {
       <div>
         {!selected ? (
           <p className="text-ash text-sm italic">Select a forum to review its posts.</p>
-        ) : loading ? (
-          <p className="text-ash text-sm">Loading…</p>
-        ) : posts.length === 0 ? (
-          <p className="text-ash text-sm italic">No posts in {selected.title}.</p>
         ) : (
           <div className="flex flex-col gap-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">{selected.title} — {posts.length} posts</p>
-            {posts.map(p => (
+            <div className="flex items-center justify-between gap-3 mb-1">
+              <p className="text-xs font-bold uppercase tracking-widest text-steel">{selected.title}{!loading && ` — ${posts.length} ${posts.length === 1 ? 'post' : 'posts'}`}</p>
+              <button onClick={() => delForum(selected)} disabled={deletingForum} className="text-xs font-semibold text-brand-red hover:underline flex-shrink-0 disabled:opacity-60">
+                {deletingForum ? 'Deleting…' : 'Delete forum'}
+              </button>
+            </div>
+            {loading ? (
+              <p className="text-ash text-sm">Loading…</p>
+            ) : posts.length === 0 ? (
+              <p className="text-ash text-sm italic">No posts in {selected.title}.</p>
+            ) : posts.map(p => (
               <div key={p.id} className="border border-smoke bg-paper p-3 flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-xs text-ash mb-0.5">

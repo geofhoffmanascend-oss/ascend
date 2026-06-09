@@ -380,7 +380,7 @@ function ProductFormModal({ product, onClose, onSaved }: {
               <div className={`w-10 h-5 rounded-full transition-colors ${available ? 'bg-brand-red' : 'bg-smoke'}`} />
               <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-paper rounded-full shadow transition-transform ${available ? 'translate-x-5' : ''}`} />
             </div>
-            <span className="text-sm text-ink">Visible to students</span>
+            <span className="text-sm text-ink">Visible to members</span>
           </label>
 
           {error && <p className="text-sm text-brand-red">{error}</p>}

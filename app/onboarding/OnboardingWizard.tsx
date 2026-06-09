@@ -23,12 +23,10 @@ interface Props {
   initialGymName?: string | null
 }
 
-const TOTAL_STEPS = 5
-
-function StepDots({ current }: { current: number }) {
+function StepDots({ current, total }: { current: number; total: number }) {
   return (
     <div className="flex gap-2 justify-center mb-8">
-      {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+      {Array.from({ length: total }).map((_, i) => (
         <div
           key={i}
           className={`w-2 h-2 rounded-full transition-colors ${
@@ -72,6 +70,11 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
   const [goals, setGoals] = useState('')
 
   const hasScheduleStep = (info?.classGroups.length ?? 0) > 0
+  // When there's no schedule step (independent users / gyms with no class
+  // groups), Step 3 is skipped — renumber the remaining steps so the labels
+  // and progress dots stay contiguous (e.g. "Step 3 of 4" instead of "Step 4 of 5").
+  const displayTotal = hasScheduleStep ? 5 : 4
+  const displayStep = hasScheduleStep ? step : step <= 2 ? step : step - 1
 
   async function patch(data: Record<string, unknown>) {
     const res = await fetch(`/api/users/${userId}`, {
@@ -145,14 +148,14 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
 
   return (
     <div>
-      <StepDots current={step} />
+      <StepDots current={displayStep} total={displayTotal} />
 
       <div className="border border-smoke bg-paper p-8">
         {/* ── Step 1: Basic Profile ── */}
         {step === 1 && (
           <div className="flex flex-col gap-5">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 1 of {TOTAL_STEPS}</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step {displayStep} of {displayTotal}</p>
               <h2 className="font-display text-xl text-ink mb-1">Welcome — let's set up your profile</h2>
               <p className="text-sm text-slate">All fields are optional. You can edit this later.</p>
             </div>
@@ -195,7 +198,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
         {step === 2 && !showGymForumPrompt && (
           <div className="flex flex-col gap-5">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 2 of {TOTAL_STEPS}</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step {displayStep} of {displayTotal}</p>
               <h2 className="font-display text-xl text-ink mb-1">Which gym do you train at?</h2>
               <p className="text-sm text-slate">Search by name, city, or instructor. You can change this later.</p>
             </div>
@@ -291,7 +294,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
         {step === 3 && (
           <div className="flex flex-col gap-5">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 3 of {TOTAL_STEPS}</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step {displayStep} of {displayTotal}</p>
               <h2 className="font-display text-xl text-ink mb-1">Which classes do you normally attend?</h2>
               <p className="text-sm text-slate">Unchecked groups from {selectedGym?.name ?? 'your gym'} are hidden from your schedule. You can change this in Settings.</p>
             </div>
@@ -326,7 +329,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
         {step === 4 && (
           <div className="flex flex-col gap-5">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 4 of {TOTAL_STEPS}</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step {displayStep} of {displayTotal}</p>
               <h2 className="font-display text-xl text-ink mb-1">A few questions to help you get the most from your training</h2>
               <p className="text-sm text-slate">Your answers are private by default — only you can see them. You can share them later from your profile.</p>
             </div>
@@ -362,7 +365,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
         {step === 5 && (
           <div className="flex flex-col gap-6">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step 5 of {TOTAL_STEPS}</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step {displayStep} of {displayTotal}</p>
               <h2 className="font-display text-2xl text-ink mb-2">You're all set!</h2>
               <p className="text-sm text-slate">Welcome to AscendIt.</p>
             </div>

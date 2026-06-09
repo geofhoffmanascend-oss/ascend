@@ -39,7 +39,7 @@ export function SessionNotesEditor({
             <div className={`w-8 h-4 rounded-full transition-colors ${pub ? 'bg-brand-red' : 'bg-smoke'}`} />
             <div className={`absolute top-0.5 left-0.5 w-3 h-3 bg-paper rounded-full shadow transition-transform ${pub ? 'translate-x-4' : ''}`} />
           </div>
-          <span className="text-xs text-steel">{pub ? 'Visible to students' : 'Private'}</span>
+          <span className="text-xs text-steel">{pub ? 'Visible to members' : 'Private'}</span>
         </label>
       </div>
       <textarea

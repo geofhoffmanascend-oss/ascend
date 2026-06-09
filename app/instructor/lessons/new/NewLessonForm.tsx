@@ -102,12 +102,12 @@ export function NewLessonForm() {
     <form onSubmit={submit} className="flex flex-col gap-5">
       <div>
         <label className="block text-xs font-bold uppercase tracking-widest text-steel mb-2">Primary Member *</label>
-        <StudentSearch label="student" value={student} onChange={setStudent} />
+        <StudentSearch label="member" value={student} onChange={setStudent} />
       </div>
 
       <div>
         <label className="block text-xs font-bold uppercase tracking-widest text-steel mb-2">Second Member (optional)</label>
-        <StudentSearch label="second student" value={uke} onChange={setUke} />
+        <StudentSearch label="second member" value={uke} onChange={setUke} />
       </div>
 
       <div>
@@ -166,7 +166,7 @@ export function NewLessonForm() {
           value={notes}
           onChange={e => setNotes(e.target.value)}
           rows={3}
-          placeholder="Goals, focus areas, instructions for student…"
+          placeholder="Goals, focus areas, instructions for member…"
           className="w-full px-4 py-3 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors resize-none"
         />
       </div>

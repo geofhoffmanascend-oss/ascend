@@ -71,7 +71,7 @@ export default async function AdminHomePage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <Link href="/admin/users" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Users</p>
-          <p className="text-slate text-sm">Manage students and instructors</p>
+          <p className="text-slate text-sm">Manage members and instructors</p>
         </Link>
         <Link href="/admin/classes" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Classes</p>
@@ -87,7 +87,7 @@ export default async function AdminHomePage() {
         </Link>
         <Link href="/admin/feedback" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Feedback</p>
-          <p className="text-slate text-sm">Student class feedback</p>
+          <p className="text-slate text-sm">Member class feedback</p>
         </Link>
         <Link href="/admin/store" className="border border-smoke bg-paper hover:border-steel transition-colors p-5 flex flex-col gap-2">
           <p className="text-xs font-bold uppercase tracking-widest text-steel">Gear Store</p>

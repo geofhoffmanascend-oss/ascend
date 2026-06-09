@@ -116,12 +116,12 @@ export default async function HelpPage() {
             <HelpSection title="Session Management">
               Your upcoming sessions appear on the Instructor home page. Click any session to view
               the roster, mark attendance, and add session notes. Notes can be marked public (visible
-              to registered students on the day view) or private (instructor/admin only).
+              to registered members on the day view) or private (instructor/admin only).
             </HelpSection>
 
             <HelpSection title="Attendance">
               On the session detail page, click each student's name to mark them present or absent.
-              Students who check in via the app are automatically marked present. Students who
+              Members who check in via the app are automatically marked present. Members who
               haven't registered but show up can be added manually.
             </HelpSection>
 
@@ -148,13 +148,13 @@ export default async function HelpPage() {
             </HelpSection>
 
             <HelpSection title="Push Notifications">
-              On any session detail page, use the "Notify Students" button to send a push
-              notification to all registered students. Use this for last-minute changes, reminders,
+              On any session detail page, use the "Notify Class" button to send a push
+              notification to all registered members. Use this for last-minute changes, reminders,
               or announcements.
             </HelpSection>
 
             <HelpSection title="Feedback">
-              Post-class feedback from students appears in Instructor → Feedback. Feedback is
+              Post-class feedback from members appears in Instructor → Feedback. Feedback is
               categorized as positive, neutral, negative, or a flagged concern. Anonymous feedback
               is marked as such.
             </HelpSection>

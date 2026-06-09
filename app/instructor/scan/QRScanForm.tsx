@@ -41,7 +41,7 @@ export function QRScanForm({ sessions }: { sessions: SessionOption[] }) {
             <option value="">— Auto-detect —</option>
             {sessions.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
           </select>
-          <p className="text-xs text-ash">Leave as auto-detect to find the student's current class automatically.</p>
+          <p className="text-xs text-ash">Leave as auto-detect to find the member's current class automatically.</p>
         </div>
       )}
 

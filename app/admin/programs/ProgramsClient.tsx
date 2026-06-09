@@ -148,7 +148,7 @@ export function ProgramsClient({ initial }: { initial: Program[] }) {
         </div>
         <div className="flex flex-col gap-1">
           <label className={labelCls}>Description <span className="normal-case font-normal text-ash">(optional)</span></label>
-          <input value={description} onChange={e => setDescription(e.target.value)} className={inputCls} placeholder="Fundamentals for new students" />
+          <input value={description} onChange={e => setDescription(e.target.value)} className={inputCls} placeholder="Fundamentals for new members" />
         </div>
         <div className="flex justify-end">
           <button type="submit" disabled={saving} className="px-5 py-2.5 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors disabled:opacity-60">

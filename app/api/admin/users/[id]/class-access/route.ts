@@ -24,11 +24,20 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (valid.length !== ids.length) return NextResponse.json({ error: 'Invalid class group' }, { status: 400 })
 
     const prev = await prisma.user.findUnique({ where: { id }, select: { blockedProgramIds: true } })
-    const nowBlocked = ids.filter(p => !(prev?.blockedProgramIds ?? []).includes(p))
+    const prevBlocked = prev?.blockedProgramIds ?? []
+    const nowBlocked = ids.filter(p => !prevBlocked.includes(p))
     if (nowBlocked.length > 0) {
       const forums = await prisma.forum.findMany({ where: { programId: { in: nowBlocked } }, select: { id: true } })
       if (forums.length > 0) {
         await prisma.forumSubscription.deleteMany({ where: { userId: id, forumId: { in: forums.map(f => f.id) } } })
+      }
+    }
+    // Auto-subscribe to a class group's forum when access is (re)granted.
+    const nowUnblocked = prevBlocked.filter(p => !ids.includes(p))
+    if (nowUnblocked.length > 0) {
+      const forums = await prisma.forum.findMany({ where: { programId: { in: nowUnblocked } }, select: { id: true } })
+      if (forums.length > 0) {
+        await prisma.forumSubscription.createMany({ data: forums.map(f => ({ userId: id, forumId: f.id })), skipDuplicates: true })
       }
     }
     await prisma.user.update({ where: { id }, data: { blockedProgramIds: ids } })
@@ -53,6 +62,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     await prisma.forumSubscription.deleteMany({
       where: { userId: id, forumId: { in: forumIds } },
     })
+  }
+
+  // Auto-subscribe to a group's forum when access is (re)granted.
+  const nowUnblocked = prevBlocked.filter(g => !newBlocked.includes(g))
+  if (nowUnblocked.length > 0) {
+    const forumIds = nowUnblocked.map(g => GROUP_FORUM_IDS[g]).filter(Boolean)
+    const existing = await prisma.forum.findMany({ where: { id: { in: forumIds } }, select: { id: true } })
+    if (existing.length > 0) {
+      await prisma.forumSubscription.createMany({ data: existing.map(f => ({ userId: id, forumId: f.id })), skipDuplicates: true })
+    }
   }
 
   await prisma.user.update({

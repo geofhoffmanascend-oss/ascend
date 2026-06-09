@@ -19,7 +19,7 @@ export default async function NewInstructorLessonPage() {
           <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Instructor</span>
         </div>
         <h1 className="font-display text-2xl text-ink">Schedule Private Lesson</h1>
-        <p className="text-ash text-sm mt-1">Create a lesson for up to 2 students. They will be notified automatically.</p>
+        <p className="text-ash text-sm mt-1">Create a lesson for up to 2 members. They will be notified automatically.</p>
       </div>
       <NewLessonForm />
     </div>

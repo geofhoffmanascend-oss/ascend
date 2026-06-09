@@ -7,7 +7,7 @@ const TOGGLES: { key: keyof PlatformFlags; label: string; description: string; d
   {
     key: 'scheduleReadOnly',
     label: 'Schedule Read-Only',
-    description: 'When ON, students cannot register for classes or check in. Instructors and admins are unaffected. Use before launch or during maintenance.',
+    description: 'When ON, members cannot register for classes or check in. Instructors and admins are unaffected. Use before launch or during maintenance.',
     dangerOff: false, // "off" here means read-only is disabled (normal operation)
   },
   {
@@ -28,7 +28,7 @@ const TOGGLES: { key: keyof PlatformFlags; label: string; description: string; d
   {
     key: 'allowTournamentRegistration',
     label: 'Tournament Registration',
-    description: 'Allow students to register for tournament divisions. Disable to freeze registrations while brackets are being set up.',
+    description: 'Allow members to register for tournament divisions. Disable to freeze registrations while brackets are being set up.',
   },
   {
     key: 'galleryEnabled',
@@ -43,7 +43,7 @@ const TOGGLES: { key: keyof PlatformFlags; label: string; description: string; d
   {
     key: 'storeEnabled',
     label: 'Gear Store',
-    description: 'Show the store to students. Disable before products are added or before the gym is ready to fulfil orders.',
+    description: 'Show the store to members. Disable before products are added or before the gym is ready to fulfil orders.',
   },
   {
     key: 'feedEnabled',
@@ -140,7 +140,7 @@ export function PlatformSettingsClient({ initial }: { initial: PlatformFlags }) 
             <div className="mt-2 pt-2 border-t border-smoke">
               <p className={`text-xs font-medium ${on && !isReadOnlyToggle ? 'text-green-600' : isReadOnlyToggle && on ? 'text-amber-600' : 'text-ash'}`}>
                 {isReadOnlyToggle
-                  ? on ? 'Schedule is in read-only mode — students cannot register or check in' : 'Normal — students can register and check in'
+                  ? on ? 'Schedule is in read-only mode — members cannot register or check in' : 'Normal — members can register and check in'
                   : on ? 'Enabled — feature is available to users' : 'Disabled — feature is hidden from users'
                 }
               </p>

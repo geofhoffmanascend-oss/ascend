@@ -29,5 +29,18 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     select: { id: true },
   })
 
+  // Auto-subscribe every gym member who has access to this class group
+  // (i.e. not blocked from it) to its new forum.
+  const members = await prisma.user.findMany({
+    where: { gymId: program.gymId, NOT: { blockedProgramIds: { has: program.id } } },
+    select: { id: true },
+  })
+  if (members.length > 0) {
+    await prisma.forumSubscription.createMany({
+      data: members.map(m => ({ userId: m.id, forumId: forum.id })),
+      skipDuplicates: true,
+    })
+  }
+
   return NextResponse.json({ forumId: forum.id, created: true }, { status: 201 })
 }

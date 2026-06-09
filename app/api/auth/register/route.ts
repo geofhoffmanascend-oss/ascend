@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/database'
 import bcrypt from 'bcryptjs'
+import { applyEmailInvites } from '@/lib/invites'
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,6 +26,14 @@ export async function POST(req: NextRequest) {
       data: { name, email, passwordHash, roles: ['student'] },
       select: { id: true, email: true, name: true, roles: true },
     })
+
+    // Phase 40.2 — apply any pending bulk-CSV invites targeted at this email
+    // (auto-associates with the inviting gym; instructor rows request approval).
+    try {
+      await applyEmailInvites(email, user.id)
+    } catch (e) {
+      console.error('[register] applyEmailInvites', e)
+    }
 
     return NextResponse.json(user, { status: 201 })
   } catch (err) {

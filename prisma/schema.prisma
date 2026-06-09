@@ -571,9 +571,13 @@ model Invitation {
   grantOnAccept Boolean   @default(true) // instructor: true = single-use grant; false = approve-after
   maxUses      Int?       // null = unlimited (reusable friend link)
   usedCount    Int        @default(0)
+  email        String?    // Phase 40.2 — bulk CSV invite targeted at this email (auto-applied on signup)
+  meta         Json?      // Phase 40.2 — prefill from CSV: { name?, belt?, phone?, notes? }
   expiresAt    DateTime?
   createdAt    DateTime   @default(now())
   redemptions  InviteRedemption[]
+
+  @@index([email])
 }
 
 model InviteRedemption {

@@ -68,6 +68,13 @@ export default async function AdminUsersPage({
       <div className="mb-8 flex flex-col gap-4">
         <InviteMember />
         <InviteInstructor />
+        <div className="border border-smoke bg-paper p-5 flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-steel">Import a member list</p>
+            <p className="text-xs text-ash mt-1">Upload a CSV of your members — map the columns, preview, and import in bulk.</p>
+          </div>
+          <Link href="/admin/import" className="px-4 py-2 bg-brand-red text-paper font-bold text-sm hover:bg-red-700 transition-colors whitespace-nowrap">Import CSV</Link>
+        </div>
         {instructorRequests.length > 0 && (
           <div className="border border-brand-red bg-paper p-5">
             <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">Instructor Requests ({instructorRequests.length})</p>

@@ -1,7 +1,17 @@
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
-const FROM = process.env.EMAIL_FROM ?? 'onboarding@resend.dev'
+
+// Two senders on the verified domain:
+//  - no-reply: transactional mail users shouldn't reply to (password reset, email change)
+//  - admin:    mail people may reply to (invites, gym/admin notifications)
+// EMAIL_FROM is kept as a fallback for older configs / local dev.
+const FROM_NAME = process.env.EMAIL_FROM_NAME ?? 'AscendIt'
+const NOREPLY = process.env.EMAIL_FROM_NOREPLY ?? process.env.EMAIL_FROM ?? 'onboarding@resend.dev'
+const ADMIN = process.env.EMAIL_FROM_ADMIN ?? process.env.EMAIL_FROM ?? NOREPLY
+
+export const fromNoReply = `${FROM_NAME} <${NOREPLY}>`
+export const fromAdmin = `${FROM_NAME} <${ADMIN}>`
 
 export async function sendPasswordResetEmail({
   to,
@@ -18,7 +28,7 @@ export async function sendPasswordResetEmail({
     ? `Hi ${name}, we received a request to reset the password for your Ascend account.`
     : `Hi ${name}, an admin requested a password reset for your Ascend account.`
   return resend.emails.send({
-    from: `Ascend BJJ <${FROM}>`,
+    from: fromNoReply,
     to,
     subject: 'Reset your Ascend password',
     html: `
@@ -46,7 +56,7 @@ export async function sendEmailChangeConfirmation({
   confirmUrl: string
 }) {
   return resend.emails.send({
-    from: `Ascend BJJ <${FROM}>`,
+    from: fromNoReply,
     to,
     subject: 'Confirm your new email address',
     html: `

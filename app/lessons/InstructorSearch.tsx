@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-type Result = { id: string; name: string | null; belt: string | null; avatarUrl: string | null; gymName: string; gymSlug: string; miles: number }
+type Result = { id: string; name: string | null; belt: string | null; avatarUrl: string | null; gymName: string; gymSlug: string | null; miles: number }
 
 export function InstructorSearch() {
   const [open, setOpen] = useState(false)
@@ -61,7 +61,7 @@ export function InstructorSearch() {
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-ink truncate">{r.name ?? 'Instructor'}</p>
                   <p className="text-xs text-ash truncate">
-                    <Link href={`/gyms/${r.gymSlug}`} className="hover:text-ink">{r.gymName}</Link> · {r.miles} mi
+                    {r.gymSlug ? <Link href={`/gyms/${r.gymSlug}`} className="hover:text-ink">{r.gymName}</Link> : <span>{r.gymName}</span>} · {r.miles} mi
                   </p>
                 </div>
               </div>

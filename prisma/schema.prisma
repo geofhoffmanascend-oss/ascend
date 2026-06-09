@@ -241,6 +241,16 @@ model User {
   sentInvitations      Invitation[] @relation("InviteInviter")
   instructorRequestedAt DateTime?   // Phase 40 — set when an "approve-after" instructor invite is accepted; cleared when the admin grants/denies
   acceptsOutsideOrg    Boolean      @default(false) // Phase 42 — instructor accepts private-lesson requests from outside their gym
+
+  // Phase 42.4 — independent (non-gym) private-lesson provider, vetted by a verified black belt.
+  providerStatus       ProviderStatus @default(none)
+  providerApprovedById String?
+  providerApprovedAt   DateTime?
+  providerBio          String?
+  providerCity         String?
+  providerState        String?
+  providerLat          Float?
+  providerLng          Float?
   availability         InstructorAvailability[]
   postLikes            PostLike[]
   lastLoginAt          DateTime?
@@ -559,6 +569,14 @@ enum InviteKind {
   friend
   gym_member
   gym_instructor
+}
+
+// Phase 42.4 — independent private-lesson provider approval state.
+enum ProviderStatus {
+  none
+  pending
+  approved
+  rejected
 }
 
 model Invitation {

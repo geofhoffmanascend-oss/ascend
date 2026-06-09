@@ -11,11 +11,19 @@ function isInstructor(roles?: string[]) {
   return !!roles && (roles.includes('instructor') || roles.includes('admin'))
 }
 
+// Allowed to edit availability: gym instructors/admins, or approved independent
+// providers (Phase 42.4 — providerStatus checked from the DB since it's not on the session).
+async function canEditAvailability(userId: string, roles?: string[]): Promise<boolean> {
+  if (isInstructor(roles)) return true
+  const u = await prisma.user.findUnique({ where: { id: userId }, select: { providerStatus: true } })
+  return u?.providerStatus === 'approved'
+}
+
 // GET /api/instructor/availability — the current instructor's availability + acceptsOutsideOrg
 export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!isInstructor(session.user.roles)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!(await canEditAvailability(session.user.id, session.user.roles))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const [entries, user] = await Promise.all([
     prisma.instructorAvailability.findMany({
@@ -31,7 +39,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!isInstructor(session.user.roles)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!(await canEditAvailability(session.user.id, session.user.roles))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await req.json()
   const kind = body.kind as AvailabilityKind
@@ -62,7 +70,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!isInstructor(session.user.roles)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!(await canEditAvailability(session.user.id, session.user.roles))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { acceptsOutsideOrg } = await req.json()
   await prisma.user.update({ where: { id: session.user.id }, data: { acceptsOutsideOrg: !!acceptsOutsideOrg } })

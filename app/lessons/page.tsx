@@ -82,6 +82,11 @@ export default async function LessonsPage() {
         </Link>
       </div>
 
+      <p className="text-xs text-ash mb-6">
+        Teach privately?{' '}
+        <Link href="/provider" className="text-brand-red font-semibold hover:underline">Offer private lessons as an independent provider →</Link>
+      </p>
+
       {/* Instructors offering private lessons */}
       <section className="mb-8">
         <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">

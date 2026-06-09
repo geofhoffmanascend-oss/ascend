@@ -36,12 +36,29 @@ export async function GET(req: NextRequest) {
     select: { id: true, name: true, belt: true, avatarUrl: true, gymId: true },
   })
 
-  const results = instructors
-    .map(i => {
-      const g = gymMap.get(i.gymId!)!
-      return { id: i.id, name: i.name, belt: i.belt, avatarUrl: i.avatarUrl, gymName: g.name, gymSlug: g.slug, miles: Math.round(g.dist) }
-    })
-    .sort((a, b) => a.miles - b.miles)
+  const gymResults = instructors.map(i => {
+    const g = gymMap.get(i.gymId!)!
+    return { id: i.id, name: i.name, belt: i.belt, avatarUrl: i.avatarUrl, gymName: g.name, gymSlug: g.slug as string | null, miles: Math.round(g.dist) }
+  })
+
+  // Phase 42.4 — approved independent providers within radius (own coords, no gym).
+  const providers = await prisma.user.findMany({
+    where: {
+      providerStatus: 'approved',
+      providerLat: { not: null },
+      providerLng: { not: null },
+      id: { not: session.user.id },
+    },
+    select: { id: true, name: true, belt: true, avatarUrl: true, providerLat: true, providerLng: true },
+  })
+  const providerResults = providers
+    .map(p => ({ p, dist: distanceMiles(origin, { lat: p.providerLat!, lng: p.providerLng! }) }))
+    .filter(x => x.dist <= miles)
+    .map(({ p, dist }) => ({ id: p.id, name: p.name, belt: p.belt, avatarUrl: p.avatarUrl, gymName: 'Independent', gymSlug: null as string | null, miles: Math.round(dist) }))
+
+  // De-dupe (a gym instructor who is also an approved provider) — keep the gym row.
+  const seen = new Set(gymResults.map(r => r.id))
+  const results = [...gymResults, ...providerResults.filter(r => !seen.has(r.id))].sort((a, b) => a.miles - b.miles)
 
   return NextResponse.json({ results })
 }

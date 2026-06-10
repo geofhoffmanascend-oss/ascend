@@ -25,6 +25,7 @@ export default async function LessonDetailPage({ params }: { params: Promise<{ i
         requester: { select: { id: true, name: true, belt: true } },
         instructor: { select: { id: true, name: true } },
         uke: { select: { name: true } },
+        review: { select: { id: true } },
       },
     }),
     prisma.lessonMessage.findMany({
@@ -38,6 +39,8 @@ export default async function LessonDetailPage({ params }: { params: Promise<{ i
   if (!isParticipant && !session.user.roles?.includes('admin')) redirect('/lessons')
 
   const isInstructor = lesson.instructorId === session.user.id || session.user.roles?.includes('admin')
+  // Phase 56 — the requester can review a completed lesson once.
+  const canReview = lesson.requesterId === session.user.id && lesson.status === 'completed' && !lesson.review
 
   // Map authorId → name from participants
   const nameMap: Record<string, string> = {
@@ -62,7 +65,9 @@ export default async function LessonDetailPage({ params }: { params: Promise<{ i
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <h1 className="font-display text-2xl text-ink">
-            {lesson.requester.name} with {lesson.instructor.name}
+            <Link href={`/profile/${lesson.requesterId}`} className="hover:text-brand-red transition-colors">{lesson.requester.name}</Link>
+            {' with '}
+            <Link href={`/profile/${lesson.instructorId}`} className="hover:text-brand-red transition-colors">{lesson.instructor.name}</Link>
           </h1>
           <span className={`px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${STATUS_STYLES[lesson.status]}`}>
             {lesson.status}
@@ -105,6 +110,7 @@ export default async function LessonDetailPage({ params }: { params: Promise<{ i
         lessonId={lesson.id}
         status={lesson.status}
         isInstructor={isInstructor}
+        canReview={canReview}
         messages={messages}
       />
     </div>

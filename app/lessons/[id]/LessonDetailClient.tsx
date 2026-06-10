@@ -22,11 +22,13 @@ export function LessonDetailClient({
   lessonId,
   status: initStatus,
   isInstructor,
+  canReview = false,
   messages: initMessages,
 }: {
   lessonId: string
   status: string
   isInstructor: boolean
+  canReview?: boolean
   messages: Message[]
 }) {
   const router = useRouter()
@@ -34,6 +36,23 @@ export function LessonDetailClient({
   const [messages, setMessages] = useState(initMessages)
   const [content, setContent] = useState('')
   const [saving, setSaving] = useState(false)
+  const [rating, setRating] = useState(0)
+  const [hoverRating, setHoverRating] = useState(0)
+  const [reviewComment, setReviewComment] = useState('')
+  const [reviewed, setReviewed] = useState(false)
+  const [reviewError, setReviewError] = useState('')
+
+  async function submitReview() {
+    if (rating < 1) { setReviewError('Pick a star rating.'); return }
+    setReviewError('')
+    const res = await fetch(`/api/lessons/${lessonId}/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rating, comment: reviewComment }),
+    })
+    if (res.ok) { setReviewed(true); router.refresh() }
+    else { const d = await res.json().catch(() => ({})); setReviewError(d.error ?? 'Could not submit review.') }
+  }
 
   async function updateStatus(next: string) {
     const res = await fetch(`/api/lessons/${lessonId}`, {
@@ -86,6 +105,30 @@ export function LessonDetailClient({
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Review (requester, completed lesson, not yet reviewed) */}
+      {canReview && !reviewed && (
+        <div className="border border-smoke bg-paper p-5">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">Rate this lesson</p>
+          <div className="flex items-center gap-1 mb-3" onMouseLeave={() => setHoverRating(0)}>
+            {[1, 2, 3, 4, 5].map(n => (
+              <button key={n} type="button" onClick={() => setRating(n)} onMouseEnter={() => setHoverRating(n)}
+                className={`text-2xl leading-none transition-colors ${(hoverRating || rating) >= n ? 'text-brand-red' : 'text-smoke'}`}
+                aria-label={`${n} star${n > 1 ? 's' : ''}`}>★</button>
+            ))}
+          </div>
+          <textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} rows={3}
+            placeholder="How was the lesson? (optional)"
+            className="w-full px-4 py-2 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors mb-3" />
+          {reviewError && <p className="text-sm text-brand-red mb-2">{reviewError}</p>}
+          <button onClick={submitReview} className="px-5 py-2.5 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors">Submit review</button>
+        </div>
+      )}
+      {reviewed && (
+        <div className="border border-smoke bg-paper p-5">
+          <p className="text-sm text-ink">✓ Thanks for your review.</p>
         </div>
       )}
 

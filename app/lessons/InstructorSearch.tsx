@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-type Result = { id: string; name: string | null; belt: string | null; beltVerified?: boolean; avatarUrl: string | null; kind?: 'class' | 'private'; gymName: string; gymSlug: string | null; miles: number }
+type Result = { id: string; name: string | null; belt: string | null; beltVerified?: boolean; avatarUrl: string | null; kind?: 'class' | 'private'; gymName: string; gymSlug: string | null; miles: number; ratingAvg?: number | null; ratingCount?: number }
 
 function cap(s: string | null) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : '' }
 
@@ -72,6 +72,9 @@ export function InstructorSearch() {
                     {r.kind === 'private'
                       ? <span className="text-ash"> · vetted</span>
                       : r.gymSlug && <span className="text-ash"> · <Link href={`/gyms/${r.gymSlug}`} className="hover:text-ink">{r.gymName}</Link></span>}
+                    {typeof r.ratingAvg === 'number' && (r.ratingCount ?? 0) > 0 && (
+                      <span className="text-ash"> · <span className="text-brand-red">★</span>{r.ratingAvg.toFixed(1)} ({r.ratingCount})</span>
+                    )}
                     <span className="text-ash"> · {r.miles} mi</span>
                   </p>
                 </div>

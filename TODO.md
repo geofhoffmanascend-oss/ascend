@@ -747,7 +747,7 @@ Today `/lessons/new` is just an instructor dropdown + free `datetime-local` (no 
 ### Phase 55 — Trust & Safety + Instructor Role Separation (planned, user direction 2026-06-10)
 See `memory/project_trust_safety.md`. **Background checks** for anyone offering private lessons **outside their own gym** before approval (member safety; vendor/process TBD). **Role separation:** class-instructor vs private-instructor as distinct roles, **administered by the gym admin if participating**, else **submitted to site admin to verify with black belts** (today provider approval = any verified black belt/site_admin). Not yet built.
 
-### Phase 56 — Private-Instructor Ratings & Reviews (planned, user request 2026-06-10)
+### Phase 56 — Private-Instructor Ratings & Reviews — DONE 2026-06-10 (verified 14/14)
 Feedback/rating system for private instructors. **Suggested design:**
 - **Earned reviews only:** a review can be left **only by the requester of a `completed` private lesson**, one review per lesson (tie to `lessonId @unique`) → every review maps to a real, finished booking (no drive-by/fake reviews). No self-review.
 - **Capture:** 1–5 star overall + optional short text. (Optional v2 sub-scores: knowledge / communication / punctuality.)
@@ -757,7 +757,7 @@ Feedback/rating system for private instructors. **Suggested design:**
 - **Scope:** applies to both class instructors (for their privates) and independent private instructors. Pairs with belt-verified + vetted + background check (Phase 55) for a strong trust profile.
 - **Trigger UX:** prompt the student to review when a lesson flips to `completed` (in-app + notification), mirroring the post-class feedback pattern.
 
-### Phase 57 — Unify the instructor profile (planned, user question 2026-06-10)
+### Phase 57 — Unified instructor profile — DONE 2026-06-10 (verified 14/14)
 **Finding:** there is **one** public profile per user (`/profile/[userId]`) — no separate "instructor profile." But instructor/provider info is fragmented: `providerBio` is collected yet never shown publicly, availability is private, and search "Request" jumps straight to the booking form (instructor names aren't even linked to their profile). **Recommendation (keep one profile, surface the rest there):**
 - On `/profile/[userId]`: when the user is a class instructor or approved private instructor, show an **"Offers private lessons"** section with their teaching/`providerBio`, belt-verified/vetted badges, ratings (Phase 56), and a **"Request a lesson"** CTA → `/lessons/new?instructor=`.
 - Link instructor **names in search + lesson participants** to `/profile/[userId]` so members can vet before booking.

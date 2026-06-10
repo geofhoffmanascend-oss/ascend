@@ -54,8 +54,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (status !== undefined) {
     const notifyId = session.user.id === lesson.instructorId ? lesson.requesterId : lesson.instructorId
     const label = STATUS_LABELS[status] ?? 'updated'
+    // When a lesson is completed, invite the student to leave a review (Phase 56).
+    const body = status === 'completed'
+      ? `${actorName} marked your lesson complete. Tap to leave a review.`
+      : `${actorName} ${label} your lesson request.`
     await createNotification(notifyId, 'general', `Private lesson ${label}`, {
-      body: `${actorName} ${label} your lesson request.`,
+      body,
       link: `/lessons/${id}`,
     })
   } else if (scheduledAt !== undefined) {

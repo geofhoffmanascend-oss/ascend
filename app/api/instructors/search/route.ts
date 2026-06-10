@@ -33,12 +33,12 @@ export async function GET(req: NextRequest) {
       roles: { hasSome: ['instructor', 'admin'] },
       id: { not: session.user.id },
     },
-    select: { id: true, name: true, belt: true, beltVerified: true, avatarUrl: true, gymId: true },
+    select: { id: true, name: true, belt: true, beltVerified: true, avatarUrl: true, gymId: true, ratingAvg: true, ratingCount: true },
   })
 
   const gymResults = instructors.map(i => {
     const g = gymMap.get(i.gymId!)!
-    return { id: i.id, name: i.name, belt: i.belt, beltVerified: i.beltVerified, avatarUrl: i.avatarUrl, kind: 'class' as const, gymName: g.name, gymSlug: g.slug as string | null, miles: Math.round(g.dist) }
+    return { id: i.id, name: i.name, belt: i.belt, beltVerified: i.beltVerified, avatarUrl: i.avatarUrl, kind: 'class' as const, gymName: g.name, gymSlug: g.slug as string | null, miles: Math.round(g.dist), ratingAvg: i.ratingAvg, ratingCount: i.ratingCount }
   })
 
   // Phase 42.4 — approved independent (private) instructors within radius (own coords, no gym).
@@ -49,12 +49,12 @@ export async function GET(req: NextRequest) {
       providerLng: { not: null },
       id: { not: session.user.id },
     },
-    select: { id: true, name: true, belt: true, beltVerified: true, avatarUrl: true, providerLat: true, providerLng: true },
+    select: { id: true, name: true, belt: true, beltVerified: true, avatarUrl: true, providerLat: true, providerLng: true, ratingAvg: true, ratingCount: true },
   })
   const providerResults = providers
     .map(p => ({ p, dist: distanceMiles(origin, { lat: p.providerLat!, lng: p.providerLng! }) }))
     .filter(x => x.dist <= miles)
-    .map(({ p, dist }) => ({ id: p.id, name: p.name, belt: p.belt, beltVerified: p.beltVerified, avatarUrl: p.avatarUrl, kind: 'private' as const, gymName: 'Independent' as string, gymSlug: null as string | null, miles: Math.round(dist) }))
+    .map(({ p, dist }) => ({ id: p.id, name: p.name, belt: p.belt, beltVerified: p.beltVerified, avatarUrl: p.avatarUrl, kind: 'private' as const, gymName: 'Independent' as string, gymSlug: null as string | null, miles: Math.round(dist), ratingAvg: p.ratingAvg, ratingCount: p.ratingCount }))
 
   // De-dupe (a gym instructor who is also an approved provider) — keep the gym row.
   const seen = new Set(gymResults.map(r => r.id))

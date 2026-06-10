@@ -251,6 +251,12 @@ model User {
   providerState        String?
   providerLat          Float?
   providerLng          Float?
+
+  // Phase 56 — cached aggregate of private-lesson reviews received (as instructor).
+  ratingAvg            Float?
+  ratingCount          Int          @default(0)
+  reviewsReceived      InstructorReview[] @relation("ReviewInstructor")
+  reviewsWritten       InstructorReview[] @relation("ReviewReviewer")
   availability         InstructorAvailability[]
   postLikes            PostLike[]
   lastLoginAt          DateTime?
@@ -469,6 +475,24 @@ model PrivateLesson {
   instructor   User          @relation("LessonInstructor", fields: [instructorId], references: [id])
   uke          User?         @relation("LessonUke", fields: [ukeId], references: [id])
   messages     LessonMessage[]
+  review       InstructorReview?
+}
+
+// Phase 56 — a private-lesson review. One per completed lesson (lessonId unique),
+// written by the lesson's requester about the instructor.
+model InstructorReview {
+  id           String        @id @default(cuid())
+  lessonId     String        @unique
+  lesson       PrivateLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  instructorId String
+  instructor   User          @relation("ReviewInstructor", fields: [instructorId], references: [id], onDelete: Cascade)
+  reviewerId   String
+  reviewer     User          @relation("ReviewReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  rating       Int           // 1..5
+  comment      String?
+  createdAt    DateTime      @default(now())
+
+  @@index([instructorId])
 }
 
 model LessonMessage {

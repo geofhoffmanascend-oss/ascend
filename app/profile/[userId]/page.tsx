@@ -39,6 +39,13 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       roles: true,
       providerStatus: true,
       providerBio: true,
+      ratingAvg: true,
+      ratingCount: true,
+      reviewsReceived: {
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: { id: true, rating: true, comment: true, createdAt: true, reviewer: { select: { id: true, name: true } } },
+      },
       gym: { select: { name: true, slug: true } },
       _count: { select: { followers: true, following: true } },
       competitions: {
@@ -172,6 +179,12 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
                 )}
               </div>
             </div>
+            {typeof user.ratingAvg === 'number' && user.ratingCount > 0 && (
+              <p className="text-sm text-ink mb-3">
+                <span className="text-brand-red">★</span> <strong>{user.ratingAvg.toFixed(1)}</strong>
+                <span className="text-ash"> · {user.ratingCount} review{user.ratingCount === 1 ? '' : 's'}</span>
+              </p>
+            )}
             {isPrivateInstructor && user.providerBio && (
               <p className="text-ink text-sm leading-relaxed mb-4">{user.providerBio}</p>
             )}
@@ -179,6 +192,21 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
               <Link href={`/lessons/new?instructor=${userId}`} className="inline-block px-5 py-2.5 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors">
                 Request a lesson
               </Link>
+            )}
+
+            {user.reviewsReceived.length > 0 && (
+              <div className="mt-5 pt-5 border-t border-smoke flex flex-col gap-3">
+                {user.reviewsReceived.map(rv => (
+                  <div key={rv.id}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-brand-red">{'★'.repeat(rv.rating)}<span className="text-smoke">{'★'.repeat(5 - rv.rating)}</span></span>
+                      <Link href={`/profile/${rv.reviewer.id}`} className="text-xs font-medium text-steel hover:text-ink">{rv.reviewer.name ?? 'Member'}</Link>
+                      <span className="text-xs text-ash">· Verified lesson</span>
+                    </div>
+                    {rv.comment && <p className="text-sm text-ink mt-1">{rv.comment}</p>}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}

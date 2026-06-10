@@ -96,19 +96,23 @@ export const authOptions: NextAuthOptions = {
         if (!targetId) {
           delete token.viewAs
           delete token.viewBySiteAdmin
+          delete token.viewAsRoles
         } else {
           const roles = (token.roles ?? []) as string[]
           const isSite = roles.includes('site_admin')
           const isGymAdmin = roles.includes('admin')
+          const target = await prisma.user.findUnique({ where: { id: targetId }, select: { gymId: true, roles: true } }).catch(() => null)
           let allowed = false
-          if (isSite) allowed = true
-          else if (isGymAdmin && token.gymId) {
-            const target = await prisma.user.findUnique({ where: { id: targetId }, select: { gymId: true } }).catch(() => null)
-            allowed = !!target && target.gymId === token.gymId
+          if (isSite) allowed = !!target
+          else if (isGymAdmin && token.gymId && target) {
+            allowed = target.gymId === token.gymId
           }
-          if (allowed && targetId !== token.id) {
+          if (allowed && target && targetId !== token.id) {
             token.viewAs = targetId
             token.viewBySiteAdmin = isSite
+            // Page-access during view-as is gated by the VIEWED user's roles, so
+            // a site admin sees exactly what that user sees (writes stay blocked).
+            token.viewAsRoles = target.roles as typeof token.viewAsRoles
           }
         }
       }

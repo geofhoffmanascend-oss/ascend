@@ -5,7 +5,12 @@ export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token
     const { pathname } = req.nextUrl
-    const roles: string[] = (token?.roles as string[]) ?? []
+    // Phase 53 — while viewing as another user, gate page access by the VIEWED
+    // user's roles so the impersonator sees exactly what that user sees. The real
+    // account's roles are never changed; "Exit view" restores them.
+    const roles: string[] = (token?.viewAs
+      ? (token?.viewAsRoles as string[] | undefined)
+      : (token?.roles as string[] | undefined)) ?? []
 
     // Phase 53 — read-only "view as": block every write from the viewed account
     // (except NextAuth, which is needed to exit view-as). GETs pass through.

@@ -39,5 +39,6 @@ declare module 'next-auth/jwt' {
     belt?: string | null
     viewAs?: string | null         // viewed user id
     viewBySiteAdmin?: boolean       // real admin is a site_admin
+    viewAsRoles?: AppRole[]         // viewed user's roles — gate page access while viewing-as
   }
 }

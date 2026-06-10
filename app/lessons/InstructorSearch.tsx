@@ -61,8 +61,8 @@ export function InstructorSearch() {
                 {r.avatarUrl ? <img src={r.avatarUrl} alt="" className="w-9 h-9 rounded-full object-cover border border-smoke flex-shrink-0" />
                   : <div className="w-9 h-9 rounded-full bg-mist border border-smoke flex-shrink-0" />}
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-ink truncate">
-                    {r.name ?? 'Instructor'}
+                  <p className="text-sm font-medium truncate">
+                    <Link href={`/profile/${r.id}`} className="text-ink hover:text-brand-red transition-colors">{r.name ?? 'Instructor'}</Link>
                     {r.belt && <span className="text-ash font-normal"> · {cap(r.belt)} belt{r.beltVerified ? ' ✓' : ''}</span>}
                   </p>
                   <p className="text-xs truncate">

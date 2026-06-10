@@ -97,13 +97,13 @@ export default async function LessonsPage() {
         <div className="flex flex-col gap-2">
             {instructors.map(i => (
               <div key={i.id} className="border border-smoke bg-paper p-4 flex items-center justify-between gap-3">
-                <Link href={`/lessons/new?instructor=${i.id}`} className="flex items-center gap-3 min-w-0 group">
+                <Link href={`/profile/${i.id}`} className="flex items-center gap-3 min-w-0 group">
                   {i.avatarUrl
                     ? <img src={i.avatarUrl} alt="" className="w-9 h-9 rounded-full object-cover border border-smoke flex-shrink-0" />
                     : <div className="w-9 h-9 rounded-full bg-mist border border-smoke flex-shrink-0" />}
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-ink group-hover:text-brand-red transition-colors truncate">{i.name ?? 'Instructor'}</p>
-                    <p className="text-xs text-ash">{i._count.availability > 0 ? 'View availability →' : 'Request a time →'}</p>
+                    <p className="text-xs text-ash">Class Instructor · view profile →</p>
                   </div>
                 </Link>
                 <Link href={`/lessons/new?instructor=${i.id}`} className="px-3 py-1.5 bg-brand-red text-paper font-bold text-xs tracking-wide hover:bg-brand-red-dark transition-colors flex-shrink-0">

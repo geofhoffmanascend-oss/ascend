@@ -26,7 +26,12 @@ export default async function InstructorClassesPage() {
   sunday.setUTCHours(23, 59, 59, 999)
 
   const classes = await prisma.class.findMany({
-    where: !session.user.roles?.includes('admin') ? { instructorId: session.user.id } : {},
+    where: {
+      // Scope to the user's own gym (multi-tenancy). Admins see all classes at
+      // their gym; instructors see only the ones they teach.
+      ...(session.user.gymId ? { gymId: session.user.gymId } : {}),
+      ...(!session.user.roles?.includes('admin') ? { instructorId: session.user.id } : {}),
+    },
     include: {
       _count: { select: { sessions: true } },
       sessions: {

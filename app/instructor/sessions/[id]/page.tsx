@@ -29,7 +29,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
       class: {
         select: {
           id: true, title: true, type: true, startTime: true, endTime: true,
-          location: true, instructorId: true,
+          location: true, instructorId: true, gymId: true,
           instructor: { select: { name: true } },
         },
       },
@@ -43,7 +43,10 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
   })
 
   if (!cs) notFound()
-  if (!session.user.roles?.includes('admin') && cs.class.instructorId !== session.user.id) redirect('/instructor')
+  // Own session, or an admin of the same gym (multi-tenancy).
+  const allowedSession = cs.class.instructorId === session.user.id ||
+    (!!session.user.roles?.includes('admin') && cs.class.gymId === session.user.gymId)
+  if (!allowedSession) redirect('/instructor')
 
   // 4.7 — students who attended before but haven't committed this session
   const committedIds = new Set(cs.commitments.map(c => c.userId))

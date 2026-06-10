@@ -23,6 +23,7 @@ export default async function InstructorHomePage() {
       date: { gte: today, lte: todayEnd },
       class: {
         isActive: true,
+        ...(session.user.gymId ? { gymId: session.user.gymId } : {}),
         ...(!session.user.roles?.includes('admin') && { instructorId: session.user.id }),
       },
     },

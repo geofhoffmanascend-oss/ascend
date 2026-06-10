@@ -26,6 +26,7 @@ export default async function InstructorSchedulePage() {
       date: { gte: today, lte: fourWeeksOut },
       class: {
         isActive: true,
+        ...(session.user.gymId ? { gymId: session.user.gymId } : {}),
         ...(!session.user.roles?.includes('admin') && { instructorId: session.user.id }),
       },
     },

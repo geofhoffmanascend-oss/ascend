@@ -28,7 +28,10 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
   })
 
   if (!cls) notFound()
-  if (!session.user.roles?.includes('admin') && cls.instructorId !== session.user.id) redirect('/instructor/classes')
+  // Own class, or an admin of the same gym (multi-tenancy).
+  const allowedClass = cls.instructorId === session.user.id ||
+    (!!session.user.roles?.includes('admin') && cls.gymId === session.user.gymId)
+  if (!allowedClass) redirect('/instructor/classes')
 
   const monday = getMondayOfWeek(new Date())
   const sunday = new Date(monday)

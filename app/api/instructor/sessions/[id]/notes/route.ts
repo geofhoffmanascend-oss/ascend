@@ -11,10 +11,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const cs = await prisma.classSession.findUnique({
     where: { id },
-    select: { class: { select: { instructorId: true } } },
+    select: { class: { select: { instructorId: true, gymId: true } } },
   })
   if (!cs) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  if (!session!.user.roles?.includes('admin') && cs.class.instructorId !== session!.user.id) {
+  const allowed = cs.class.instructorId === session!.user.id ||
+    (!!session!.user.roles?.includes('admin') && cs.class.gymId === session!.user.gymId)
+  if (!allowed) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

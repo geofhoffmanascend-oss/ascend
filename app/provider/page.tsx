@@ -43,9 +43,12 @@ export default async function ProviderPage() {
 
       {status === 'approved' ? (
         <div className="border border-smoke bg-paper p-6">
-          <p className="text-sm font-medium text-ink mb-1">✓ You&apos;re an approved provider.</p>
-          <p className="text-sm text-slate mb-4">Set your availability so students can book slots with you.</p>
-          <Link href="/provider/availability" className="inline-block px-6 py-3 bg-brand-red text-paper font-bold text-sm hover:bg-red-700 transition-colors">Manage availability</Link>
+          <p className="text-sm font-medium text-ink mb-1">✓ You&apos;re an approved private instructor.</p>
+          <p className="text-sm text-slate mb-4">Set your availability so students can book slots with you, and review incoming requests.</p>
+          <div className="flex gap-2 flex-wrap">
+            <Link href="/provider/availability" className="inline-block px-6 py-3 bg-brand-red text-paper font-bold text-sm hover:bg-red-700 transition-colors">Manage availability</Link>
+            <Link href="/provider/lessons" className="inline-block px-6 py-3 border border-smoke text-steel text-sm font-medium hover:border-steel hover:text-ink transition-colors">Lesson requests</Link>
+          </div>
         </div>
       ) : status === 'pending' ? (
         <div className="border border-smoke bg-paper p-6">

@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-type Result = { id: string; name: string | null; belt: string | null; avatarUrl: string | null; gymName: string; gymSlug: string | null; miles: number }
+type Result = { id: string; name: string | null; belt: string | null; beltVerified?: boolean; avatarUrl: string | null; kind?: 'class' | 'private'; gymName: string; gymSlug: string | null; miles: number }
+
+function cap(s: string | null) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : '' }
 
 export function InstructorSearch() {
   const [open, setOpen] = useState(false)
@@ -59,9 +61,18 @@ export function InstructorSearch() {
                 {r.avatarUrl ? <img src={r.avatarUrl} alt="" className="w-9 h-9 rounded-full object-cover border border-smoke flex-shrink-0" />
                   : <div className="w-9 h-9 rounded-full bg-mist border border-smoke flex-shrink-0" />}
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-ink truncate">{r.name ?? 'Instructor'}</p>
-                  <p className="text-xs text-ash truncate">
-                    {r.gymSlug ? <Link href={`/gyms/${r.gymSlug}`} className="hover:text-ink">{r.gymName}</Link> : <span>{r.gymName}</span>} · {r.miles} mi
+                  <p className="text-sm font-medium text-ink truncate">
+                    {r.name ?? 'Instructor'}
+                    {r.belt && <span className="text-ash font-normal"> · {cap(r.belt)} belt{r.beltVerified ? ' ✓' : ''}</span>}
+                  </p>
+                  <p className="text-xs truncate">
+                    <span className={`font-semibold ${r.kind === 'private' ? 'text-brand-red' : 'text-steel'}`}>
+                      {r.kind === 'private' ? 'Private Instructor' : 'Class Instructor'}
+                    </span>
+                    {r.kind === 'private'
+                      ? <span className="text-ash"> · vetted</span>
+                      : r.gymSlug && <span className="text-ash"> · <Link href={`/gyms/${r.gymSlug}`} className="hover:text-ink">{r.gymName}</Link></span>}
+                    <span className="text-ash"> · {r.miles} mi</span>
                   </p>
                 </div>
               </div>

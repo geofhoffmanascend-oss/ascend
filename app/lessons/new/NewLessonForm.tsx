@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-type Person = { id: string; name: string | null }
+type Person = { id: string; name: string | null; note?: string }
 type Day = { date: string; slots: string[] }
 type Pick = { date: string; time: string }
 
@@ -112,7 +112,7 @@ export function NewLessonForm({ instructors, students, initialInstructorId = '' 
         <label className={label}>Instructor *</label>
         <select value={instructorId} onChange={e => setInstructorId(e.target.value)} className={input}>
           <option value="">Select instructor…</option>
-          {instructors.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+          {instructors.map(i => <option key={i.id} value={i.id}>{i.name}{i.note ? ` — ${i.note}` : ''}</option>)}
         </select>
       </div>
 

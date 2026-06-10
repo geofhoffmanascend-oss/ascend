@@ -738,6 +738,15 @@ Today `/lessons/new` is just an instructor dropdown + free `datetime-local` (no 
 
 **Phase 42 COMPLETE.** Ops: add `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to Vercel for prod geocoding; modern vector map UI (gym-finder/events-near-me) = backlog.
 
+### Phase 42 lessons polish (2026-06-10) — IN PROGRESS
+- [ ] **42.7 — Provider lesson inbox + correct notification link.** Approved independent providers have no inbox (they aren't `instructor` role, so `/instructor/lessons` 403s them; the new-request notification mis-links there). Add a provider-accessible "Lesson Requests" view + route the request notification to the right place per recipient kind.
+- [ ] **42.8 — Class Instructor vs Private Instructor badges.** Distinguish the two in search/lists ("Class Instructor · {Gym}" vs "Private Instructor", + belt/verified). Aligns with the role-separation direction ([[project_trust_safety]]).
+- [ ] **42.9 — Fix request dropdown for out-of-gym/independent instructors.** `/lessons/new?instructor=` for someone not at your gym leaves the dropdown blank; include the selected person by name.
+- [ ] **42.10 — Tighten `/api/lessons` validation.** Verify `instructorId` is a real gym instructor/admin or approved provider; restrict status transitions (requester can't self-"confirm").
+
+### Phase 55 — Trust & Safety + Instructor Role Separation (planned, user direction 2026-06-10)
+See [[project_trust_safety]]. **Background checks** for anyone offering private lessons **outside their own gym** before approval (member safety; vendor/process TBD). **Role separation:** class-instructor vs private-instructor as distinct roles, **administered by the gym admin if participating**, else **submitted to site admin to verify with black belts** (today provider approval = any verified black belt/site_admin). Not yet built.
+
 ---
 
 ## PHASE 43 — Legal: Waivers, Terms & Agreements ⚠️ NEEDS ATTORNEY

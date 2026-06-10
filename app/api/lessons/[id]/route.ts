@@ -25,6 +25,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const { status, scheduledAt, notes, location } = await req.json()
+
+  // Status-transition rules: only the instructor (or an admin) may confirm or
+  // complete a lesson; either participant may cancel. (A requester can't self-confirm.)
+  if (status !== undefined) {
+    if (!['confirmed', 'cancelled', 'completed'].includes(status)) {
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+    }
+    const isInstructor = lesson.instructorId === session.user.id
+    const isAdmin = !!session.user.roles?.includes('admin')
+    if ((status === 'confirmed' || status === 'completed') && !isInstructor && !isAdmin) {
+      return NextResponse.json({ error: 'Only the instructor can confirm or complete a lesson.' }, { status: 403 })
+    }
+  }
+
   const updated = await prisma.privateLesson.update({
     where: { id },
     data: {

@@ -61,7 +61,13 @@ export function LessonDetailClient({
     setSaving(false)
   }
 
-  const actions = isInstructor ? (STATUS_ACTIONS[status] ?? []) : []
+  // Instructor gets the full confirm/complete/cancel set; the requester can
+  // cancel their own pending or confirmed lesson.
+  const actions = isInstructor
+    ? (STATUS_ACTIONS[status] ?? [])
+    : (status === 'pending' || status === 'confirmed')
+      ? [{ label: status === 'pending' ? 'Cancel request' : 'Cancel lesson', next: 'cancelled' }]
+      : []
 
   return (
     <div className="flex flex-col gap-6">

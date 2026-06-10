@@ -738,14 +738,30 @@ Today `/lessons/new` is just an instructor dropdown + free `datetime-local` (no 
 
 **Phase 42 COMPLETE.** Ops: add `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to Vercel for prod geocoding; modern vector map UI (gym-finder/events-near-me) = backlog.
 
-### Phase 42 lessons polish (2026-06-10) — IN PROGRESS
-- [ ] **42.7 — Provider lesson inbox + correct notification link.** Approved independent providers have no inbox (they aren't `instructor` role, so `/instructor/lessons` 403s them; the new-request notification mis-links there). Add a provider-accessible "Lesson Requests" view + route the request notification to the right place per recipient kind.
-- [ ] **42.8 — Class Instructor vs Private Instructor badges.** Distinguish the two in search/lists ("Class Instructor · {Gym}" vs "Private Instructor", + belt/verified). Aligns with the role-separation direction ([[project_trust_safety]]).
-- [ ] **42.9 — Fix request dropdown for out-of-gym/independent instructors.** `/lessons/new?instructor=` for someone not at your gym leaves the dropdown blank; include the selected person by name.
-- [ ] **42.10 — Tighten `/api/lessons` validation.** Verify `instructorId` is a real gym instructor/admin or approved provider; restrict status transitions (requester can't self-"confirm").
+### Phase 42 lessons polish (2026-06-10) — DONE (browser+DB verified 14/14)
+- [x] **42.7 — Provider lesson inbox + correct notification link.** New `/provider/lessons` inbox (approved private instructors); `/api/lessons` routes the new-request notification to `/instructor/lessons` (class instructor) or `/provider/lessons` (private). "Lesson requests" link on `/provider`.
+- [x] **42.8 — Class Instructor vs Private Instructor badges.** `/api/instructors/search` returns `kind` (`class`|`private`) + belt/`beltVerified`; `InstructorSearch` shows "Class Instructor · {Gym}" vs "Private Instructor · vetted" + belt (✓ if verified).
+- [x] **42.9 — Request dropdown for out-of-gym/independent instructors.** `/lessons/new?instructor=` now fetches a non-home-gym selection and prepends it (labelled "Private Instructor" / gym name) so it shows pre-selected by name.
+- [x] **42.10 — `/api/lessons` validation.** POST verifies the target is a gym instructor/admin or approved provider (403 otherwise), blocks self-request (400); PATCH restricts confirm/complete to the instructor/admin (requester can't self-confirm).
 
 ### Phase 55 — Trust & Safety + Instructor Role Separation (planned, user direction 2026-06-10)
-See [[project_trust_safety]]. **Background checks** for anyone offering private lessons **outside their own gym** before approval (member safety; vendor/process TBD). **Role separation:** class-instructor vs private-instructor as distinct roles, **administered by the gym admin if participating**, else **submitted to site admin to verify with black belts** (today provider approval = any verified black belt/site_admin). Not yet built.
+See `memory/project_trust_safety.md`. **Background checks** for anyone offering private lessons **outside their own gym** before approval (member safety; vendor/process TBD). **Role separation:** class-instructor vs private-instructor as distinct roles, **administered by the gym admin if participating**, else **submitted to site admin to verify with black belts** (today provider approval = any verified black belt/site_admin). Not yet built.
+
+### Phase 56 — Private-Instructor Ratings & Reviews (planned, user request 2026-06-10)
+Feedback/rating system for private instructors. **Suggested design:**
+- **Earned reviews only:** a review can be left **only by the requester of a `completed` private lesson**, one review per lesson (tie to `lessonId @unique`) → every review maps to a real, finished booking (no drive-by/fake reviews). No self-review.
+- **Capture:** 1–5 star overall + optional short text. (Optional v2 sub-scores: knowledge / communication / punctuality.)
+- **Model:** `InstructorReview { id, lessonId @unique, instructorId, reviewerId, rating Int, comment String?, createdAt }`; cache `avgRating`/`reviewCount` on User (or compute) for cheap display.
+- **Surface:** rating badge in `/api/instructors/search` rows (e.g. "4.8★ (12)") + full reviews on the instructor's profile; "Verified lesson" tag on each review since it's booking-backed. Optional instructor public reply.
+- **Moderation:** instructors can't delete reviews; site_admin can remove abusive ones; rate-limit.
+- **Scope:** applies to both class instructors (for their privates) and independent private instructors. Pairs with belt-verified + vetted + background check (Phase 55) for a strong trust profile.
+- **Trigger UX:** prompt the student to review when a lesson flips to `completed` (in-app + notification), mirroring the post-class feedback pattern.
+
+### Phase 57 — Unify the instructor profile (planned, user question 2026-06-10)
+**Finding:** there is **one** public profile per user (`/profile/[userId]`) — no separate "instructor profile." But instructor/provider info is fragmented: `providerBio` is collected yet never shown publicly, availability is private, and search "Request" jumps straight to the booking form (instructor names aren't even linked to their profile). **Recommendation (keep one profile, surface the rest there):**
+- On `/profile/[userId]`: when the user is a class instructor or approved private instructor, show an **"Offers private lessons"** section with their teaching/`providerBio`, belt-verified/vetted badges, ratings (Phase 56), and a **"Request a lesson"** CTA → `/lessons/new?instructor=`.
+- Link instructor **names in search + lesson participants** to `/profile/[userId]` so members can vet before booking.
+- Net: no structural "merge" needed (already unified) — the work is surfacing instructor context + cross-linking discovery → profile → booking.
 
 ---
 

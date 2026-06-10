@@ -41,26 +41,34 @@
 
 ---
 
-## ⏭ NEXT SESSION — Status (updated 2026-06-09)
+## ⏭ NEXT SESSION — Status (updated 2026-06-10)
 
-**Done recently (pushed to git by user):**
-- **Phase 53 — Admin "View As"** (read-only): site_admin → any user (incl. DMs); gym admin → own-gym users (DMs hidden). Writes blocked in middleware; banner + Exit. Built, NOT browser-tested.
-- **Phase 54 — Journal sharing**: share entries with connections (gym/follows/lesson partners); DM-off → pending request; "Shared with me" in journal tab + `/instructor/journals`. Built, NOT browser-tested.
-- **Schedule multi-tenancy fix** (week/month/day scoped to member's gym) + user-search/commitment/check-in gym scoping.
-- **Help page accuracy pass**, **beta notice** (available/coming-soon, both variants), **Terms/Privacy** placeholder pages, **DMV gym import** (102 claimable, geocoded), **radius instructor search**, gym auto-geocode on create.
-- **Email infra**: `lib/email.ts` split into `fromNoReply` (no_reply@ascendit.app) + `fromAdmin` (admin@ascendit.app); test sends to geof.hoffman@gmail.com succeeded. Password-reset token system confirmed built & secure (32-byte, 1h, single-use).
-- **Vercel env push (project `ascend`)**: added Production `EMAIL_FROM_NAME`, `EMAIL_FROM_NOREPLY`, `EMAIL_FROM_ADMIN`, `EMAIL_FROM`, `NEXTAUTH_URL=https://ascendit.app`; updated `VAPID_SUBJECT`→`mailto:admin@ascendit.app` (Prod done; **Preview was removed + re-add in flight — VERIFY**). Real domain = **ascendit.app** (ascend.app/ascend.gym were placeholders; gym.com = test accounts only).
+### ▶️ START HERE next session
+**Build Phase 58 — Live Match Console, Milestone 1** = a standalone single-match console (timer + score + public scoreboard, manual winner) to nail the real-time clock, BEFORE wiring tournaments/challenges. Guide: **`guides/phase58-live-match-console.md`** (all decisions confirmed; defaults accepted 2026-06-10). Key design locked in: **authoritative anchored clock** — the timekeeper's button-press instant is the source of truth; all screens (scoreboard/scorer/timer) derive the clock from one server anchor (`now − anchor`) via ~1s polling + local interpolation + a clock-skew offset → zero drift, no realtime infra. Public login-free **scoreboard URL + QR** (reuse `qrcode`/`QRCodeDisplay`). When building `lib/rulesets.ts`, **pull verified IBJJF/ADCC point values + official links via web search** — don't invent. Then: wire tournaments (Phase 32, N tables, propagate winner to bracket), then **Phase 59 — Challenge Matches** (`guides/phase59-challenge-matches.md`). Both guides need an additive `prisma db push`.
 
-**Pending verification / ops (user doing):**
-- Verify Vercel env in UI (esp. Preview `VAPID_SUBJECT`), then **redeploy** so email/NEXTAUTH_URL take effect.
-- After redeploy: test live `/forgot-password` end-to-end on ascendit.app.
+### Done THIS session (2026-06-09 → 06-10) — committed locally on `main`, **NOT pushed** (user pushes)
+- **Autonomous polish queue (7 items)** — view-as + journal-sharing browser-tested (10/10, 15/15); forum auto-subscribe; site-admin forum-delete; dynamic onboarding steps; student→member copy sweep; month-view graying. (commit `e1c5b63`)
+- **Phase 39 — Gym claiming** DONE (functional only, no upsell): `/gyms/claim` + `/site-admin/claims` approve/reject (transfers control, notifies, auto-rejects dups) + gym rename in `/admin/settings`. Verified 13/13. (`7a2bd28`)
+- **Phase 40 — Bulk CSV invites** DONE (40.2–40.5): `/admin/import` CSV→map→preview→import; existing users associated, new emails auto-applied on signup; instructor rows request approval. Verified 20/20. (`f8a14fe`)
+- **Phase 42 COMPLETE** — 42.6 re-geocode on gym address edit (`ea9c319`) + 42.4 independent (private) providers w/ verified-black-belt approval (`33b2a4c`). Verified 4/4 + 14/14.
+- **View As role-gating fix** — site_admin (no `admin` role) can now reach a gym admin's dashboard while viewing-as (middleware uses `token.viewAsRoles`); real roles never mutated; no carve-out. Verified 9/9. (`660ca1e`)
+- **Multi-tenancy leak audit + fixes** — instructor list views, `/instructor/sub-requests`, `/instructor/scan`, `/instructor/students/[id]` IDOR, + sub-claim/attendance/notes/QR APIs all gym-scoped. (`2359eec`, `069af0a`)
+- **Phase 42.7–42.10 lessons polish** — provider lesson inbox + notification routing, Class/Private instructor badges, request-dropdown fix, `/api/lessons` validation + status-transition locks. Verified 14/14. (`e9efa81`)
+- **Requester cancel button** on `/lessons/[id]`. Verified 2/2. (`e2a4de0`)
+- **Phase 57 — Unified instructor profile** ("Offers private lessons" section + Request CTA + cross-links). (`8d656e8`)
+- **Phase 56 — Private-instructor ratings** (earned reviews on completed lessons, stars on profile + search). Verified 14/14. (`72dc07b`)
+- **Guides written** (gitignored): Phase 58 (live match console), Phase 59 (challenge matches); Phase 55 notes (trust/safety + role separation); amended Phase 32 → console. (`382a497`)
 
-**Recommended next features (user to pick):**
-- **Phase 39 — Gym claiming** (owner claims a listed DMV gym → site-admin verify) = marketing/paid-services funnel.
-- **Email invites** (Phase 40) now that admin@ sender is live.
-- **Map display UI** (gym finder / events-near-me; geocoding groundwork done).
-- **Browser-test Phase 53 (view-as) + Phase 54 (journal sharing)** — neither is UI-tested yet.
-- Polish: month-view graying, auto-subscribe new class-group forum, site-admin forum-delete button, dynamic onboarding step numbers, remaining "student→member" copy.
+### ⚠️ Ops / state to know
+- **Additive `prisma db push`es this session went to the SHARED cluster (live):** `GymClaim`, `Invitation.email/meta`, `ProviderStatus`+`User.provider*`, `InstructorReview`+`User.ratingAvg/ratingCount`. All additive — no data loss.
+- **Nothing pushed to git or deployed this session** — all commits are local on `main`. User handles push/deploy.
+- **Recurring gotcha:** after a `prisma db push`, fully restart the dev server (`fuser -k 3002/tcp` / `pkill -f next-server`, not just the npm PID) or the stale in-memory Prisma client 500s.
+- **Still pending (user/ops):** add `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to Vercel (prod geocoding/search); email beta blocker (Resend sandbox — 47.1); verify Vercel env + redeploy for email/NEXTAUTH_URL.
+
+### Other open work (not blocking Phase 58)
+- **Phase 55** — background checks for out-of-gym private instructors + class/private role separation (gym-admin vs site-admin approval). Planned, see `memory/project_trust_safety.md`.
+- **Map display UI** (gym finder / events-near-me) — backlog.
+- Small parked: 36.7 (trim onboarding reflection), 45.8 (show phone/email on profile), 48.2 ('ScendIt Group B rename), 49.7 (forum video uploads).
 
 ---
 

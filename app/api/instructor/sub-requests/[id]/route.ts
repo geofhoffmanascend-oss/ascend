@@ -14,13 +14,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     where: { id },
     include: {
       classSession: {
-        include: { class: { select: { title: true, startTime: true } } },
+        include: { class: { select: { title: true, startTime: true, gymId: true } } },
       },
       requestedBy: { select: { id: true } },
     },
   })
 
   if (!subReq) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  // Can only claim a sub at your own gym (multi-tenancy).
+  if (subReq.classSession.class.gymId !== session!.user.gymId) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
   if (subReq.status !== 'open') return NextResponse.json({ error: 'Already filled or cancelled' }, { status: 409 })
   if (subReq.requestedById === session!.user.id) {
     return NextResponse.json({ error: 'Cannot claim your own release' }, { status: 400 })

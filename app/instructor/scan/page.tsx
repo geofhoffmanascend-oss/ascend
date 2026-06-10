@@ -3,7 +3,7 @@ import { QRScanForm } from './QRScanForm'
 import prisma from '@/lib/database'
 
 export default async function QRScanPage() {
-  await requireInstructor()
+  const { session } = await requireInstructor()
 
   // Get today's sessions for the optional class selector
   const today = new Date()
@@ -12,7 +12,8 @@ export default async function QRScanPage() {
   tomorrow.setUTCDate(today.getUTCDate() + 1)
 
   const sessions = await prisma.classSession.findMany({
-    where: { date: { gte: today, lt: tomorrow }, cancelled: false },
+    // Only today's sessions at the viewer's own gym (multi-tenancy).
+    where: { date: { gte: today, lt: tomorrow }, cancelled: false, class: { gymId: session?.user?.gymId ?? null } },
     include: { class: { select: { title: true, startTime: true } } },
     orderBy: { class: { startTime: 'asc' } },
   })

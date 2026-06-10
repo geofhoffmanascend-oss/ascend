@@ -45,6 +45,12 @@ export async function POST(req: NextRequest) {
   })
   if (!classSession) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
 
+  // The scanning instructor/admin can only check students into their own gym's
+  // sessions (site admins bypass; multi-tenancy).
+  if (!session.user.roles?.includes('site_admin') && classSession.class.gymId !== (session.user.gymId ?? null)) {
+    return NextResponse.json({ error: 'You can only check in at your own gym.' }, { status: 403 })
+  }
+
   if (classSession.class.gymId !== (student.gymId ?? null)) {
     return NextResponse.json({ error: `${student.name} is not a member of this gym.` }, { status: 403 })
   }

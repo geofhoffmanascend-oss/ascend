@@ -18,7 +18,7 @@ export default async function InstructorStudentPage({ params }: { params: Promis
   const student = await prisma.user.findUnique({
     where: { id },
     select: {
-      id: true, name: true, email: true, belt: true, stripes: true,
+      id: true, name: true, email: true, belt: true, stripes: true, gymId: true,
       bio: true, phone: true, emergencyContact: true, avatarUrl: true, createdAt: true,
       studentNotes: {
         include: { instructor: { select: { name: true } } },
@@ -45,6 +45,8 @@ export default async function InstructorStudentPage({ params }: { params: Promis
   })
 
   if (!student) notFound()
+  // Only view students at your own gym (multi-tenancy; site admins bypass).
+  if (!session.user.roles?.includes('site_admin') && student.gymId !== session.user.gymId) notFound()
 
   const notes = student.studentNotes.map(n => ({
     id: n.id,

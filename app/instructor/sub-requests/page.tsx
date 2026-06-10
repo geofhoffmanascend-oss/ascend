@@ -11,7 +11,8 @@ export default async function SubRequestsPage() {
   if (!session.user.roles?.includes('instructor') && !session.user.roles?.includes('admin')) redirect('/dashboard')
 
   const open = await prisma.classSubRequest.findMany({
-    where: { status: 'open' },
+    // Only open requests at the viewer's own gym (multi-tenancy).
+    where: { status: 'open', classSession: { class: { gymId: session.user.gymId } } },
     include: {
       classSession: {
         include: { class: { select: { title: true, startTime: true, endTime: true, location: true } } },

@@ -12,6 +12,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'studentId and content required' }, { status: 400 })
   }
 
+  // Only note a student at your own gym (multi-tenancy; site admins bypass).
+  const student = await prisma.user.findUnique({ where: { id: studentId }, select: { gymId: true } })
+  if (!student) return NextResponse.json({ error: 'Student not found' }, { status: 404 })
+  if (!session!.user.roles?.includes('site_admin') && student.gymId !== session!.user.gymId) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const note = await prisma.studentNote.create({
     data: { studentId, instructorId: session!.user.id, content: content.trim() },
   })

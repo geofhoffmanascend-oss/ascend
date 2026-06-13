@@ -36,12 +36,22 @@ export default async function AdminTournamentDetailPage({ params }: { params: Pr
 
   if (!tournament || tournament.gymId !== gymId) notFound()
 
+  // Phase 58 M2 — live-console tables linked to this tournament's bracket matches
+  const tables = await prisma.matchTable.findMany({
+    where: { tournamentId: id },
+    select: { id: true, publicSlug: true, status: true, tournamentMatchId: true },
+  })
+  const tableByMatch: Record<string, { id: string; publicSlug: string; status: string }> = {}
+  for (const t of tables) {
+    if (t.tournamentMatchId) tableByMatch[t.tournamentMatchId] = { id: t.id, publicSlug: t.publicSlug, status: t.status }
+  }
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
       <div className="mb-3">
         <Link href="/admin/tournaments" className="text-xs text-ash hover:text-ink transition-colors">← Tournaments</Link>
       </div>
-      <TournamentManageClient tournament={{
+      <TournamentManageClient tableByMatch={tableByMatch} tournament={{
         ...tournament,
         date: tournament.date.toISOString(),
         

@@ -9,6 +9,7 @@ import { ShareButton } from './ShareButton'
 import { FollowButton } from './FollowButton'
 import { ProfilePosts, type ProfilePost } from './ProfilePosts'
 import { PUBLIC_FORUM_TYPES } from '@/lib/feed'
+import { getCompetitionRecord } from '@/lib/challenge'
 
 export async function generateMetadata({ params }: { params: Promise<{ userId: string }> }): Promise<Metadata> {
   const { userId } = await params
@@ -41,6 +42,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       providerBio: true,
       ratingAvg: true,
       ratingCount: true,
+      acceptsChallenges: true,
       reviewsReceived: {
         orderBy: { createdAt: 'desc' },
         take: 5,
@@ -72,6 +74,13 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
         where: { followerId_followingId: { followerId: viewerId, followingId: userId } },
       }))
     : false
+
+  // Phase 59 — challenge button (both must accept challenges) + competition record
+  const viewerAcceptsChallenges = viewerId
+    ? !!(await prisma.user.findUnique({ where: { id: viewerId }, select: { acceptsChallenges: true } }))?.acceptsChallenges
+    : false
+  const canChallenge = isAuthenticated && user.acceptsChallenges && viewerAcceptsChallenges
+  const record = await getCompetitionRecord(userId)
 
   // Public post history (anyone) + restricted posts the viewer can see (same-gym forum)
   const postSelect = {
@@ -125,16 +134,36 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
             </p>
           )}
           <p className="text-xs text-ash mt-1">
-            <span className="font-medium text-steel">{user._count.followers}</span> followers
+            <Link href={`/profile/${userId}/followers`} className="hover:text-ink transition-colors">
+              <span className="font-medium text-steel">{user._count.followers}</span> followers
+            </Link>
             {' · '}
-            <span className="font-medium text-steel">{user._count.following}</span> following
+            <Link href={`/profile/${userId}/following`} className="hover:text-ink transition-colors">
+              <span className="font-medium text-steel">{user._count.following}</span> following
+            </Link>
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {isAuthenticated && <FollowButton userId={userId} initialFollowing={isFollowing} />}
+          {canChallenge && (
+            <Link
+              href={`/challenges/new?to=${userId}`}
+              className="px-4 py-2 border border-brand-red text-brand-red font-bold text-sm tracking-wide hover:bg-brand-red hover:text-paper transition-colors"
+            >
+              Challenge
+            </Link>
+          )}
           <ShareButton url={profilePath} />
         </div>
       </div>
+
+      {(record.wins + record.losses + record.draws > 0) && (
+        <p className="text-xs text-slate mb-4">
+          <span className="font-bold uppercase tracking-widest text-steel">Competition record</span>
+          {' · '}
+          <span className="text-ink font-medium">{record.wins}W–{record.losses}L{record.draws ? `–${record.draws}D` : ''}</span>
+        </p>
+      )}
 
       <div className="flex flex-col gap-6">
         {/* Avatar + belt */}

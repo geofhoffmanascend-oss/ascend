@@ -18,12 +18,16 @@ export interface BracketParticipant {
   belt: string
 }
 
+export type TableLink = { id: string; publicSlug: string; status: string }
+
 interface Props {
   matches: BracketMatch[]
   participants: BracketParticipant[]
   format: 'single_elim' | 'round_robin' | 'double_elim'
   isAdmin?: boolean
   onResultSave?: (matchId: string, result: string, notes: string) => Promise<void>
+  tableByMatch?: Record<string, TableLink>
+  onSendToTable?: (matchId: string) => Promise<void>
 }
 
 const RESULT_LABELS: Record<string, string> = {
@@ -34,22 +38,27 @@ const RESULT_LABELS: Record<string, string> = {
   bye: 'Bye',
 }
 
-export function BracketView({ matches, participants, format, isAdmin = false, onResultSave }: Props) {
+export function BracketView({ matches, participants, format, isAdmin = false, onResultSave, tableByMatch, onSendToTable }: Props) {
   const nameMap = Object.fromEntries(participants.map(p => [p.id, p.name ?? 'Unknown']))
+  const shared = { nameMap, isAdmin, onResultSave, tableByMatch, onSendToTable }
 
   if (format === 'round_robin') {
-    return <RoundRobinView matches={matches} nameMap={nameMap} isAdmin={isAdmin} onResultSave={onResultSave} />
+    return <RoundRobinView matches={matches} {...shared} />
   }
 
-  return <SingleElimView matches={matches} nameMap={nameMap} isAdmin={isAdmin} onResultSave={onResultSave} />
+  return <SingleElimView matches={matches} {...shared} />
 }
 
-function SingleElimView({ matches, nameMap, isAdmin, onResultSave }: {
+type ViewProps = {
   matches: BracketMatch[]
   nameMap: Record<string, string>
   isAdmin: boolean
   onResultSave?: Props['onResultSave']
-}) {
+  tableByMatch?: Record<string, TableLink>
+  onSendToTable?: Props['onSendToTable']
+}
+
+function SingleElimView({ matches, nameMap, isAdmin, onResultSave, tableByMatch, onSendToTable }: ViewProps) {
   const rounds = [...new Set(matches.map(m => m.round))].sort((a, b) => a - b)
 
   return (
@@ -70,6 +79,8 @@ function SingleElimView({ matches, nameMap, isAdmin, onResultSave }: {
                   nameMap={nameMap}
                   isAdmin={isAdmin}
                   onResultSave={onResultSave}
+                  table={tableByMatch?.[match.id]}
+                  onSendToTable={onSendToTable}
                 />
               ))}
             </div>
@@ -80,22 +91,26 @@ function SingleElimView({ matches, nameMap, isAdmin, onResultSave }: {
   )
 }
 
-function MatchCard({ match, nameMap, isAdmin, onResultSave }: {
+function MatchCard({ match, nameMap, isAdmin, onResultSave, table, onSendToTable }: {
   match: BracketMatch
   nameMap: Record<string, string>
   isAdmin: boolean
   onResultSave?: Props['onResultSave']
+  table?: TableLink
+  onSendToTable?: Props['onSendToTable']
 }) {
   const [editing, setEditing] = useState(false)
   const [result, setResult] = useState(match.result)
   const [notes, setNotes] = useState(match.notes ?? '')
   const [saving, setSaving] = useState(false)
+  const [sending, setSending] = useState(false)
 
   const nameA = match.participantA ? nameMap[match.participantA] ?? 'TBD' : 'BYE'
   const nameB = match.participantB ? nameMap[match.participantB] ?? 'TBD' : 'BYE'
 
   const winnerA = match.result === 'participant_a_wins' || match.result === 'bye'
   const winnerB = match.result === 'participant_b_wins'
+  const hasBoth = !!match.participantA && !!match.participantB
 
   async function save() {
     if (!onResultSave || result === 'pending') return
@@ -103,6 +118,13 @@ function MatchCard({ match, nameMap, isAdmin, onResultSave }: {
     await onResultSave(match.id, result, notes)
     setEditing(false)
     setSaving(false)
+  }
+
+  async function send() {
+    if (!onSendToTable) return
+    setSending(true)
+    await onSendToTable(match.id)
+    setSending(false)
   }
 
   return (
@@ -126,6 +148,21 @@ function MatchCard({ match, nameMap, isAdmin, onResultSave }: {
       {isAdmin && !editing && match.result !== 'pending' && (
         <div className="px-3 py-1 border-t border-smoke">
           <button onClick={() => setEditing(true)} className="text-xs text-ash hover:text-ink">Edit</button>
+        </div>
+      )}
+      {/* Phase 58 M2 — live match console */}
+      {isAdmin && !editing && hasBoth && (table || (onSendToTable && match.result === 'pending')) && (
+        <div className="px-3 py-1 border-t border-smoke flex flex-wrap items-center gap-x-3 gap-y-1">
+          {table ? (
+            <>
+              <a href={`/console/${table.id}`} target="_blank" rel="noopener noreferrer" className="text-xs text-brand-red hover:underline">Console ↗</a>
+              <a href={`/scoreboard/${table.publicSlug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-ash hover:text-ink">Scoreboard ↗</a>
+            </>
+          ) : (
+            <button onClick={send} disabled={sending} className="text-xs text-steel hover:text-ink disabled:opacity-50">
+              {sending ? '…' : 'Run on console'}
+            </button>
+          )}
         </div>
       )}
       {isAdmin && editing && (
@@ -155,12 +192,7 @@ function MatchCard({ match, nameMap, isAdmin, onResultSave }: {
   )
 }
 
-function RoundRobinView({ matches, nameMap, isAdmin, onResultSave }: {
-  matches: BracketMatch[]
-  nameMap: Record<string, string>
-  isAdmin: boolean
-  onResultSave?: Props['onResultSave']
-}) {
+function RoundRobinView({ matches, nameMap, isAdmin, onResultSave, tableByMatch, onSendToTable }: ViewProps) {
   const participants = [...new Set(matches.flatMap(m => [m.participantA, m.participantB]).filter(Boolean) as string[])]
 
   // Compute standings
@@ -210,7 +242,7 @@ function RoundRobinView({ matches, nameMap, isAdmin, onResultSave }: {
         <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">Matches</p>
         <div className="flex flex-col gap-2 max-w-md">
           {matches.map(match => (
-            <MatchCard key={match.id} match={match} nameMap={nameMap} isAdmin={isAdmin} onResultSave={onResultSave} />
+            <MatchCard key={match.id} match={match} nameMap={nameMap} isAdmin={isAdmin} onResultSave={onResultSave} table={tableByMatch?.[match.id]} onSendToTable={onSendToTable} />
           ))}
         </div>
       </div>

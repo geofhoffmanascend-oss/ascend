@@ -32,6 +32,7 @@ export default async function ProfilePage() {
       emergencyContact: true,
       avatarUrl: true,
       createdAt: true,
+      _count: { select: { followers: true, following: true } },
       gym: { select: { participatingStatus: true, name: true, slug: true } },
       goalsAsStudent: {
         orderBy: { createdAt: 'desc' },
@@ -97,6 +98,15 @@ export default async function ProfilePage() {
             </span>
           </div>
           <h1 className="font-display text-2xl text-ink">{user.name ?? 'No name set'}</h1>
+          <p className="text-xs text-ash mt-1">
+            <Link href={`/profile/${session.user.id}/followers`} className="hover:text-ink transition-colors">
+              <span className="font-medium text-steel">{user._count.followers}</span> followers
+            </Link>
+            {' · '}
+            <Link href={`/profile/${session.user.id}/following`} className="hover:text-ink transition-colors">
+              <span className="font-medium text-steel">{user._count.following}</span> following
+            </Link>
+          </p>
         </div>
         <Link
           href="/profile/edit"

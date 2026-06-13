@@ -17,6 +17,8 @@ type Prefs = {
   notifyByEmail:         boolean
   allowDmsFromStudents:  boolean
   allowMediaTagging:     boolean
+  competeTournaments:    boolean
+  acceptsChallenges:     boolean
   defaultJournalPrompts: string | null
 }
 
@@ -166,6 +168,22 @@ export function SettingsForm({ userId, initial, forums: initialForums, hiddenCla
             </button>
           )}
         </div>
+      </section>
+
+      <section className="border border-smoke bg-paper p-6 flex flex-col gap-4">
+        <p className="text-xs font-bold uppercase tracking-widest text-steel">Competition</p>
+        <Toggle
+          label="Compete in tournaments"
+          description="Show interest in in-house tournaments your gym runs."
+          checked={prefs.competeTournaments}
+          onChange={() => toggle('competeTournaments')}
+        />
+        <Toggle
+          label="Accept challenge matches"
+          description="Adds a 'Challenge' button to your public profile so other members can propose a match. You can turn this off anytime."
+          checked={prefs.acceptsChallenges}
+          onChange={() => toggle('acceptsChallenges')}
+        />
       </section>
 
       <section className="border border-smoke bg-paper p-6 flex flex-col gap-4">

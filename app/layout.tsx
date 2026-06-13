@@ -9,6 +9,7 @@ import { Providers } from './providers'
 import { Header } from './components/Header'
 import { Footer } from './components/Footer'
 import { ViewAsBanner } from './components/ViewAsBanner'
+import { LayoutChrome } from './components/LayoutChrome'
 import { ServiceWorkerRegistration } from './components/ServiceWorkerRegistration'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -45,12 +46,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body suppressHydrationWarning>
         <Providers session={session}>
-          <div className="min-h-screen flex flex-col">
-            <ViewAsBanner />
-            <Header initialSession={session} features={features} />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
+          <LayoutChrome
+            banner={<ViewAsBanner />}
+            header={<Header initialSession={session} features={features} />}
+            footer={<Footer />}
+          >
+            {children}
+          </LayoutChrome>
         </Providers>
         <ServiceWorkerRegistration />
       </body>

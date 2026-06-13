@@ -29,7 +29,18 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   })
 
   if (!tournament || tournament.gymId !== gymId) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  return NextResponse.json({ tournament })
+
+  // Phase 58 M2 — live-console tables linked to this tournament's bracket matches
+  const tables = await prisma.matchTable.findMany({
+    where: { tournamentId: id },
+    select: { id: true, publicSlug: true, status: true, tournamentMatchId: true },
+  })
+  const tableByMatch: Record<string, { id: string; publicSlug: string; status: string }> = {}
+  for (const t of tables) {
+    if (t.tournamentMatchId) tableByMatch[t.tournamentMatchId] = { id: t.id, publicSlug: t.publicSlug, status: t.status }
+  }
+
+  return NextResponse.json({ tournament, tableByMatch })
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

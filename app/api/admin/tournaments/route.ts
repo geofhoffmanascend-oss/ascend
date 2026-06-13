@@ -26,10 +26,12 @@ export async function POST(req: NextRequest) {
   const gymId = session!.user.gymId
   if (!gymId) return NextResponse.json({ error: 'No gym associated with this admin' }, { status: 400 })
 
-  const gym = await prisma.gym.findUnique({ where: { id: gymId }, select: { participatingStatus: true } })
-  if (gym?.participatingStatus !== 'participating') {
-    return NextResponse.json({ error: 'Tournament creation requires a Participating gym subscription.' }, { status: 403 })
-  }
+  // TEST ONLY (Phase 58): tournament creation is normally gated to Participating
+  // gyms. Temporarily disabled to test the live match console. Re-enable before launch.
+  // const gym = await prisma.gym.findUnique({ where: { id: gymId }, select: { participatingStatus: true } })
+  // if (gym?.participatingStatus !== 'participating') {
+  //   return NextResponse.json({ error: 'Tournament creation requires a Participating gym subscription.' }, { status: 403 })
+  // }
 
   const { title, description, date, format, isPublic } = await req.json()
   if (!title?.trim()) return NextResponse.json({ error: 'Title required' }, { status: 400 })

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { AdminSettingsForm } from './AdminSettingsForm'
 import { GymLogoForm } from './GymLogoForm'
 import { GymFeaturesForm } from './GymFeaturesForm'
+import { ChallengeHostingForm } from './ChallengeHostingForm'
 
 export default async function AdminSettingsPage() {
   const { session } = await requireAdmin()
@@ -30,6 +31,7 @@ export default async function AdminSettingsPage() {
         <GymLogoForm initial={{ logoUrl: gym?.logoUrl ?? '', name: gym?.name ?? '', description: gym?.description ?? '' }} />
         <AdminSettingsForm initial={{ reviewUrl: settings.reviewUrl ?? '' }} />
         <GymFeaturesForm initial={features} />
+        <ChallengeHostingForm />
       </div>
     </div>
   )

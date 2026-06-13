@@ -159,15 +159,15 @@ enum ClassGroup {
 // ── Auth (NextAuth) ────────────────────────────────────────────────────────────
 
 model User {
-  id               String    @id @default(cuid())
-  name             String?
-  email            String    @unique
-  emailVerified    DateTime?
-  image            String?
-  passwordHash     String?
-  roles            Role[]    @default([student])
-  vendorType       VendorType?
-  onboardingDone   Boolean   @default(false)
+  id             String      @id @default(cuid())
+  name           String?
+  email          String      @unique
+  emailVerified  DateTime?
+  image          String?
+  passwordHash   String?
+  roles          Role[]      @default([student])
+  vendorType     VendorType?
+  onboardingDone Boolean     @default(false)
 
   // Profile
   bio              String?
@@ -177,12 +177,12 @@ model User {
   profilePrivacy   Json    @default("{}")
 
   // Rank
-  belt             Belt      @default(white)
-  stripes          Int       @default(0)
-  weightClass      String?
+  belt        Belt    @default(white)
+  stripes     Int     @default(0)
+  weightClass String?
 
   // QR check-in token
-  qrToken              String  @unique @default(cuid())
+  qrToken String @unique @default(cuid())
 
   // Journal settings
   defaultJournalPrompts String?
@@ -198,49 +198,49 @@ model User {
   allowMediaTagging     Boolean @default(true)
 
   // Class access (admin-controlled membership restrictions)
-  blockedClassGroups    ClassGroup[] @default([])
+  blockedClassGroups ClassGroup[] @default([])
   // Phase 52 — admin-controlled access to gym-defined class programs (program ids)
-  blockedProgramIds     String[]     @default([])
+  blockedProgramIds  String[]     @default([])
   // Schedule preferences (user-controlled visibility)
-  hiddenClassGroups     ClassGroup[] @default([])
+  hiddenClassGroups  ClassGroup[] @default([])
   // Phase 53 — member-hidden gym-defined class groups (schedule visibility, by program id)
-  hiddenProgramIds      String[]     @default([])
+  hiddenProgramIds   String[]     @default([])
 
   // Onboarding tracking — roles for which the onboarding wizard has been completed
-  onboardedRoles        Role[]       @default([])
+  onboardedRoles Role[] @default([])
 
   // Gym affiliation
-  gymId          String?   // home gym (nullable for unaffiliated users)
-  beltVerified   Boolean   @default(false)
-  beltVerifiedBy String?   // userId of the admin who verified
+  gymId          String? // home gym (nullable for unaffiliated users)
+  beltVerified   Boolean @default(false)
+  beltVerifiedBy String? // userId of the admin who verified
 
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // NextAuth relations
-  accounts         Account[]
-  sessions         Session[]
+  accounts Account[]
+  sessions Session[]
 
   // Gym relations
-  gym            Gym?           @relation(fields: [gymId], references: [id], onDelete: SetNull)
+  gym            Gym?            @relation(fields: [gymId], references: [id], onDelete: SetNull)
   gymMemberships GymMembership[]
-  gymClaims      GymClaim[]     @relation("GymClaims")
+  gymClaims      GymClaim[]      @relation("GymClaims")
 
   // App relations
-  taughtClasses        Class[]           @relation("ClassInstructor")
-  commitments          Commitment[]
-  attendanceRecords    Attendance[]
-  lessonsRequested     PrivateLesson[]   @relation("LessonRequester")
-  lessonsTeaching      PrivateLesson[]   @relation("LessonInstructor")
-  lessonsAsUke         PrivateLesson[]   @relation("LessonUke")
-  posts                Post[]
-  forumSubscriptions   ForumSubscription[]
-  forumReads           ForumRead[]
-  following            Follow[]    @relation("Following")
-  followers            Follow[]    @relation("Followers")
-  sentInvitations      Invitation[] @relation("InviteInviter")
-  instructorRequestedAt DateTime?   // Phase 40 — set when an "approve-after" instructor invite is accepted; cleared when the admin grants/denies
-  acceptsOutsideOrg    Boolean      @default(false) // Phase 42 — instructor accepts private-lesson requests from outside their gym
+  taughtClasses         Class[]             @relation("ClassInstructor")
+  commitments           Commitment[]
+  attendanceRecords     Attendance[]
+  lessonsRequested      PrivateLesson[]     @relation("LessonRequester")
+  lessonsTeaching       PrivateLesson[]     @relation("LessonInstructor")
+  lessonsAsUke          PrivateLesson[]     @relation("LessonUke")
+  posts                 Post[]
+  forumSubscriptions    ForumSubscription[]
+  forumReads            ForumRead[]
+  following             Follow[]            @relation("Following")
+  followers             Follow[]            @relation("Followers")
+  sentInvitations       Invitation[]        @relation("InviteInviter")
+  instructorRequestedAt DateTime? // Phase 40 — set when an "approve-after" instructor invite is accepted; cleared when the admin grants/denies
+  acceptsOutsideOrg     Boolean             @default(false) // Phase 42 — instructor accepts private-lesson requests from outside their gym
 
   // Phase 42.4 — independent (non-gym) private-lesson provider, vetted by a verified black belt.
   providerStatus       ProviderStatus @default(none)
@@ -253,40 +253,47 @@ model User {
   providerLng          Float?
 
   // Phase 56 — cached aggregate of private-lesson reviews received (as instructor).
-  ratingAvg            Float?
-  ratingCount          Int          @default(0)
-  reviewsReceived      InstructorReview[] @relation("ReviewInstructor")
-  reviewsWritten       InstructorReview[] @relation("ReviewReviewer")
-  availability         InstructorAvailability[]
-  postLikes            PostLike[]
-  lastLoginAt          DateTime?
-  loginEvents          LoginEvent[]
-  goalsAsStudent       StudentGoal[]
-  competitions         Competition[]
-  rankHistory          RankPromotion[]   @relation("StudentRank")
-  rankPromotionsGiven  RankPromotion[]   @relation("RankGivenBy")
-  studentNotes         StudentNote[]     @relation("NoteSubject")
-  instructorNotes      StudentNote[]     @relation("NoteAuthor")
-  lessonPlansAuthored  LessonPlan[]
-  notifications        Notification[]
-  pushSubscriptions    PushSubscription[]
-  sentMessages         DirectMessage[]   @relation("SentMessages")
-  receivedMessages     DirectMessage[]   @relation("ReceivedMessages")
-  sentMessageRequests     MessageRequest[] @relation("SentRequests")
-  receivedMessageRequests MessageRequest[] @relation("ReceivedRequests")
-  uploadedMedia           MediaItem[]      @relation("UploaderMedia")
-  mediaTags               MediaTag[]       @relation("TaggedInMedia")
+  ratingAvg               Float?
+  ratingCount             Int                      @default(0)
+  reviewsReceived         InstructorReview[]       @relation("ReviewInstructor")
+  reviewsWritten          InstructorReview[]       @relation("ReviewReviewer")
+  availability            InstructorAvailability[]
+  postLikes               PostLike[]
+  lastLoginAt             DateTime?
+  loginEvents             LoginEvent[]
+  goalsAsStudent          StudentGoal[]
+  competitions            Competition[]
+  rankHistory             RankPromotion[]          @relation("StudentRank")
+  rankPromotionsGiven     RankPromotion[]          @relation("RankGivenBy")
+  studentNotes            StudentNote[]            @relation("NoteSubject")
+  instructorNotes         StudentNote[]            @relation("NoteAuthor")
+  lessonPlansAuthored     LessonPlan[]
+  notifications           Notification[]
+  pushSubscriptions       PushSubscription[]
+  sentMessages            DirectMessage[]          @relation("SentMessages")
+  receivedMessages        DirectMessage[]          @relation("ReceivedMessages")
+  sentMessageRequests     MessageRequest[]         @relation("SentRequests")
+  receivedMessageRequests MessageRequest[]         @relation("ReceivedRequests")
+  uploadedMedia           MediaItem[]              @relation("UploaderMedia")
+  mediaTags               MediaTag[]               @relation("TaggedInMedia")
   mediaAccessGrants       MediaAccess[]
-  trainingLogs         TrainingLog[]
-  classFeedback        ClassFeedback[]
-  orders               Order[]
-  subRequestsMade      ClassSubRequest[] @relation("SubRequestedBy")
-  subRequestsClaimed   ClassSubRequest[] @relation("SubClaimedBy")
-  trainingReflection   TrainingReflection?
-  eventsSubmitted      PublicEvent[]  @relation("EventSubmitter")
-  eventsApproved       PublicEvent[]  @relation("EventApprover")
-  tournamentsCreated   Tournament[]   @relation("TournamentCreator")
-  registrations        Registration[]
+  trainingLogs            TrainingLog[]
+  classFeedback           ClassFeedback[]
+  orders                  Order[]
+  subRequestsMade         ClassSubRequest[]        @relation("SubRequestedBy")
+  subRequestsClaimed      ClassSubRequest[]        @relation("SubClaimedBy")
+  trainingReflection      TrainingReflection?
+  eventsSubmitted         PublicEvent[]            @relation("EventSubmitter")
+  eventsApproved          PublicEvent[]            @relation("EventApprover")
+  tournamentsCreated      Tournament[]             @relation("TournamentCreator")
+  registrations           Registration[]
+
+  // Phase 59 — challenge matches
+  competeTournaments Boolean           @default(false)
+  acceptsChallenges  Boolean           @default(false)
+  challengesSent     ChallengeMatch[]  @relation("Challenger")
+  challengesReceived ChallengeMatch[]  @relation("Challenged")
+  waiverSignatures   WaiverSignature[]
 }
 
 model Account {
@@ -303,6 +310,7 @@ model Account {
   id_token          String?
   session_state     String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([provider, providerAccountId])
 }
 
@@ -318,34 +326,35 @@ model VerificationToken {
   identifier String
   token      String   @unique
   expires    DateTime
+
   @@unique([identifier, token])
 }
 
 // ── Classes ────────────────────────────────────────────────────────────────────
 
 model Class {
-  id           String      @id @default(cuid())
+  id           String    @id @default(cuid())
   instructorId String
   title        String
   description  String?
-  type         ClassType   @default(gi)
+  type         ClassType @default(gi)
   dayOfWeek    DayOfWeek
   startTime    String
   endTime      String
   location     String?
-  isActive     Boolean     @default(true)
+  isActive     Boolean   @default(true)
   maxStudents  Int?
   gymId        String?
-  programId    String?     // Phase 52 — gym-defined class program (Basics/Advanced/…)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  programId    String? // Phase 52 — gym-defined class program (Basics/Advanced/…)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  instructor   User        @relation("ClassInstructor", fields: [instructorId], references: [id])
-  gym          Gym?        @relation(fields: [gymId], references: [id], onDelete: SetNull)
-  program      ClassProgram? @relation(fields: [programId], references: [id], onDelete: SetNull)
-  sessions     ClassSession[]
-  forum        Forum?
-  lessonPlans  LessonPlan[]
+  instructor  User           @relation("ClassInstructor", fields: [instructorId], references: [id])
+  gym         Gym?           @relation(fields: [gymId], references: [id], onDelete: SetNull)
+  program     ClassProgram?  @relation(fields: [programId], references: [id], onDelete: SetNull)
+  sessions    ClassSession[]
+  forum       Forum?
+  lessonPlans LessonPlan[]
 }
 
 // Phase 52 — a gym-defined grouping of classes (e.g. Basics, Advanced, Comp Team).
@@ -366,16 +375,16 @@ model ClassProgram {
 }
 
 model ClassSession {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   classId      String
-  date         DateTime  @db.Date
-  cancelled    Boolean   @default(false)
+  date         DateTime @db.Date
+  cancelled    Boolean  @default(false)
   cancelNote   String?
   notes        String?
   sessionNotes String?
-  notesPublic  Boolean   @default(false)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  notesPublic  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   class        Class             @relation(fields: [classId], references: [id], onDelete: Cascade)
   commitments  Commitment[]
@@ -438,8 +447,8 @@ model Attendance {
 // Phase 42 — instructor private-lesson availability
 enum AvailabilityKind {
   recurring // weekly window (uses dayOfWeek)
-  oneoff    // single dated bookable window (uses date)
-  block     // exception that removes availability (uses date)
+  oneoff // single dated bookable window (uses date)
+  block // exception that removes availability (uses date)
 }
 
 model InstructorAvailability {
@@ -447,35 +456,35 @@ model InstructorAvailability {
   instructorId String
   instructor   User             @relation(fields: [instructorId], references: [id], onDelete: Cascade)
   kind         AvailabilityKind
-  dayOfWeek    DayOfWeek?       // recurring
-  date         DateTime?        // oneoff / block
-  startTime    String           // "HH:mm"
-  endTime      String           // "HH:mm"
-  gymId        String?          // gym this availability is offered at
+  dayOfWeek    DayOfWeek? // recurring
+  date         DateTime? // oneoff / block
+  startTime    String // "HH:mm"
+  endTime      String // "HH:mm"
+  gymId        String? // gym this availability is offered at
   createdAt    DateTime         @default(now())
 
   @@index([instructorId])
 }
 
 model PrivateLesson {
-  id           String        @id @default(cuid())
+  id           String       @id @default(cuid())
   requesterId  String
   instructorId String
   ukeId        String?
   scheduledAt  DateTime
-  durationMins Int           @default(60)
-  status       LessonStatus  @default(pending)
+  durationMins Int          @default(60)
+  status       LessonStatus @default(pending)
   location     String?
   notes        String?
   price        Int?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
-  requester    User          @relation("LessonRequester", fields: [requesterId], references: [id])
-  instructor   User          @relation("LessonInstructor", fields: [instructorId], references: [id])
-  uke          User?         @relation("LessonUke", fields: [ukeId], references: [id])
-  messages     LessonMessage[]
-  review       InstructorReview?
+  requester  User              @relation("LessonRequester", fields: [requesterId], references: [id])
+  instructor User              @relation("LessonInstructor", fields: [instructorId], references: [id])
+  uke        User?             @relation("LessonUke", fields: [ukeId], references: [id])
+  messages   LessonMessage[]
+  review     InstructorReview?
 }
 
 // Phase 56 — a private-lesson review. One per completed lesson (lessonId unique),
@@ -488,7 +497,7 @@ model InstructorReview {
   instructor   User          @relation("ReviewInstructor", fields: [instructorId], references: [id], onDelete: Cascade)
   reviewerId   String
   reviewer     User          @relation("ReviewReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
-  rating       Int           // 1..5
+  rating       Int // 1..5
   comment      String?
   createdAt    DateTime      @default(now())
 
@@ -508,22 +517,22 @@ model LessonMessage {
 // ── Forums & Posts ─────────────────────────────────────────────────────────────
 
 model Forum {
-  id          String     @id @default(cuid())
+  id          String      @id @default(cuid())
   type        ForumType
-  classId     String?    @unique
+  classId     String?     @unique
   classGroup  ClassGroup?
   gymId       String?
-  programId   String?    @unique  // Phase 52 — dedicated forum for a ClassProgram
+  programId   String?     @unique // Phase 52 — dedicated forum for a ClassProgram
   beltLevel   Belt?
   title       String
   description String?
-  createdAt   DateTime   @default(now())
+  createdAt   DateTime    @default(now())
 
-  class         Class?             @relation(fields: [classId], references: [id], onDelete: Cascade)
-  gym           Gym?               @relation(fields: [gymId], references: [id], onDelete: SetNull)
+  class         Class?              @relation(fields: [classId], references: [id], onDelete: Cascade)
+  gym           Gym?                @relation(fields: [gymId], references: [id], onDelete: SetNull)
   // Class-group forum survives if its class group is deleted (Phase 52) — it just
   // detaches (programId → null) and remains until an admin deletes it.
-  program       ClassProgram?      @relation(fields: [programId], references: [id], onDelete: SetNull)
+  program       ClassProgram?       @relation(fields: [programId], references: [id], onDelete: SetNull)
   posts         Post[]
   subscriptions ForumSubscription[]
   reads         ForumRead[]
@@ -543,12 +552,12 @@ model Post {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  forum    Forum  @relation(fields: [forumId], references: [id], onDelete: Cascade)
-  author   User   @relation(fields: [authorId], references: [id])
-  parent   Post?  @relation("PostReplies", fields: [parentId], references: [id])
-  replies  Post[] @relation("PostReplies")
-  likes    PostLike[]
-  media    MediaItem?
+  forum   Forum      @relation(fields: [forumId], references: [id], onDelete: Cascade)
+  author  User       @relation(fields: [authorId], references: [id])
+  parent  Post?      @relation("PostReplies", fields: [parentId], references: [id])
+  replies Post[]     @relation("PostReplies")
+  likes   PostLike[]
+  media   MediaItem?
 }
 
 // Thumbs-up reaction on a forum post (one per user per post).
@@ -604,20 +613,20 @@ enum ProviderStatus {
 }
 
 model Invitation {
-  id           String     @id @default(cuid())
-  token        String     @unique
-  inviterId    String
-  inviter      User       @relation("InviteInviter", fields: [inviterId], references: [id], onDelete: Cascade)
-  kind         InviteKind
-  gymId        String?    // for gym_member / gym_instructor
-  grantOnAccept Boolean   @default(true) // instructor: true = single-use grant; false = approve-after
-  maxUses      Int?       // null = unlimited (reusable friend link)
-  usedCount    Int        @default(0)
-  email        String?    // Phase 40.2 — bulk CSV invite targeted at this email (auto-applied on signup)
-  meta         Json?      // Phase 40.2 — prefill from CSV: { name?, belt?, phone?, notes? }
-  expiresAt    DateTime?
-  createdAt    DateTime   @default(now())
-  redemptions  InviteRedemption[]
+  id            String             @id @default(cuid())
+  token         String             @unique
+  inviterId     String
+  inviter       User               @relation("InviteInviter", fields: [inviterId], references: [id], onDelete: Cascade)
+  kind          InviteKind
+  gymId         String? // for gym_member / gym_instructor
+  grantOnAccept Boolean            @default(true) // instructor: true = single-use grant; false = approve-after
+  maxUses       Int? // null = unlimited (reusable friend link)
+  usedCount     Int                @default(0)
+  email         String? // Phase 40.2 — bulk CSV invite targeted at this email (auto-applied on signup)
+  meta          Json? // Phase 40.2 — prefill from CSV: { name?, belt?, phone?, notes? }
+  expiresAt     DateTime?
+  createdAt     DateTime           @default(now())
+  redemptions   InviteRedemption[]
 
   @@index([email])
 }
@@ -626,7 +635,7 @@ model InviteRedemption {
   id           String     @id @default(cuid())
   invitationId String
   invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
-  userId       String     // redeemer (no relation needed)
+  userId       String // redeemer (no relation needed)
   createdAt    DateTime   @default(now())
 
   @@unique([invitationId, userId])
@@ -697,8 +706,8 @@ model RankPromotion {
   notes        String?
   createdAt    DateTime @default(now())
 
-  student     User @relation("StudentRank", fields: [studentId], references: [id])
-  promotedBy  User @relation("RankGivenBy", fields: [promotedById], references: [id])
+  student    User @relation("StudentRank", fields: [studentId], references: [id])
+  promotedBy User @relation("RankGivenBy", fields: [promotedById], references: [id])
 }
 
 // ── Instructor Tools ───────────────────────────────────────────────────────────
@@ -751,7 +760,7 @@ model Notification {
 model DirectMessage {
   id          String    @id @default(cuid())
   senderId    String
-  sender      User      @relation("SentMessages",     fields: [senderId],    references: [id], onDelete: Cascade)
+  sender      User      @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   recipientId String
   recipient   User      @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
   body        String
@@ -764,7 +773,7 @@ model DirectMessage {
 model MessageRequest {
   id             String               @id @default(cuid())
   senderId       String
-  sender         User                 @relation("SentRequests",     fields: [senderId],    references: [id], onDelete: Cascade)
+  sender         User                 @relation("SentRequests", fields: [senderId], references: [id], onDelete: Cascade)
   recipientId    String
   recipient      User                 @relation("ReceivedRequests", fields: [recipientId], references: [id], onDelete: Cascade)
   initialMessage String
@@ -791,7 +800,7 @@ model TrainingLog {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  shares          JournalShare[]
+  shares JournalShare[]
 }
 
 // Phase 54 — share a journal entry with specific people (training partners,
@@ -806,8 +815,8 @@ model JournalShare {
   id            String             @id @default(cuid())
   trainingLogId String
   trainingLog   TrainingLog        @relation(fields: [trainingLogId], references: [id], onDelete: Cascade)
-  fromUserId    String             // entry owner (sharer)
-  toUserId      String             // recipient
+  fromUserId    String // entry owner (sharer)
+  toUserId      String // recipient
   status        JournalShareStatus @default(active)
   createdAt     DateTime           @default(now())
 
@@ -863,13 +872,13 @@ model MediaItem {
 }
 
 model MediaAccess {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   mediaItemId String
   userId      String
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime @default(now())
 
-  mediaItem   MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaItem MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([mediaItemId, userId])
 }
@@ -885,7 +894,7 @@ model MediaHashtag {
   mediaItemId String
   hashtagId   String
   mediaItem   MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
-  hashtag     Hashtag   @relation(fields: [hashtagId],   references: [id], onDelete: Cascade)
+  hashtag     Hashtag   @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
 
   @@id([mediaItemId, hashtagId])
 }
@@ -916,39 +925,44 @@ model PushSubscription {
 // ── Gym ────────────────────────────────────────────────────────────────────────
 
 model Gym {
-  id                  String    @id @default(cuid())
-  name                String
-  slug                String    @unique
-  address             String?
-  city                String?
-  state               String?
-  zip                 String?
-  phone               String?
-  website             String?
-  logoUrl             String?
-  headInstructorName  String?
-  description         String?
-  participatingStatus GymTier   @default(free)
-  paymentTerms        Json?
-  setupProgress       Json?     // Phase 38.3 — owner setup checklist completion, e.g. {schedule:true,instructors:false,logo:true,roster:false}
-  lat                 Float?    // Phase 42 — geocoded (Google Maps) for radius search
-  lng                 Float?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  id                     String   @id @default(cuid())
+  name                   String
+  slug                   String   @unique
+  address                String?
+  city                   String?
+  state                  String?
+  zip                    String?
+  phone                  String?
+  website                String?
+  logoUrl                String?
+  headInstructorName     String?
+  description            String?
+  participatingStatus    GymTier  @default(free)
+  paymentTerms           Json?
+  setupProgress          Json? // Phase 38.3 — owner setup checklist completion, e.g. {schedule:true,instructors:false,logo:true,roster:false}
+  lat                    Float? // Phase 42 — geocoded (Google Maps) for radius search
+  lng                    Float?
+  // Phase 59 — challenge-match hosting opt-ins
+  hostsInHouseChallenges Boolean  @default(false)
+  hostsOpenChallenges    Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
-  members      GymMembership[]
-  users        User[]
-  classes      Class[]
-  forums       Forum[]
-  media        MediaItem[]
-  products     Product[]
-  orders       Order[]
-  settings     GymSettings[]
-  publicEvents PublicEvent[]
-  tournaments  Tournament[]
-  features     GymFeatures?
-  classPrograms ClassProgram[]
-  claims        GymClaim[]
+  members          GymMembership[]
+  users            User[]
+  classes          Class[]
+  forums           Forum[]
+  media            MediaItem[]
+  products         Product[]
+  orders           Order[]
+  settings         GymSettings[]
+  publicEvents     PublicEvent[]
+  tournaments      Tournament[]
+  features         GymFeatures?
+  classPrograms    ClassProgram[]
+  claims           GymClaim[]
+  waivers          GymWaiver[]
+  challengesHosted ChallengeMatch[]
 }
 
 // Phase 39 — owner claim of an unclaimed (no-admin) gym listing. Site-admin
@@ -1022,19 +1036,19 @@ model GymSettings {
 // ── Gear Store ─────────────────────────────────────────────────────────────────
 
 model Product {
-  id            String      @id @default(cuid())
-  name          String
-  description   String?
-  price         Int
-  imageUrl      String?
-  stock         Int         @default(0)
-  available     Boolean     @default(true)
-  category      String?
-  gymId         String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  gym           Gym?        @relation(fields: [gymId], references: [id], onDelete: SetNull)
-  orderItems    OrderItem[]
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  price       Int
+  imageUrl    String?
+  stock       Int         @default(0)
+  available   Boolean     @default(true)
+  category    String?
+  gymId       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  gym         Gym?        @relation(fields: [gymId], references: [id], onDelete: SetNull)
+  orderItems  OrderItem[]
 }
 
 model Order {
@@ -1067,15 +1081,15 @@ enum ReflectionPrivacy {
 }
 
 model TrainingReflection {
-  id          String             @id @default(cuid())
-  userId      String             @unique
-  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  whyStarted  String?
-  challenges  String?
-  goals       String?
-  privacy     ReflectionPrivacy  @default(private)
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  id         String            @id @default(cuid())
+  userId     String            @unique
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  whyStarted String?
+  challenges String?
+  goals      String?
+  privacy    ReflectionPrivacy @default(private)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
 }
 
 model PasswordResetToken {
@@ -1135,9 +1149,9 @@ model PublicEvent {
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 
-  submittedBy  User  @relation("EventSubmitter", fields: [submittedById], references: [id], onDelete: Cascade)
-  approvedBy   User? @relation("EventApprover",  fields: [approvedById],  references: [id], onDelete: SetNull)
-  gym          Gym?  @relation(fields: [gymId], references: [id], onDelete: SetNull)
+  submittedBy User  @relation("EventSubmitter", fields: [submittedById], references: [id], onDelete: Cascade)
+  approvedBy  User? @relation("EventApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  gym         Gym?  @relation(fields: [gymId], references: [id], onDelete: SetNull)
 }
 
 enum TournamentFormat {
@@ -1174,70 +1188,263 @@ model Tournament {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
-  gym         Gym              @relation(fields: [gymId], references: [id], onDelete: Cascade)
-  createdBy   User             @relation("TournamentCreator", fields: [createdById], references: [id], onDelete: Restrict)
-  divisions   Division[]
+  gym       Gym        @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  createdBy User       @relation("TournamentCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  divisions Division[]
 }
 
 model Division {
-  id            String         @id @default(cuid())
-  tournamentId  String
-  name          String
-  beltMin       Belt
-  beltMax       Belt
-  weightClass   String?
-  ageGroup      String?
-  createdAt     DateTime       @default(now())
+  id           String   @id @default(cuid())
+  tournamentId String
+  name         String
+  beltMin      Belt
+  beltMax      Belt
+  weightClass  String?
+  ageGroup     String?
+  createdAt    DateTime @default(now())
 
-  tournament    Tournament     @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  tournament    Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   registrations Registration[]
   matches       TournamentMatch[]
 }
 
 model Registration {
-  id           String   @id @default(cuid())
-  divisionId   String
-  userId       String
-  confirmed    Boolean  @default(false)
-  seed         Int?
-  createdAt    DateTime @default(now())
+  id         String   @id @default(cuid())
+  divisionId String
+  userId     String
+  confirmed  Boolean  @default(false)
+  seed       Int?
+  createdAt  DateTime @default(now())
 
-  division     Division @relation(fields: [divisionId], references: [id], onDelete: Cascade)
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  division Division @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([divisionId, userId])
 }
 
 model TournamentMatch {
-  id            String      @id @default(cuid())
-  divisionId    String
-  round         Int
-  position      Int
-  participantA  String?
-  participantB  String?
-  result        MatchResult @default(pending)
-  notes         String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id           String      @id @default(cuid())
+  divisionId   String
+  round        Int
+  position     Int
+  participantA String?
+  participantB String?
+  result       MatchResult @default(pending)
+  notes        String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
-  division      Division    @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+  division Division @relation(fields: [divisionId], references: [id], onDelete: Cascade)
 }
 
 model PlatformSettings {
-  id                        String   @id @default("singleton")
+  id                          String   @id @default("singleton")
   // Feature toggles — all default to true (on). Set false to disable before launch.
-  allowGymForumCreation     Boolean  @default(true)
-  allowBeltForumPosting     Boolean  @default(true)
-  allowEventSubmission      Boolean  @default(true)
-  allowTournamentRegistration Boolean @default(true)
-  scheduleReadOnly          Boolean  @default(false)
-  galleryEnabled            Boolean  @default(true) // gallery visible/browsable
-  galleryUploadEnabled      Boolean  @default(true) // new uploads allowed
-  storeEnabled              Boolean  @default(true)
+  allowGymForumCreation       Boolean  @default(true)
+  allowBeltForumPosting       Boolean  @default(true)
+  allowEventSubmission        Boolean  @default(true)
+  allowTournamentRegistration Boolean  @default(true)
+  scheduleReadOnly            Boolean  @default(false)
+  galleryEnabled              Boolean  @default(true) // gallery visible/browsable
+  galleryUploadEnabled        Boolean  @default(true) // new uploads allowed
+  storeEnabled                Boolean  @default(true)
   // Navbar-link visibility toggles (platform-wide; admins always see them)
-  feedEnabled               Boolean  @default(true)
-  scheduleEnabled           Boolean  @default(true)
-  forumsEnabled             Boolean  @default(true)
-  eventsEnabled             Boolean  @default(true)
-  updatedAt                 DateTime @updatedAt
+  feedEnabled                 Boolean  @default(true)
+  scheduleEnabled             Boolean  @default(true)
+  forumsEnabled               Boolean  @default(true)
+  eventsEnabled               Boolean  @default(true)
+  updatedAt                   DateTime @updatedAt
+}
+
+// ── Phase 58 — Live Match Console ───────────────────────────────────────────────
+// A reusable single-match subsystem: timekeeper-anchored clock + append-only
+// score log + login-free public scoreboard. Used standalone (Milestone 1), then
+// by tournaments (Phase 32) and challenge matches (Phase 59).
+
+enum MatchTableStatus {
+  idle
+  live
+  paused
+  done
+}
+
+// A scoring table. Tournament: N tables. Challenge: usually 1.
+model MatchTable {
+  id                String           @id @default(cuid())
+  gymId             String? // host context (tournament gym / challenge host gym)
+  tournamentId      String?
+  challengeId       String? // Phase 59
+  tournamentMatchId String?          @unique // link to a bracket match (propagate winner on finish)
+  label             String // "Table 1", "Mat A"
+  publicSlug        String           @unique // login-free scoreboard URL token
+  status            MatchTableStatus @default(idle)
+  createdById       String
+
+  // competitors (denormalized names so the public scoreboard needs no joins/auth)
+  aUserId String?
+  aName   String?
+  aClub   String?
+  bUserId String?
+  bName   String?
+  bClub   String?
+
+  // ruleset snapshot (see lib/rulesets.ts) — preset id + resolved config
+  rulesetId     String?
+  rulesetConfig Json?
+
+  // clock state — timekeeper-anchored authoritative clock
+  clockStatus String  @default("stopped") // 'stopped' | 'running'
+  remainingMs Int     @default(0) // ms left at the anchor instant
+  anchorTs    BigInt? // server-epoch ms of the timekeeper's press
+  periodMs    Int     @default(300000) // length of the current period
+  period      Int     @default(1) // 1-based period index
+
+  winnerSide String? // 'a' | 'b' | null; set on finish
+  winBy      String? // 'submission' | 'points' | 'decision' | 'dq' | 'forfeit'
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignments MatchTableAssignment[]
+  events      MatchScoreEvent[]
+
+  @@index([tournamentId])
+  @@index([challengeId])
+  @@index([createdById])
+}
+
+// Who can run this table. Granted via the "share with…" user search.
+model MatchTableAssignment {
+  id        String     @id @default(cuid())
+  tableId   String
+  userId    String
+  canScore  Boolean    @default(true)
+  canTime   Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  table     MatchTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@unique([tableId, userId])
+  @@index([userId])
+}
+
+// Append-only event log = source of truth for the score; enables undo + audit.
+model MatchScoreEvent {
+  id        String     @id @default(cuid())
+  tableId   String
+  side      String? // 'a' | 'b' (null for clock/timeout/note)
+  type      String // points | advantage | penalty | submission | disqualification | timeout | note | clock_adjust | win
+  value     Int        @default(0) // e.g. points 2/3/4; advantage/penalty 1
+  voided    Boolean    @default(false) // corrections: void instead of delete (audit trail)
+  byUserId  String
+  meta      Json? // clock_adjust deltas, note text, etc.
+  createdAt DateTime   @default(now())
+  table     MatchTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@index([tableId])
+}
+
+// ── Phase 59 — Challenge Matches ────────────────────────────────────────────────
+// Members opt in to accept challenges; another member proposes terms (time, host
+// gym, ruleset, round length); both negotiate + accept; both sign the host gym's
+// visitor waiver; host gym admin approves → scheduled; runs on the Phase 58 console;
+// result feeds a competition record.
+
+enum ChallengeStatus {
+  proposed // challenger sent; awaiting challenged
+  countered // someone changed terms; awaiting the other side
+  accepted // both agree on terms; awaiting waivers + gym approval
+  gym_pending // both signed; awaiting host gym admin
+  scheduled // gym approved
+  declined
+  withdrawn
+  completed
+  cancelled
+}
+
+enum WaiverKind {
+  membership
+  visitor_challenge
+}
+
+// Gym-supplied legal waiver text/file (the gym owns the legal content).
+model GymWaiver {
+  id         String            @id @default(cuid())
+  gymId      String
+  kind       WaiverKind
+  version    Int               @default(1)
+  title      String
+  body       String? // text waiver
+  fileUrl    String? // or uploaded PDF
+  active     Boolean           @default(true)
+  createdAt  DateTime          @default(now())
+  gym        Gym               @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  signatures WaiverSignature[]
+
+  @@index([gymId])
+}
+
+// Typed-name e-signature of a waiver (audit trail). context = "challenge:<id>".
+model WaiverSignature {
+  id        String    @id @default(cuid())
+  waiverId  String
+  userId    String
+  typedName String
+  signedAt  DateTime  @default(now())
+  ip        String?
+  context   String?
+  waiver    GymWaiver @relation(fields: [waiverId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([waiverId, userId, context])
+  @@index([userId])
+}
+
+model ChallengeMatch {
+  id           String          @id @default(cuid())
+  challengerId String
+  challengedId String
+  hostGymId    String?
+  status       ChallengeStatus @default(proposed)
+
+  // agreed terms (the current offer on the table)
+  scheduledAt   DateTime?
+  location      String?
+  rulesetId     String?
+  rulesetConfig Json?
+  periodMs      Int? // agreed match length
+  message       String? // optional note attached to the latest offer
+  lastActorId   String? // who made the current offer (whose-turn logic)
+  termsVersion  Int       @default(1)
+
+  listOnCalendar Boolean @default(false)
+  publicEventId  String?
+
+  // result
+  winnerId String?
+  winBy    String?
+
+  expiresAt DateTime? // auto-expire stale pending (default +14d)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  challenger User                    @relation("Challenger", fields: [challengerId], references: [id], onDelete: Cascade)
+  challenged User                    @relation("Challenged", fields: [challengedId], references: [id], onDelete: Cascade)
+  hostGym    Gym?                    @relation(fields: [hostGymId], references: [id], onDelete: SetNull)
+  terms      ChallengeTermsHistory[]
+
+  @@index([challengerId])
+  @@index([challengedId])
+  @@index([hostGymId])
+}
+
+// Audit of each offer/counter-offer.
+model ChallengeTermsHistory {
+  id          String         @id @default(cuid())
+  challengeId String
+  byUserId    String
+  terms       Json
+  createdAt   DateTime       @default(now())
+  challenge   ChallengeMatch @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@index([challengeId])
 }

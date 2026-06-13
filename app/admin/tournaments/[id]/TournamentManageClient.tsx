@@ -50,6 +50,9 @@ interface Tournament {
   divisions: Division[]
 }
 
+type TableLink = { id: string; publicSlug: string; status: string }
+type TableByMatch = Record<string, TableLink>
+
 const STATUS_ORDER = ['draft', 'open', 'in_progress', 'complete']
 const STATUS_LABELS: Record<string, string> = { draft: 'Draft', open: 'Open', in_progress: 'In Progress', complete: 'Complete' }
 
@@ -58,8 +61,9 @@ const labelCls = 'text-xs font-bold uppercase tracking-widest text-steel'
 const primaryBtn = 'px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors disabled:opacity-50'
 const secondaryBtn = 'px-4 py-2 border border-smoke text-steel text-sm font-medium hover:border-steel hover:text-ink transition-colors disabled:opacity-50'
 
-export function TournamentManageClient({ tournament: initial }: { tournament: Tournament }) {
+export function TournamentManageClient({ tournament: initial, tableByMatch: initialTables = {} }: { tournament: Tournament; tableByMatch?: TableByMatch }) {
   const [tournament, setTournament] = useState(initial)
+  const [tableByMatch, setTableByMatch] = useState<TableByMatch>(initialTables)
   const [tab, setTab] = useState<'setup' | 'registrations' | 'brackets'>('setup')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -140,24 +144,40 @@ export function TournamentManageClient({ tournament: initial }: { tournament: To
     setSaving(false)
   }
 
+  async function refreshBracket() {
+    const fresh = await fetch(`/api/admin/tournaments/${tournament.id}`)
+    if (fresh.ok) {
+      const freshData = await fresh.json()
+      setTournament(prev => ({
+        ...prev,
+        status: freshData.tournament.status,
+        divisions: freshData.tournament.divisions,
+      }))
+      if (freshData.tableByMatch) setTableByMatch(freshData.tableByMatch)
+    }
+  }
+
   async function saveMatchResult(matchId: string, result: string, notes: string) {
     const res = await fetch(`/api/admin/tournaments/${tournament.id}/matches/${matchId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ result, notes }),
     })
+    if (res.ok) await refreshBracket()
+  }
+
+  // Phase 58 M2 — send a bracket match to a live match-console table.
+  async function sendToTable(matchId: string) {
+    setError('')
+    const res = await fetch(`/api/admin/tournaments/${tournament.id}/matches/${matchId}/table`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}),
+    })
+    const data = await res.json().catch(() => ({}))
     if (res.ok) {
-      const data = await res.json()
-      // Re-fetch tournament to get updated bracket state
-      const fresh = await fetch(`/api/admin/tournaments/${tournament.id}`)
-      if (fresh.ok) {
-        const freshData = await fresh.json()
-        setTournament(prev => ({
-          ...prev,
-          status: freshData.tournament.status,
-          divisions: freshData.tournament.divisions,
-        }))
-      }
+      setTableByMatch(prev => ({ ...prev, [matchId]: { id: data.table.id, publicSlug: data.table.publicSlug, status: 'idle' } }))
+      window.open(`/console/${data.table.id}`, '_blank')
+    } else {
+      setError(data.error ?? 'Could not create table.')
     }
   }
 
@@ -346,6 +366,8 @@ export function TournamentManageClient({ tournament: initial }: { tournament: To
                     format={tournament.format as 'single_elim' | 'round_robin' | 'double_elim'}
                     isAdmin
                     onResultSave={saveMatchResult}
+                    tableByMatch={tableByMatch}
+                    onSendToTable={sendToTable}
                   />
                 )}
               </div>

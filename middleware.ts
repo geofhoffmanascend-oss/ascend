@@ -63,6 +63,9 @@ export default withAuth(
         if (pathname === '/events' || pathname.startsWith('/events/') && !pathname.startsWith('/events/new')) return true
         // Public tournament results (page self-gates on isPublic; detail page redirects anon to login)
         if (pathname.startsWith('/tournaments/')) return true
+        // Phase 58 — login-free public match scoreboard
+        if (pathname.startsWith('/scoreboard/')) return true
+        if (pathname.startsWith('/api/scoreboard/')) return true
         if (pathname.startsWith('/api/events') && req.method === 'GET') return true
         if (pathname.startsWith('/api/auth')) return true
         if (pathname.startsWith('/api/checkin/public')) return true

@@ -26,6 +26,8 @@ export default async function SettingsPage() {
         notifyByEmail:         true,
         allowDmsFromStudents:  true,
         allowMediaTagging:     true,
+        competeTournaments:    true,
+        acceptsChallenges:     true,
         defaultJournalPrompts: true,
         hiddenClassGroups:     true,
         hiddenProgramIds:      true,

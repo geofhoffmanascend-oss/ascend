@@ -25,14 +25,14 @@ export default async function AdminTournamentsPage() {
     </div>
   )
 
-  const [gym, tournaments] = await Promise.all([
-    prisma.gym.findUnique({ where: { id: gymId }, select: { name: true, participatingStatus: true } }),
-    prisma.tournament.findMany({
-      where: { gymId },
-      include: { _count: { select: { divisions: true } } },
-      orderBy: { date: 'desc' },
-    }),
-  ])
+  // TEST ONLY (Phase 58): gym fetch removed with the participating-gym gate below.
+  // To re-enable, restore `const [gym, tournaments] = await Promise.all([...])`
+  // with the gym.findUnique selecting `participatingStatus`.
+  const tournaments = await prisma.tournament.findMany({
+    where: { gymId },
+    include: { _count: { select: { divisions: true } } },
+    orderBy: { date: 'desc' },
+  })
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
@@ -43,15 +43,11 @@ export default async function AdminTournamentsPage() {
           </div>
           <h1 className="font-display text-2xl text-ink">Tournaments</h1>
         </div>
-        {gym?.participatingStatus === 'participating' ? (
-          <Link href="/admin/tournaments/new" className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors">
-            + Create Tournament
-          </Link>
-        ) : (
-          <p className="text-xs text-ash border border-smoke px-3 py-2 max-w-xs text-right">
-            Tournament creation requires a Participating gym subscription.
-          </p>
-        )}
+        {/* TEST ONLY (Phase 58): normally gated to `gym?.participatingStatus === 'participating'`.
+            Temporarily always shown to test the live match console. Re-enable before launch. */}
+        <Link href="/admin/tournaments/new" className="px-4 py-2 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors">
+          + Create Tournament
+        </Link>
       </div>
 
       {tournaments.length === 0 ? (

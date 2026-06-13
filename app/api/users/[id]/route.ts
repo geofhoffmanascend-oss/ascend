@@ -22,6 +22,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     notifyCheckinPrompts, notifyFeedbackPrompts, notifyByEmail, allowDmsFromStudents,
     allowMediaTagging, defaultJournalPrompts, profilePrivacy,
     hiddenClassGroups, hiddenProgramIds, onboardedRoles,
+    competeTournaments, acceptsChallenges,
   } = body
 
   const user = await prisma.user.update({
@@ -49,6 +50,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(hiddenClassGroups !== undefined && { hiddenClassGroups }),
       ...(hiddenProgramIds !== undefined && { hiddenProgramIds }),
       ...(onboardedRoles !== undefined && { onboardedRoles }),
+      ...(competeTournaments !== undefined && { competeTournaments }),
+      ...(acceptsChallenges !== undefined && { acceptsChallenges }),
     },
     select: {
       id: true,

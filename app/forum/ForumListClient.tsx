@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { BELT_COLORS, BELT_LABELS } from '@/lib/belt'
+import { SIMPLE_LAUNCH } from '@/lib/launchMode'
 
 export type ForumVM = {
   id: string
@@ -142,7 +143,11 @@ export function ForumListClient({ general, belt, group, cls, noClasses }: Props)
 
       {noClasses && (
         <p className="text-ash text-sm italic">
-          Register for a class to join its forum. <Link href="/schedule" className="text-brand-red hover:underline">View schedule →</Link>
+          {SIMPLE_LAUNCH ? (
+            <>These forums are public. To talk privately with training partners, start or join a group chat. <Link href="/chats" className="text-brand-red hover:underline">Browse group chats →</Link></>
+          ) : (
+            <>Register for a class to join its forum. <Link href="/schedule" className="text-brand-red hover:underline">View schedule →</Link></>
+          )}
         </p>
       )}
 

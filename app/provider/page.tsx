@@ -25,18 +25,20 @@ export default async function ProviderPage() {
       <div className="mb-2"><Link href="/lessons" className="text-xs text-ash hover:text-ink transition-colors">← Private Lessons</Link></div>
       <div className="mb-6">
         <div className="inline-block bg-brand-red px-3 py-1 mb-3">
-          <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Independent Provider</span>
+          <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Private Instructor</span>
         </div>
         <h1 className="font-display text-2xl text-ink">Offer private lessons</h1>
         <p className="text-slate text-sm mt-2">
-          You don&apos;t need to belong to a gym to teach private lessons on AscendIt. Apply below — a verified black belt
-          reviews your application. Once approved, set your availability and students nearby can request lessons.
+          Apply below to offer private lessons. AscendIt verifies the black belt you train under and runs the criminal
+          background check required to advertise on this platform. Please let your instructor know AscendIt will be in
+          contact within 1–5 days. Once your credentials are verified, you&apos;ll be cleared to be listed as a private
+          instructor. You&apos;ll be notified if any additional information is needed.
         </p>
       </div>
 
       {canApprove && (
         <Link href="/provider/approvals" className="block mb-6 border border-smoke bg-paper p-4 hover:border-steel transition-colors">
-          <p className="text-sm font-medium text-ink">Review provider applications →</p>
+          <p className="text-sm font-medium text-ink">Review private instructor applications →</p>
           <p className="text-xs text-ash mt-0.5">{pendingCount} pending · you can approve as a verified black belt</p>
         </Link>
       )}
@@ -52,8 +54,8 @@ export default async function ProviderPage() {
         </div>
       ) : status === 'pending' ? (
         <div className="border border-smoke bg-paper p-6">
-          <p className="text-sm font-medium text-ink">Application pending review.</p>
-          <p className="text-sm text-slate mt-1">A verified black belt will review your application. You&apos;ll get a notification when it&apos;s decided.</p>
+          <p className="text-sm font-medium text-ink">Application received — verification in progress.</p>
+          <p className="text-sm text-slate mt-1">AscendIt will verify the black belt you train under and run a background check — usually 1–5 days. Let your instructor know to expect our contact. You&apos;ll be notified when it&apos;s decided or if more information is needed.</p>
         </div>
       ) : (
         <>

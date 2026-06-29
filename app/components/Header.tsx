@@ -6,6 +6,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { NavBadges } from './NavBadges'
 import type { Session } from 'next-auth'
 import type { EffectiveFeatures } from '@/lib/features'
+import { SIMPLE_LAUNCH } from '@/lib/launchMode'
 
 function NavLink({
   href,
@@ -65,9 +66,11 @@ export function Header({ initialSession, features }: { initialSession?: Session 
           {session ? (
             <>
               <NavLink href="/dashboard">Dashboard</NavLink>
+              <NavLink href="/my-training">My Training</NavLink>
               {show('feed') && <NavLink href="/feed">Feed</NavLink>}
               {show('schedule') && <NavLink href="/schedule">Schedule</NavLink>}
               {show('forums') && <NavLink href="/forum">Forums</NavLink>}
+              <NavLink href="/chats">Chats</NavLink>
               {show('eventsNav') && <NavLink href="/events">Events</NavLink>}
               {show('tournaments') && <NavLink href="/tournaments">Tournaments</NavLink>}
               {show('privateLessons') && <NavLink href="/lessons">Lessons</NavLink>}
@@ -75,16 +78,17 @@ export function Header({ initialSession, features }: { initialSession?: Session 
               {show('gallery') && <NavLink href="/gallery">Gallery</NavLink>}
               {show('store') && <NavLink href="/store">Store</NavLink>}
 
-              {(session.user.roles?.includes('instructor') || session.user.roles?.includes('admin')) && (
+              {/* Gym-management links hidden in simple-launch mode (Phase 1 pivot) */}
+              {!SIMPLE_LAUNCH && (session.user.roles?.includes('instructor') || session.user.roles?.includes('admin')) && (
                 <>
                   <span className="w-px h-4 bg-steel/50 mx-1.5 shrink-0" />
                   <NavLink href="/instructor" highlight>Instructor</NavLink>
                 </>
               )}
-              {session.user.roles?.includes('vendor') && !session.user.roles?.includes('admin') && (
+              {!SIMPLE_LAUNCH && session.user.roles?.includes('vendor') && !session.user.roles?.includes('admin') && (
                 <NavLink href="/vendor" highlight>Vendor</NavLink>
               )}
-              {session.user.roles?.includes('admin') && (
+              {!SIMPLE_LAUNCH && session.user.roles?.includes('admin') && (
                 <NavLink href="/admin" highlight>Admin</NavLink>
               )}
               {session.user.roles?.includes('site_admin') && (
@@ -174,9 +178,11 @@ export function Header({ initialSession, features }: { initialSession?: Session 
           {session ? (
             <>
               <NavLink href="/dashboard" onClick={close}>Dashboard</NavLink>
+              <NavLink href="/my-training" onClick={close}>My Training</NavLink>
               {show('feed') && <NavLink href="/feed" onClick={close}>Feed</NavLink>}
               {show('schedule') && <NavLink href="/schedule" onClick={close}>Schedule</NavLink>}
               {show('forums') && <NavLink href="/forum" onClick={close}>Forums</NavLink>}
+              <NavLink href="/chats" onClick={close}>Chats</NavLink>
               {show('eventsNav') && <NavLink href="/events" onClick={close}>Events</NavLink>}
               {show('tournaments') && <NavLink href="/tournaments" onClick={close}>Tournaments</NavLink>}
               {show('privateLessons') && <NavLink href="/lessons" onClick={close}>Lessons</NavLink>}
@@ -184,16 +190,16 @@ export function Header({ initialSession, features }: { initialSession?: Session 
               {show('gallery') && <NavLink href="/gallery" onClick={close}>Gallery</NavLink>}
               {show('store') && <NavLink href="/store" onClick={close}>Store</NavLink>}
 
-              {(session.user.roles?.includes('instructor') || session.user.roles?.includes('admin')) && (
+              {!SIMPLE_LAUNCH && (session.user.roles?.includes('instructor') || session.user.roles?.includes('admin')) && (
                 <>
                   <div className="h-px bg-steel/30 my-2" />
                   <NavLink href="/instructor" highlight onClick={close}>Instructor</NavLink>
                 </>
               )}
-              {session.user.roles?.includes('vendor') && !session.user.roles?.includes('admin') && (
+              {!SIMPLE_LAUNCH && session.user.roles?.includes('vendor') && !session.user.roles?.includes('admin') && (
                 <NavLink href="/vendor" highlight onClick={close}>Vendor</NavLink>
               )}
-              {session.user.roles?.includes('admin') && (
+              {!SIMPLE_LAUNCH && session.user.roles?.includes('admin') && (
                 <NavLink href="/admin" highlight onClick={close}>Admin</NavLink>
               )}
               {session.user.roles?.includes('site_admin') && (

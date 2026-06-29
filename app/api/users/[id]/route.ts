@@ -19,10 +19,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const {
     bio, phone, emergencyContact, belt, stripes, name, avatarUrl, weightClass, onboardingDone,
     notifyClassUpdates, notifyInstructorNotes, notifyPrivateMessages,
+    notifyGroupChats, notifyForumActivity,
     notifyCheckinPrompts, notifyFeedbackPrompts, notifyByEmail, allowDmsFromStudents,
     allowMediaTagging, defaultJournalPrompts, profilePrivacy,
     hiddenClassGroups, hiddenProgramIds, onboardedRoles,
     competeTournaments, acceptsChallenges,
+    selfIdInstructor, selfIdGymOwner,
   } = body
 
   const user = await prisma.user.update({
@@ -40,6 +42,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(notifyClassUpdates !== undefined && { notifyClassUpdates }),
       ...(notifyInstructorNotes !== undefined && { notifyInstructorNotes }),
       ...(notifyPrivateMessages !== undefined && { notifyPrivateMessages }),
+      ...(notifyGroupChats !== undefined && { notifyGroupChats }),
+      ...(notifyForumActivity !== undefined && { notifyForumActivity }),
       ...(notifyCheckinPrompts !== undefined && { notifyCheckinPrompts }),
       ...(notifyFeedbackPrompts !== undefined && { notifyFeedbackPrompts }),
       ...(notifyByEmail !== undefined && { notifyByEmail }),
@@ -52,6 +56,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(onboardedRoles !== undefined && { onboardedRoles }),
       ...(competeTournaments !== undefined && { competeTournaments }),
       ...(acceptsChallenges !== undefined && { acceptsChallenges }),
+      ...(selfIdInstructor !== undefined && { selfIdInstructor: !!selfIdInstructor }),
+      ...(selfIdGymOwner !== undefined && { selfIdGymOwner: !!selfIdGymOwner }),
     },
     select: {
       id: true,

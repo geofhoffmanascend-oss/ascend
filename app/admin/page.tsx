@@ -8,6 +8,8 @@ import prisma from '@/lib/database'
 import { getMondayOfWeek } from '@/lib/generateSessions'
 import { getGymSetup } from '@/lib/gymSetup'
 import { GymSetupCard } from './GymSetupCard'
+import { TourAutoPromptGate } from '@/app/components/TourAutoPromptGate'
+import { canApproveProviders } from '@/lib/provider'
 
 export const metadata = { title: 'Admin' }
 
@@ -34,15 +36,34 @@ export default async function AdminHomePage() {
   // Scope all dashboard stats to THIS admin's gym (multi-tenancy).
   const gymId = session.user.gymId ?? null
 
-  const [totalMembers, totalInstructors, todaySessions, newSignups] = await Promise.all([
+  const [totalMembers, totalInstructors, todaySessions, newSignups, me] = await Promise.all([
     prisma.user.count({ where: { gymId } }),
     prisma.user.count({ where: { gymId, roles: { hasSome: ['instructor', 'admin'] } } }),
     prisma.classSession.count({ where: { date: { gte: today, lte: todayEnd }, class: { isActive: true, gymId } } }),
     prisma.user.count({ where: { gymId, createdAt: { gte: weekAgo } } }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { belt: true, beltVerified: true, roles: true } }),
   ])
+
+  // Independent-provider applications are approved by verified black belts (Phase 42.4) —
+  // surface a queue link for those approvers who manage from the admin dashboard.
+  const canApprove = !!me && canApproveProviders(me)
+  const pendingProviders = canApprove
+    ? await prisma.user.count({ where: { providerStatus: 'pending' } })
+    : 0
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
+      <TourAutoPromptGate />
+
+      {canApprove && pendingProviders > 0 && (
+        <Link href="/provider/approvals" className="flex items-center justify-between gap-3 border border-brand-red/30 bg-brand-red/5 p-4 mb-6 hover:border-brand-red transition-colors">
+          <div>
+            <p className="text-sm font-bold text-ink">{pendingProviders} private instructor {pendingProviders === 1 ? 'application' : 'applications'} to review →</p>
+            <p className="text-xs text-slate mt-0.5">Approve or reject black-belt-verified instructors applying to teach privates.</p>
+          </div>
+          <span className="bg-brand-red text-paper text-xs font-bold rounded-full px-2.5 py-1">{pendingProviders}</span>
+        </Link>
+      )}
       <div className="mb-8">
         <div className="inline-block bg-brand-red px-3 py-1 mb-3">
           <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Admin</span>

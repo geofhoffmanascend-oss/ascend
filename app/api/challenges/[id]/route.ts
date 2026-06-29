@@ -4,7 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import prisma from '@/lib/database'
 import { getRuleset } from '@/lib/rulesets'
 import { createNotification } from '@/lib/notify'
-import { canRespond, canWithdraw, isParty, otherParty, maybeAdvanceToGymPending } from '@/lib/challenge'
+import { canRespond, canWithdraw, isParty, otherParty } from '@/lib/challenge'
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
@@ -55,13 +55,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   if (action === 'accept') {
     if (!canRespond(c, uid)) return NextResponse.json({ error: 'Not your turn' }, { status: 409 })
-    await prisma.challengeMatch.update({ where: { id }, data: { status: 'accepted' } })
+    // Terms agreed → both sign the platform friendly-challenge waiver. Clear any stale signatures.
+    await prisma.challengeMatch.update({
+      where: { id },
+      data: {
+        status: 'accepted',
+        challengerSignedName: null, challengerSignedAt: null,
+        challengedSignedName: null, challengedSignedAt: null,
+      },
+    })
     await createNotification(other, 'general', 'Challenge terms accepted', {
-      body: 'Next: both competitors sign the host gym waiver (if any), then the host gym approves.',
+      body: 'Next: both competitors sign the friendly-challenge waiver to lock it in.',
       link: `/challenges/${id}`,
     })
-    // if no host gym / no active waiver, advance straight to gym_pending handled by the sign route's helper
-    await maybeAdvanceToGymPending(id)
     return NextResponse.json({ ok: true })
   }
 

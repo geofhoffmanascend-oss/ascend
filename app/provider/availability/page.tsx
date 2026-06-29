@@ -19,7 +19,7 @@ export default async function ProviderAvailabilityPage() {
       <div className="mb-2"><Link href="/provider" className="text-xs text-ash hover:text-ink transition-colors">← Provider</Link></div>
       <div className="mb-6">
         <div className="inline-block bg-brand-red px-3 py-1 mb-3">
-          <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Independent Provider</span>
+          <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Private Instructor</span>
         </div>
         <h1 className="font-display text-2xl text-ink">My availability</h1>
         <p className="text-slate text-sm mt-2">Set when you&apos;re available for private lessons. Students nearby can request these slots.</p>

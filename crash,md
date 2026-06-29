@@ -1,0 +1,191 @@
+
+❯ no, can you put together an introduction tour that walks people through all of the features when they first register and login?    
+  This is to educate the user on all the ways the app can be used. THere should be a tour for member users, gym users/admins, and    
+  private instructors. The tour should use the pages thta mimic the actual pages, both when viewed on mobile or desktop and use      
+  sample/ example profile information and user data as a user would viewing this would not have entered any info yet. Users should   
+  have the option to view the tour prior to onboarding and it should be avaialble after onboarding through a menu UI, perhaps        
+  settings or profile. There should be an overlay of the actual UI with arrows pointing out key links and buttons and a back and     
+  next arrow to navigate through the tour. Make suggestions and ask questions. then list all of the features each user tour          
+  experience will go through. Then we'll make a guide. I also would like to create a test-user survey to gather information from     
+  users on each of the features. IF it is easier to do this at the same time, include this with the guide.                           
+  infrastructure already exists and what the actual feature surfaces are per role.
+
+● Bash(cd /home/geoff/Desktop/projects/jiujitsu
+      echo "=== existing tour files ==="; find app/tour app/components/tour lib/tourData.ts -type f 2>/dev/null…)
+  ⎿  === existing tour files ===
+     lib/tourData.ts
+     app/tour/CheckInDemo.tsx
+     … +58 lines (ctrl+o to expand)
+
+● Now let me get the real per-role feature surfaces from the nav so my feature lists are accurate:
+
+● Bash(cd /home/geoff/Desktop/projects/jiujitsu
+      echo "=== Header nav links + role gating ==="; grep -nE "href=|roles|hasRole|isAdmin|isInstructor|isVendor|features\.|p…)
+  ⎿  === Header nav links + role gating ===
+     3:import Link from 'next/link'
+     23:      href={href}
+     … +49 lines (ctrl+o to expand)
+
+● Here's the lay of the land plus a plan. Quick context: you already have marketing tours at /tour (member) and /tour/admin —
+  scroll-through pages with mock demos (lib/tourData.ts personas: Marcus/black, Jordan/blue, Sam/white) and CSS animations. They are
+  not the coachmark/overlay style you're describing, and there's no instructor tour. So this is a new interactive layer, though we
+  can reuse those demo components and personas.
+
+  Suggestions (how I'd build it)
+
+  - Self-contained mock "tour" routes per role (/tour/member, /tour/gym, /tour/instructor) that render a faux app shell (header +
+  body) pre-filled with sample data, and a coachmark engine steps through elements — swapping the mock "screen" as you advance (step
+  4 = schedule mock, step 7 = forum mock…). No real navigation, never empty, works before login, and renders responsively at real
+  Tailwind breakpoints. This upgrades your existing /tour demos rather than fighting the "new user has no data / empty real pages"
+  problem.
+  - Coachmark engine: I'd use driver.js — tiny (~5kb), framework-agnostic, gives the spotlight + popover + arrows + next/back +
+  keyboard nav, and themes cleanly to your tokens (brand-red, Space Grotesk). react-joyride is the React-native alternative if you
+  prefer.
+  - Data-driven steps: one config array per role — { screen, selector, title, body, placement } — so steps are easy to edit and we
+  can localize/extend later.
+  - Mobile handling: the real nav collapses to a hamburger on mobile, so mobile steps that point at nav need a "open the menu first"
+  hook. driver.js supports onHighlightStarted for this. (This is the main responsive wrinkle — worth calling out now.)
+  - Entry points: pre-onboarding = a "Take the tour" button on the landing/register screen and as an optional step 0 of onboarding;
+  post-onboarding = a "Replay tour" item (Settings + Help). Persist a per-role tourSeen flag on the user so we can auto-offer it
+  once.
+  - Feature-toggle reality: gyms can disable store/gallery/tournaments/etc. For an educational tour I'd show all capabilities with a
+  small "if your gym enables this" note, rather than hiding them — otherwise new users never learn what's possible. (Open to your
+  call.)
+
+  A few things I need you to decide
+
+  - "Private instructor" scope: does that tour cover both a gym's instructors who teach privates and independent (non-gym) providers
+  (the /provider path) — or just one? They overlap but have different screens.
+  - Persona/sample data: reuse the existing Marcus/Jordan/Sam personas, or want fresh sample names/photos?
+
+  ---
+  Feature stops per tour
+
+  👤 Member tour
+
+  1. Dashboard — this week's classes, attendance streak, journal + forum activity zones
+  2. Schedule — week/day/month, register for a class, see who's committed, blocked/hidden groups
+  3. Check-in — in-app check-in window + personal QR code; streak/attendance record
+  4. Feed — posts from people you follow
+  5. Forums — gym forums, public "DMV Jiu-Jitsu", program/group forums, threaded replies, per-forum photo galleries, subscribing
+  6. Direct messages — DM icon, starting a conversation, message requests / DM privacy
+  7. Profile & privacy — public profile, 3-tier field privacy, belt, reflection, share link
+  8. Follow graph — Follow button, followers/following lists (new this session)
+  9. Private lessons — find an instructor, available slots, request, in-thread messaging, post-lesson review
+  10. Journal — free-form + guided entries, private toggle, sharing an entry
+  11. Events — public calendar + events near you
+  12. Tournaments — browse/register, brackets, results, your competition history
+  13. Challenge matches (new) — opt in, the profile Challenge button, propose/negotiate terms, waiver e-sign, live scoreboard,
+  competition record
+  14. Gallery — photos, tagging, hashtags, slideshow/layout modes
+  15. Store — gear, cart, pay-at-pickup orders
+  16. Notifications & Settings — push opt-in, check-in/feedback prompts, schedule & notification prefs, home gym, replay tour
+
+  🏢 Gym admin / owner tour
+
+  1. Admin dashboard — member/attendance counters, "Finish setting up" checklist
+  2. Gym profile & settings — name/logo/description, review URL, feature toggles
+  3. Members — roster, roles, belt verification & promotion, per-member class access
+  4. View As — read-only impersonation of any member
+  5. Classes — class wizard, programs/class groups, bulk day-of-week create, sessions
+  6. Attendance reports — by class group / instructor / member
+  7. Forum moderation — create/delete gym + group forums
+  8. Invitations — individual link/QR + bulk CSV import
+  9. Tournaments — create, divisions, registrations, brackets, run on the live console
+  10. Challenge hosting — hosting opt-ins, visitor waivers, approve & run challenges
+  11. Store management — products, order fulfillment (ready → picked up)
+  12. Private-lesson / instructor oversight — instructor approvals
+  13. Gym claiming + notifications
+
+  🥋 Private instructor tour
+
+  1. Instructor dashboard — upcoming sessions, registered/checked-in counts
+  2. Availability — recurring + one-off windows, blocks, "accept outside my gym" toggle
+  3. Private-lesson inbox — requests, confirm/complete, messaging
+  4. Class schedule & session detail — mark attendance, public/private session notes
+  5. Class release / substitution — release a session, others claim it
+  6. Student notes & lesson plans
+  7. Push to committed students
+  8. Instructor-only forum
+  9. Ratings & reviews — earned on completed lessons; shown on profile
+  10. Independent provider path (if in scope) — /provider apply → black-belt approval → discoverable in radius search
+
+  ---
+  Test-user survey (recommend folding into the same guide)
+  
+  I'd build a lightweight per-feature feedback survey rather than one giant form:
+  - A small rating + comment prompt attached to each tour stop ("Was this clear? Would you use it?" 👍/👎 + optional note), plus a
+  short overall survey at the end (most-wanted feature, confusion points, NPS-style "how likely to use weekly").
+  - Store responses in a new TourFeedback model (userId?, role, featureKey, rating, comment, createdAt) — works for logged-in or
+  anonymous pre-onboarding viewers.
+  - Results dashboard for site-admin (/site-admin/feedback) aggregating by feature.
+  - Doing it alongside the tour is easy since the step config already enumerates every feature — the survey just reuses those
+  featureKeys.
+  
+  I'll roll all of this into one guide once you answer the questions below.
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+←  ☒ Tour surface  ☒ Engine  ☒ Existing tour  ☐ Replay entry  ✔ Submit  →
+  featureKeys.
+
+  I'll roll all of this into one guide once you answer the questions below.
+
+● User answered Claude's questions:
+  ⎿  · How should the tour render the UI it walks users through? → Self-contained mock pages
+     · Which coachmark/overlay engine should we use for the spotlight + arrows + next/back? → driver.js
+     · What should we do with the existing marketing tours (/tour, /tour/admin)? → Upgrade & reuse
+     · Where should users be able to launch/replay the tour after onboarding? (pick all that apply) → Settings page, Help page,
+     Auto-prompt on first login
+
+● Locked in:
+  - Self-contained mock pages at /tour/member, /tour/gym, /tour/instructor (faux app shell + sample data, no real navigation)
+  - driver.js for the spotlight/arrows/next-back
+  - Upgrade & reuse the existing /tour demos + personas; add the instructor one
+  - Replay from Settings + Help + auto-prompt once on first login (tracked by a per-role tourSeen flag). No profile-menu entry.
+
+  Plus my defaults on the items I'd flagged: tour shows all features with an "if your gym enables this" note (not gated by toggles),
+  and I'll reuse the Marcus / Jordan / Sam personas for sample data unless you'd rather have fresh ones.
+
+  One thing I still need before writing the guide — it materially changes the instructor tour:
+
+  Who is the "private instructor" tour for?
+  - A) Gym-employed instructors who also teach privates (the /instructor/* surfaces only)
+  - B) Independent / non-gym providers (the /provider/* apply→approval→discoverable path only)
+  - C) Both, in one tour (covers /instructor/* and the /provider/* independent path, noting which applies to whom) — my
+  recommendation, since one tour educates both kinds
+  
+  Tell me A/B/C (and shout if you want fresh personas instead of Marcus/Jordan/Sam), and I'll write the full guide — tour
+  architecture, the driver.js step configs per role, the mock-screen components, entry points, the tourSeen schema, and the
+  integrated TourFeedback survey model + per-step prompts + the site-admin results view.
+
+✻ Baked for 3m 32s
+
+※ recap: Building a 3-role onboarding tour (member, gym admin, private instructor) using self-contained mock pages with driver.js 
+  coachmarks, plus a per-feature feedback survey. Next: you answer whether the instructor tour covers gym instructors, independent 
+  providers, or both, then I write the guide.
+
+❯ C, lets go                                                                                                                         
+  recommendation, since one tour educates both kinds
+
+  Tell me A/B/C (and shout if you want fresh personas instead of Marcus/Jordan/Sam), and I'll write the full guide — tour
+  architecture, the driver.js step configs per role, the mock-screen components, entry points, the tourSeen schema, and the
+  integrated TourFeedback survey model + per-step prompts + the site-admin results view.
+
+✻ Baked for 3m 32s
+
+※ recap: Building a 3-role onboarding tour (member, gym admin, private instructor) using self-contained mock pages with driver.js
+  coachmarks, plus a per-feature feedback survey. Next: you answer whether the instructor tour covers gym instructors, independent
+  providers, or both, then I write the guide.
+
+❯ C, lets go                                                                                                                         
+
+● API Error: 529 Overloaded. This is a server-side issue, usually temporary — try again in a moment. If it persists, check
+  https://status.claude.com.
+
+✻ Crunched for 3m 33s
+
+❯ can you update todo.md with where we are and where we left off?                                                                    
+
+● API Error: 529 Overloaded. This is a server-side issue, usually temporary — try again in a moment. If it persists, check
+  https://status.claude.com.
+
+✻ Brewed for 3m 21s

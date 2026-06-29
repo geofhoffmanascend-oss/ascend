@@ -4,7 +4,8 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
 import { getRuleset } from '@/lib/rulesets'
-import { canRespond, canWithdraw, isParty, waiverStateFor } from '@/lib/challenge'
+import { canRespond, canWithdraw, isParty, signatureStateFor } from '@/lib/challenge'
+import { CHALLENGE_WAIVER_BODY, CHALLENGE_WAIVER_TITLE, CHALLENGE_WAIVER_VERSION } from '@/lib/challengeWaiver'
 import { ChallengeDetailClient } from './ChallengeDetailClient'
 
 export const metadata = { title: 'Challenge' }
@@ -26,13 +27,12 @@ export default async function ChallengeDetailPage({ params }: { params: Promise<
   if (!c) notFound()
 
   const roles = session.user.roles ?? []
-  const isHostAdmin = (!!c.hostGymId && roles.includes('admin') && session.user.gymId === c.hostGymId) || roles.includes('site_admin')
-  if (!isParty(c, uid) && !isHostAdmin) notFound()
+  const amParty = isParty(c, uid)
+  const isSiteAdmin = roles.includes('site_admin')
+  if (!amParty && !isSiteAdmin) notFound()
 
   const lite = { id: c.id, challengerId: c.challengerId, challengedId: c.challengedId, status: c.status, lastActorId: c.lastActorId, expiresAt: c.expiresAt }
-  const { waiver, signed } = isParty(c, uid)
-    ? await waiverStateFor(c.id, c.hostGymId, uid)
-    : { waiver: null, signed: false }
+  const sig = signatureStateFor(c, uid)
 
   const table = await prisma.matchTable.findFirst({ where: { challengeId: c.id }, select: { id: true, publicSlug: true } })
 
@@ -41,10 +41,12 @@ export default async function ChallengeDetailPage({ params }: { params: Promise<
       <Link href="/challenges" className="text-sm text-slate hover:text-ink">← Challenges</Link>
       <ChallengeDetailClient
         viewerId={uid}
-        isHostAdmin={isHostAdmin}
-        canRespond={isParty(c, uid) && canRespond(lite, uid)}
-        canWithdraw={isParty(c, uid) && canWithdraw(lite, uid)}
-        waiver={waiver ? { id: waiver.id, title: waiver.title, body: waiver.body, fileUrl: waiver.fileUrl, version: waiver.version, signed } : null}
+        amParty={amParty}
+        canRunConsole={amParty || isSiteAdmin}
+        canRespond={amParty && canRespond(lite, uid)}
+        canWithdraw={amParty && canWithdraw(lite, uid)}
+        waiver={{ title: CHALLENGE_WAIVER_TITLE, body: CHALLENGE_WAIVER_BODY, version: CHALLENGE_WAIVER_VERSION }}
+        sig={sig}
         table={table}
         challenge={{
           id: c.id,
@@ -58,6 +60,9 @@ export default async function ChallengeDetailPage({ params }: { params: Promise<
           scheduledAt: c.scheduledAt ? c.scheduledAt.toISOString() : null,
           location: c.location,
           message: c.message,
+          stipulations: c.stipulations,
+          challengerName: c.challenger.name,
+          challengedName: c.challenged.name,
           lastActorId: c.lastActorId,
           winnerId: c.winnerId,
           winBy: c.winBy,

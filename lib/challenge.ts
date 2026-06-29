@@ -70,48 +70,32 @@ export async function applyChallengeResult(opts: {
   return updated
 }
 
-// Advance accepted → gym_pending when there is nothing left to sign (no host gym,
-// the host gym has no active visitor_challenge waiver, or both parties have signed).
-export async function maybeAdvanceToGymPending(challengeId: string) {
+// Public-launch pivot: a challenge advances accepted → scheduled once BOTH parties have
+// signed the platform friendly-challenge waiver. No gym-admin approval step.
+export async function maybeAdvanceToScheduled(challengeId: string) {
   const c = await prisma.challengeMatch.findUnique({ where: { id: challengeId } })
   if (!c || c.status !== 'accepted') return
+  if (!c.challengerSignedAt || !c.challengedSignedAt) return
 
-  if (!c.hostGymId) {
-    await prisma.challengeMatch.update({ where: { id: challengeId }, data: { status: 'gym_pending' } })
-    return
-  }
-  const waiver = await prisma.gymWaiver.findFirst({
-    where: { gymId: c.hostGymId, kind: 'visitor_challenge', active: true },
-    orderBy: { version: 'desc' },
-  })
-  if (!waiver) {
-    await prisma.challengeMatch.update({ where: { id: challengeId }, data: { status: 'gym_pending' } })
-    return
-  }
-  const ctx = `challenge:${challengeId}`
-  const signed = await prisma.waiverSignature.count({
-    where: { waiverId: waiver.id, context: ctx, userId: { in: [c.challengerId, c.challengedId] } },
-  })
-  if (signed >= 2) {
-    await prisma.challengeMatch.update({ where: { id: challengeId }, data: { status: 'gym_pending' } })
-    const admins = await prisma.user.findMany({ where: { gymId: c.hostGymId, roles: { has: 'admin' } }, select: { id: true } })
-    for (const a of admins) await createNotification(a.id, 'general', 'Challenge ready for your approval', { link: `/challenges/${challengeId}` })
+  await prisma.challengeMatch.update({ where: { id: challengeId }, data: { status: 'scheduled' } })
+  for (const uid of [c.challengerId, c.challengedId]) {
+    await createNotification(uid, 'general', 'Challenge match is on', {
+      body: 'Both of you signed the waiver. Coordinate the venue (get the gym’s OK), line up a black-belt referee, and run it.',
+      link: `/challenges/${challengeId}`,
+    })
   }
 }
 
-// Returns the host gym's active visitor_challenge waiver + whether `userId` signed it for this challenge.
-export async function waiverStateFor(challengeId: string, hostGymId: string | null, userId: string) {
-  if (!hostGymId) return { waiver: null, signed: false }
-  const waiver = await prisma.gymWaiver.findFirst({
-    where: { gymId: hostGymId, kind: 'visitor_challenge', active: true },
-    orderBy: { version: 'desc' },
-  })
-  if (!waiver) return { waiver: null, signed: false }
-  const sig = await prisma.waiverSignature.findFirst({
-    where: { waiverId: waiver.id, userId, context: `challenge:${challengeId}` },
-    select: { id: true },
-  })
-  return { waiver, signed: !!sig }
+// Signature state of the platform waiver for a given user on a challenge.
+export function signatureStateFor(
+  c: { challengerId: string; challengedId: string; challengerSignedAt: Date | null; challengedSignedAt: Date | null },
+  userId: string,
+) {
+  const isChallenger = c.challengerId === userId
+  const mySigned = isChallenger ? !!c.challengerSignedAt : !!c.challengedSignedAt
+  const otherSigned = isChallenger ? !!c.challengedSignedAt : !!c.challengerSignedAt
+  const bothSigned = !!c.challengerSignedAt && !!c.challengedSignedAt
+  return { mySigned, otherSigned, bothSigned }
 }
 
 // A member's combined competition record (challenges; tournament placements can fold in later).

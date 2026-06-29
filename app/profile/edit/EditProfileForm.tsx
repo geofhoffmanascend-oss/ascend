@@ -35,6 +35,7 @@ type Props = {
     weightClass: string
   }
   profilePrivacy: Record<string, string>
+  initialSelfId: { instructor: boolean; gymOwner: boolean }
 }
 
 function PrivacySelect({ field, privacy, onChange }: { field: string; privacy: Record<string, string>; onChange: (field: string, value: string) => void }) {
@@ -53,10 +54,11 @@ function PrivacySelect({ field, privacy, onChange }: { field: string; privacy: R
   )
 }
 
-export function EditProfileForm({ userId, initial, profilePrivacy: initialPrivacy }: Props) {
+export function EditProfileForm({ userId, initial, profilePrivacy: initialPrivacy, initialSelfId }: Props) {
   const router = useRouter()
   const [form, setForm] = useState(initial)
   const [privacy, setPrivacy] = useState<Record<string, string>>(initialPrivacy)
+  const [selfId, setSelfId] = useState(initialSelfId)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [uploading, setUploading] = useState(false)
@@ -94,7 +96,7 @@ export function EditProfileForm({ userId, initial, profilePrivacy: initialPrivac
     const res = await fetch(`/api/users/${userId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, profilePrivacy: privacy }),
+      body: JSON.stringify({ ...form, profilePrivacy: privacy, selfIdInstructor: selfId.instructor, selfIdGymOwner: selfId.gymOwner }),
     })
 
     if (!res.ok) {
@@ -186,6 +188,23 @@ export function EditProfileForm({ userId, initial, profilePrivacy: initialPrivac
           className="w-full px-4 py-3 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors"
           placeholder="…or paste an image URL"
         />
+      </div>
+
+      <div className="flex flex-col gap-2 border-t border-smoke pt-4">
+        <label className="text-xs font-bold uppercase tracking-widest text-steel">About You</label>
+        <p className="text-xs text-ash -mt-1">Private — just for you. These don’t grant any admin or management access.</p>
+        <label className="flex items-center gap-2 text-sm text-ink cursor-pointer">
+          <input type="checkbox" checked={selfId.instructor}
+            onChange={e => setSelfId(s => ({ ...s, instructor: e.target.checked }))}
+            className="w-4 h-4 accent-brand-red" />
+          I’m a Jiu-Jitsu instructor
+        </label>
+        <label className="flex items-center gap-2 text-sm text-ink cursor-pointer">
+          <input type="checkbox" checked={selfId.gymOwner}
+            onChange={e => setSelfId(s => ({ ...s, gymOwner: e.target.checked }))}
+            className="w-4 h-4 accent-brand-red" />
+          I’m a gym owner
+        </label>
       </div>
 
       <p className="text-xs text-ash -mt-2">

@@ -40,7 +40,7 @@ export default async function ClassWizardPage() {
         </div>
         <h1 className="font-display text-2xl text-ink">Add Classes</h1>
         <p className="text-slate text-sm mt-2">
-          Pick the days a class runs — we'll create one class for each. Group your classes to keep the schedule organized and give each group its own forum for training partners.
+          Pick the days a class runs — one class is created for each. Group your classes to keep the schedule organized and give each group its own forum for training partners.
         </p>
       </div>
 

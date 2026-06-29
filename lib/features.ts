@@ -1,6 +1,7 @@
 import type { Session } from 'next-auth'
 import { getPlatformSettings } from './platformSettings'
 import { getGymFeatures } from './gymFeatures'
+import { SIMPLE_LAUNCH } from './launchMode'
 
 // Effective feature availability for a given user (Phase 37). A feature is on
 // only if the platform allows it AND the user's gym allows it. Gym admins
@@ -37,10 +38,17 @@ const ALL_ON: EffectiveFeatures = {
   eventsNav: true,
 }
 
+// Public-launch pivot: force paused member features off in simple-launch mode.
+// `schedule` (gym class registration) is replaced by the personal training schedule (/my-training).
+function applyLaunchMode(f: EffectiveFeatures): EffectiveFeatures {
+  if (!SIMPLE_LAUNCH) return f
+  return { ...f, store: false, tournaments: false, schedule: false }
+}
+
 export async function getEffectiveFeatures(session: Session | null): Promise<EffectiveFeatures> {
   const roles = session?.user?.roles ?? []
   if (roles.includes('admin') || roles.includes('site_admin')) {
-    return { ...ALL_ON }
+    return applyLaunchMode({ ...ALL_ON })
   }
 
   const [platform, gym] = await Promise.all([
@@ -50,7 +58,7 @@ export async function getEffectiveFeatures(session: Session | null): Promise<Eff
 
   const galleryVisible = platform.galleryEnabled && gym.galleryEnabled
 
-  return {
+  return applyLaunchMode({
     store: platform.storeEnabled && gym.storeEnabled,
     tournaments: platform.allowTournamentRegistration && gym.tournamentsEnabled,
     gallery: galleryVisible,
@@ -63,5 +71,5 @@ export async function getEffectiveFeatures(session: Session | null): Promise<Eff
     schedule: platform.scheduleEnabled,
     forums: platform.forumsEnabled,
     eventsNav: platform.eventsEnabled,
-  }
+  })
 }

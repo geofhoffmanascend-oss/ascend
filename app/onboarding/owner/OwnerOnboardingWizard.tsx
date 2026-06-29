@@ -128,7 +128,7 @@ export function OwnerOnboardingWizard({
               <h2 className="font-display text-xl text-ink mb-1">Get your gym running</h2>
               <p className="text-sm text-slate">
                 Here's what to set up. You can do these now or anytime from your admin dashboard —
-                we'll track your progress there.
+                your progress is tracked there.
               </p>
             </div>
 

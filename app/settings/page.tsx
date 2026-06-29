@@ -5,8 +5,9 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import prisma from '@/lib/database'
 import { SettingsForm } from './SettingsForm'
-import { ClassGroup } from '@prisma/client'
 import Image from 'next/image'
+import { TourReplayButton } from '@/app/tour/TourReplayButton'
+import { tourRolesForUser } from '@/lib/tour'
 
 export const metadata = { title: 'Settings' }
 
@@ -14,13 +15,15 @@ export default async function SettingsPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect('/login')
 
-  const [user, allForums, subscriptions] = await Promise.all([
+  const me = session.user.id
+  const [user, publicForums, subscriptions] = await Promise.all([
     prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: me },
       select: {
-        notifyClassUpdates:    true,
         notifyInstructorNotes: true,
         notifyPrivateMessages: true,
+        notifyGroupChats:      true,
+        notifyForumActivity:   true,
         notifyCheckinPrompts:  true,
         notifyFeedbackPrompts: true,
         notifyByEmail:         true,
@@ -29,45 +32,26 @@ export default async function SettingsPage() {
         competeTournaments:    true,
         acceptsChallenges:     true,
         defaultJournalPrompts: true,
-        hiddenClassGroups:     true,
-        hiddenProgramIds:      true,
-        blockedClassGroups:    true,
-        blockedProgramIds:     true,
         gymId:                 true,
         gym:                   { select: { id: true, name: true } },
       },
     }),
+    // Public forums only — private/class/group forums no longer belong in subscriptions.
     prisma.forum.findMany({
-      orderBy: [{ type: 'asc' }, { title: 'asc' }],
+      where: { type: { in: ['general', 'announcement'] } },
+      orderBy: { title: 'asc' },
       select: { id: true, title: true, type: true, classGroup: true },
     }),
-    prisma.forumSubscription.findMany({
-      where: { userId: session.user.id },
-      select: { forumId: true },
-    }),
+    prisma.forumSubscription.findMany({ where: { userId: me }, select: { forumId: true } }),
   ])
 
   if (!user) redirect('/login')
 
-  // The member's gym class groups (Phase 53) — schedule visibility toggles use
-  // these when the gym has defined any; otherwise fall back to the fixed groups.
-  const classGroups = user.gymId
-    ? await prisma.classProgram.findMany({
-        where: { gymId: user.gymId, id: { notIn: (user.blockedProgramIds ?? []) as string[] } },
-        orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-        select: { id: true, name: true, description: true },
-      })
-    : []
-
   const subscribedIds = new Set(subscriptions.map(s => s.forumId))
-  const blocked = (user.blockedClassGroups ?? []) as ClassGroup[]
-
-  const forums = allForums
-    .filter(f => {
-      // Don't show group forums for admin-blocked groups
-      if (f.type === 'group_forum' && f.classGroup && blocked.includes(f.classGroup as ClassGroup)) return false
-      return true
-    })
+  // Dedupe by title (defensive against duplicate forum rows in the DB).
+  const seenTitles = new Set<string>()
+  const forums = publicForums
+    .filter(f => { const k = f.title.toLowerCase(); if (seenTitles.has(k)) return false; seenTitles.add(k); return true })
     .map(f => ({
       id: f.id,
       title: f.title,
@@ -75,6 +59,37 @@ export default async function SettingsPage() {
       classGroup: f.classGroup as string | null,
       subscribed: subscribedIds.has(f.id),
     }))
+
+  // Group chats the user can request to join — ones a connection (someone they follow,
+  // or who follows them) is a member of, and the user isn't already in.
+  const [myChatSubs, follows] = await Promise.all([
+    prisma.forumSubscription.findMany({ where: { userId: me, forum: { type: 'group_chat' } }, select: { forumId: true } }),
+    prisma.follow.findMany({ where: { OR: [{ followerId: me }, { followingId: me }] }, select: { followerId: true, followingId: true } }),
+  ])
+  const myChatIds = new Set(myChatSubs.map(s => s.forumId))
+  const connectedIds = new Set<string>()
+  follows.forEach(f => connectedIds.add(f.followerId === me ? f.followingId : f.followerId))
+
+  let connectedChats: { id: string; title: string; gymName: string | null; members: number; requested: boolean }[] = []
+  if (connectedIds.size > 0) {
+    const chatSubs = await prisma.forumSubscription.findMany({
+      where: { userId: { in: [...connectedIds] }, forum: { type: 'group_chat' } },
+      select: { forum: { select: { id: true, title: true, gym: { select: { name: true } }, _count: { select: { subscriptions: true } } } } },
+    })
+    const seen = new Set<string>()
+    const candidates: { id: string; title: string; gymName: string | null; members: number }[] = []
+    for (const s of chatSubs) {
+      const c = s.forum
+      if (myChatIds.has(c.id) || seen.has(c.id)) continue
+      seen.add(c.id)
+      candidates.push({ id: c.id, title: c.title, gymName: c.gym?.name ?? null, members: c._count.subscriptions })
+    }
+    const pendingReqs = candidates.length > 0
+      ? await prisma.forumJoinRequest.findMany({ where: { userId: me, status: 'pending', forumId: { in: candidates.map(c => c.id) } }, select: { forumId: true } })
+      : []
+    const pendingSet = new Set(pendingReqs.map(r => r.forumId))
+    connectedChats = candidates.map(c => ({ ...c, requested: pendingSet.has(c.id) }))
+  }
 
   return (
     <div className="max-w-lg mx-auto px-4 py-10">
@@ -93,11 +108,15 @@ export default async function SettingsPage() {
         userId={session.user.id}
         initial={user}
         forums={forums}
-        hiddenClassGroups={(user.hiddenClassGroups ?? []) as ClassGroup[]}
-        classGroups={classGroups}
-        hiddenProgramIds={(user.hiddenProgramIds ?? []) as string[]}
+        connectedChats={connectedChats}
         currentGym={user.gym ?? null}
       />
+
+      <div className="mt-8 pt-6 border-t border-smoke">
+        <p className="text-xs font-bold uppercase tracking-widest text-steel mb-2">Product Tour</p>
+        <p className="text-sm text-slate mb-3">Replay the guided walkthrough of the app’s features anytime.</p>
+        <TourReplayButton roles={tourRolesForUser(session.user.roles ?? [])} />
+      </div>
     </div>
   )
 }

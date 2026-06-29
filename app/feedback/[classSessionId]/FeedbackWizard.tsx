@@ -177,7 +177,7 @@ export function FeedbackWizard({ classSessionId, reviewUrl }: { classSessionId: 
       <div className="border border-smoke bg-paper p-8 flex flex-col items-center gap-5 text-center">
         <p className="font-display text-lg text-ink">Thanks for the feedback!</p>
         <p className="text-sm text-ash max-w-sm">
-          We're glad you had a great class. Would you be willing to share your experience with others? It helps the gym grow.
+          Glad you had a great class. Would you be willing to share your experience with others? It helps the gym grow.
         </p>
         <div className="flex flex-col gap-3 w-full max-w-xs">
           <a

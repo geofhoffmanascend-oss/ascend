@@ -19,15 +19,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   })
   if (!forum) return NextResponse.json({ error: 'Forum not found' }, { status: 404 })
 
-  let blockedGroups: string[] = []
-  let blockedProgramIds: string[] = []
-  if (forum.type === 'group_forum' || forum.type === 'program_forum') {
-    const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedClassGroups: true, blockedProgramIds: true } })
-    blockedGroups = (user?.blockedClassGroups ?? []) as string[]
-    blockedProgramIds = (user?.blockedProgramIds ?? []) as string[]
-  }
-  if (!canPostForum(session, forum, blockedGroups, blockedProgramIds)) {
-    return NextResponse.json({ error: 'You cannot post in this forum' }, { status: 403 })
+  // Group chat: members may upload (canPostForum denies group_chat by design).
+  if ((forum.type as string) === 'group_chat') {
+    const member = await prisma.forumSubscription.findUnique({
+      where: { userId_forumId: { userId: session.user.id, forumId } },
+      select: { id: true },
+    })
+    if (!member) return NextResponse.json({ error: 'Join the chat to post.' }, { status: 403 })
+  } else {
+    let blockedGroups: string[] = []
+    let blockedProgramIds: string[] = []
+    if (forum.type === 'group_forum' || forum.type === 'program_forum') {
+      const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedClassGroups: true, blockedProgramIds: true } })
+      blockedGroups = (user?.blockedClassGroups ?? []) as string[]
+      blockedProgramIds = (user?.blockedProgramIds ?? []) as string[]
+    }
+    if (!canPostForum(session, forum, blockedGroups, blockedProgramIds)) {
+      return NextResponse.json({ error: 'You cannot post in this forum' }, { status: 403 })
+    }
   }
 
   const formData = await req.formData()

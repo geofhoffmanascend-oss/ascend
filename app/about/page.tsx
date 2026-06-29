@@ -21,6 +21,12 @@ export default function AboutPage() {
           deepen coach-student relationships, and help every athlete track their progress from white
           belt to black belt.
         </p>
+        <p className="mt-4 text-sm text-slate">
+          Curious about the thinking behind it?{' '}
+          <Link href="/ethos" className="text-ink underline underline-offset-2 hover:text-brand-red transition-colors">
+            Read our Ethos.
+          </Link>
+        </p>
       </div>
 
       {/* Features */}
@@ -28,12 +34,14 @@ export default function AboutPage() {
         <p className="text-xs font-bold uppercase tracking-widest text-steel mb-4">Platform Features</p>
         <ul className="flex flex-col gap-2">
           {[
-            'Schedule & Registration — browse the weekly calendar and register for classes',
+            'Training Schedule & Streaks — set the days you commit to train and check them off',
             'Training Journal — log sessions, track progress, and reflect on your game',
-            'Coach Tools — session management, attendance, student notes, and lesson plans',
+            'Goals — set goals (including consistency) and track them over time',
+            'Forums & Group Chats — public community forums plus private group chats with your team',
+            'Private Lessons — find an instructor near you and book a private',
             'Direct Messaging — communicate with instructors and teammates',
             'Media Gallery — share photos and videos from training and events',
-            'Gear Store — browse and order apparel and equipment',
+            'Events — find open mats and events near you',
           ].map((feature) => (
             <li key={feature} className="flex items-start gap-2 text-sm text-slate">
               <span className="mt-1 shrink-0 w-1.5 h-1.5 rounded-full bg-brand-red" />

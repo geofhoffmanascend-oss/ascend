@@ -5,6 +5,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import prisma from '@/lib/database'
+import { TourAutoPromptGate } from '@/app/components/TourAutoPromptGate'
 
 export const metadata = { title: 'Instructor' }
 
@@ -45,6 +46,7 @@ export default async function InstructorHomePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
+      <TourAutoPromptGate />
       <div className="mb-8">
         <div className="inline-block bg-brand-red px-3 py-1 mb-3">
           <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">

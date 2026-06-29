@@ -22,6 +22,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const forum = await prisma.forum.findUnique({ where: { id: forumId }, select: { type: true, gymId: true, programId: true, beltLevel: true } })
 
+  // Group chat: only members may post.
+  if (forum && (forum.type as string) === 'group_chat') {
+    const member = await prisma.forumSubscription.findUnique({
+      where: { userId_forumId: { userId: session.user.id, forumId } },
+      select: { id: true },
+    })
+    if (!member) return NextResponse.json({ error: 'Join the chat to post.' }, { status: 403 })
+  }
+
   // Gym forum: verify caller belongs to this gym
   if (forum && (forum.type as string) === 'gym_forum') {
     const isSiteAdmin = session.user.roles?.includes('site_admin')

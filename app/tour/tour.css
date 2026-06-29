@@ -1,0 +1,30 @@
+/* driver.js disables pointer events on the whole page while active
+   (`.driver-active * { pointer-events: none }`). Re-enable it for our own
+   tour controls / modals so Back, Next, Exit and the survey stay clickable. */
+.tour-ui,
+.tour-ui * {
+  pointer-events: auto !important;
+}
+
+/* Theme driver.js popover to AscendIt tokens. */
+.driver-popover.ascend-tour {
+  background: #0A0A0A;
+  color: #FAFAFA;
+  border-radius: 4px;
+  max-width: 320px;
+}
+.driver-popover.ascend-tour .driver-popover-title {
+  font-family: var(--font-display, 'Space Grotesk'), sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #FAFAFA;
+}
+.driver-popover.ascend-tour .driver-popover-description {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #D4D4D4;
+}
+.driver-popover.ascend-tour .driver-popover-arrow-side-top.driver-popover-arrow { border-top-color: #0A0A0A; }
+.driver-popover.ascend-tour .driver-popover-arrow-side-bottom.driver-popover-arrow { border-bottom-color: #0A0A0A; }
+.driver-popover.ascend-tour .driver-popover-arrow-side-left.driver-popover-arrow { border-left-color: #0A0A0A; }
+.driver-popover.ascend-tour .driver-popover-arrow-side-right.driver-popover-arrow { border-right-color: #0A0A0A; }

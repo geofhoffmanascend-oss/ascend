@@ -14,7 +14,9 @@ export async function POST(req: NextRequest) {
   if (me?.providerStatus === 'pending') return NextResponse.json({ error: 'Your application is already pending review.' }, { status: 409 })
   if (me?.providerStatus === 'approved') return NextResponse.json({ error: 'You are already an approved provider.' }, { status: 409 })
 
-  const { bio, city, state, zip } = (await req.json().catch(() => ({}))) as { bio?: string; city?: string; state?: string; zip?: string }
+  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>
+  const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null)
+  const { bio, city, state, zip } = body as { bio?: string; city?: string; state?: string; zip?: string }
 
   // Geocode the provider's location for radius discovery (best-effort).
   let lat: number | null = null
@@ -31,13 +33,34 @@ export async function POST(req: NextRequest) {
     where: { id: session.user.id },
     data: {
       providerStatus: 'pending',
-      providerBio: bio?.trim() || null,
-      providerCity: city?.trim() || null,
-      providerState: state?.trim() || null,
+      providerBio: str(bio),
+      providerCity: str(city),
+      providerState: str(state),
       providerLat: lat,
       providerLng: lng,
       providerApprovedById: null,
       providerApprovedAt: null,
+      // Vetting/background-check application (sensitive — stored on a dedicated model).
+      providerApplication: {
+        upsert: {
+          create: {
+            fullName: str(body.fullName), dateOfBirth: str(body.dateOfBirth),
+            contactEmail: str(body.contactEmail), contactPhone: str(body.contactPhone),
+            instructorName: str(body.instructorName), instructorContact: str(body.instructorContact),
+            gymName: str(body.gymName), countiesLived: str(body.countiesLived),
+            arrestLast5: body.arrestLast5 === true, arrestDetails: str(body.arrestDetails),
+            consent: body.consent === true,
+          },
+          update: {
+            fullName: str(body.fullName), dateOfBirth: str(body.dateOfBirth),
+            contactEmail: str(body.contactEmail), contactPhone: str(body.contactPhone),
+            instructorName: str(body.instructorName), instructorContact: str(body.instructorContact),
+            gymName: str(body.gymName), countiesLived: str(body.countiesLived),
+            arrestLast5: body.arrestLast5 === true, arrestDetails: str(body.arrestDetails),
+            consent: body.consent === true,
+          },
+        },
+      },
     },
   })
 

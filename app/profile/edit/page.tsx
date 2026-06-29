@@ -18,6 +18,8 @@ export default async function EditProfilePage() {
       avatarUrl: true,
       weightClass: true,
       profilePrivacy: true,
+      selfIdInstructor: true,
+      selfIdGymOwner: true,
     },
   })
 
@@ -45,6 +47,7 @@ export default async function EditProfilePage() {
           weightClass: user.weightClass ?? '',
         }}
         profilePrivacy={(user.profilePrivacy as Record<string, string>) ?? {}}
+        initialSelfId={{ instructor: user.selfIdInstructor, gymOwner: user.selfIdGymOwner }}
       />
     </div>
   )

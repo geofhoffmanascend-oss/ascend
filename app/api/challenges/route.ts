@@ -82,6 +82,7 @@ export async function POST(req: Request) {
     rulesetId: ruleset.id,
     periodMs,
     message: (body?.message ?? '').toString().trim() || null,
+    stipulations: (body?.stipulations ?? '').toString().trim() || null,
   }
 
   const challenge = await prisma.challengeMatch.create({
@@ -96,6 +97,7 @@ export async function POST(req: Request) {
       rulesetConfig: { ...ruleset, periodMs },
       periodMs,
       message: terms.message,
+      stipulations: terms.stipulations,
       lastActorId: session.user.id,
       expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60_000),
       terms: { create: { byUserId: session.user.id, terms } },
@@ -107,7 +109,6 @@ export async function POST(req: Request) {
     body: 'Review the terms and accept, counter, or decline.',
     link: `/challenges/${challenge.id}`,
   })
-  if (hostGymId) await notifyGymAdmins(hostGymId, 'A challenge match named your gym as host', `/challenges/${challenge.id}`)
 
   return NextResponse.json({ challenge }, { status: 201 })
 }
@@ -115,9 +116,4 @@ export async function POST(req: Request) {
 async function isMemberGym(userId: string, gymId: string): Promise<boolean> {
   const u = await prisma.user.findUnique({ where: { id: userId }, select: { gymId: true } })
   return u?.gymId === gymId
-}
-
-async function notifyGymAdmins(gymId: string, title: string, link: string) {
-  const admins = await prisma.user.findMany({ where: { gymId, roles: { has: 'admin' } }, select: { id: true } })
-  for (const a of admins) await createNotification(a.id, 'general', title, { link })
 }

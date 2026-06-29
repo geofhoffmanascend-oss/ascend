@@ -11,6 +11,7 @@ export function Footer() {
             AscendIt
           </p>
           <div className="flex items-center gap-4 text-xs text-ash">
+            <Link href="/ethos" className="hover:text-ink transition-colors">Ethos</Link>
             <Link href="/terms" className="hover:text-ink transition-colors">Terms</Link>
             <Link href="/privacy" className="hover:text-ink transition-colors">Privacy</Link>
             <span className="hidden sm:inline">The Journey. The Art. The Community.</span>

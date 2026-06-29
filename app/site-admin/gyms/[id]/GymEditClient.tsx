@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface Gym {
   id: string
@@ -25,10 +26,12 @@ const primaryBtn = 'px-5 py-2.5 bg-brand-red text-paper font-bold text-sm tracki
 const secondaryBtn = 'px-5 py-2.5 border border-smoke text-steel text-sm font-medium hover:border-steel hover:text-ink transition-colors disabled:opacity-60'
 
 export function GymEditClient({ gym: initial }: { gym: Gym }) {
+  const router = useRouter()
   const [gym, setGym] = useState(initial)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   // Payment terms
   const pt = initial.paymentTerms ?? {}
@@ -96,6 +99,21 @@ export function GymEditClient({ gym: initial }: { gym: Gym }) {
     setSaving(false)
   }
 
+  async function deleteGym() {
+    setSaving(true)
+    setError('')
+    const res = await fetch(`/api/site-admin/gyms/${gym.id}`, { method: 'DELETE' })
+    if (res.ok) {
+      router.push('/site-admin/gyms')
+      router.refresh()
+      return
+    }
+    const data = await res.json().catch(() => ({}))
+    setError(data.error ?? 'Delete failed.')
+    setConfirmDelete(false)
+    setSaving(false)
+  }
+
   return (
     <>
       {/* Gym Info */}
@@ -160,13 +178,18 @@ export function GymEditClient({ gym: initial }: { gym: Gym }) {
         </div>
       </div>
 
-      {/* Danger zone */}
-      {gym.participatingStatus !== 'inactive' && (
-        <div className="border border-red-200 bg-paper p-6">
-          <p className="text-xs font-bold uppercase tracking-widest text-red-600 mb-3">Danger Zone</p>
-          {confirmInactive ? (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-ink">Mark this gym as inactive?</span>
+      {/* Moderation / danger zone */}
+      <div className="border border-red-200 bg-paper p-6">
+        <p className="text-xs font-bold uppercase tracking-widest text-red-600 mb-1">Moderation</p>
+        <p className="text-xs text-ash mb-3">
+          New gyms go live instantly as free-tier. Use the Tier selector above to mark a gym
+          Participating. Mark a gym <strong>Inactive</strong> to hide it everywhere, then delete it if it’s spam.
+        </p>
+
+        {gym.participatingStatus !== 'inactive' ? (
+          confirmInactive ? (
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-sm text-ink">Mark this gym as inactive (hidden everywhere)?</span>
               <button onClick={markInactive} disabled={saving} className="px-4 py-2 bg-brand-red text-paper text-sm font-bold hover:bg-red-700 transition-colors disabled:opacity-50">
                 Confirm
               </button>
@@ -176,9 +199,27 @@ export function GymEditClient({ gym: initial }: { gym: Gym }) {
             <button onClick={() => setConfirmInactive(true)} className={secondaryBtn}>
               Mark as Inactive
             </button>
-          )}
-        </div>
-      )}
+          )
+        ) : (
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-ink">This gym is <strong>inactive</strong> (hidden everywhere).</p>
+            {confirmDelete ? (
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-sm text-ink">Permanently delete this gym? This cannot be undone.</span>
+                <button onClick={deleteGym} disabled={saving} className="px-4 py-2 bg-brand-red text-paper text-sm font-bold hover:bg-red-700 transition-colors disabled:opacity-50">
+                  Delete permanently
+                </button>
+                <button onClick={() => setConfirmDelete(false)} className={secondaryBtn}>Cancel</button>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmDelete(true)} className={secondaryBtn}>
+                Delete gym…
+              </button>
+            )}
+          </div>
+        )}
+        {error && <p className="text-sm text-brand-red mt-3">{error}</p>}
+      </div>
     </>
   )
 }

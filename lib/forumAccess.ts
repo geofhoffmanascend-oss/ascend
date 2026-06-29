@@ -28,6 +28,7 @@ export function canReadForum(
     case 'gym_forum':       return isSiteAdmin || session.user.gymId === forum.gymId
     case 'group_forum':     return !forum.classGroup || !blockedGroups.includes(forum.classGroup)
     case 'program_forum':   return isSiteAdmin || (session.user.gymId === forum.gymId && !(forum.programId && blockedProgramIds.includes(forum.programId)))
+    case 'group_chat':      return false // membership-gated; handled by the /chats routes, not generic forum surfaces
     default:                return true // general, announcement, class_forum, belt_forum, private_lesson
   }
 }

@@ -97,6 +97,7 @@ enum ForumType {
   gym_forum
   belt_forum
   program_forum
+  group_chat
 }
 
 enum PostType {
@@ -134,6 +135,58 @@ enum MessageRequestStatus {
   pending
   approved
   denied
+}
+
+// Phase 61 — a user's own recurring training slot, independent of any gym schedule.
+model PersonalClass {
+  id        String    @id @default(cuid())
+  userId    String
+  label     String
+  type      ClassType @default(gi)
+  dayOfWeek DayOfWeek
+  startTime String // "18:00"
+  endTime   String?
+  location  String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkIns SelfCheckIn[]
+
+  @@index([userId])
+}
+
+// Phase 61 — a logged training day (gym-independent). Feeds the same streak/attendance UI.
+model SelfCheckIn {
+  id              String   @id @default(cuid())
+  userId          String
+  date            DateTime @db.Date
+  personalClassId String?
+  label           String? // snapshot of the slot label, or an ad-hoc note
+  note            String?
+  createdAt       DateTime @default(now())
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  personalClass PersonalClass? @relation(fields: [personalClassId], references: [id], onDelete: SetNull)
+
+  @@index([userId, date])
+}
+
+// Phase 60 — per-feature feedback gathered during the onboarding/feature tour.
+// userId is nullable so anonymous pre-onboarding viewers can submit.
+model TourFeedback {
+  id         String   @id @default(cuid())
+  userId     String?
+  role       String // 'member' | 'gym' | 'instructor'
+  featureKey String // step featureKey, or 'overall:<q>' for the end survey
+  rating     Int? // 1 = 👍, -1 = 👎, or 0..10 for NPS
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([role, featureKey])
 }
 
 enum MediaType {
@@ -196,6 +249,8 @@ model User {
   notifyByEmail         Boolean @default(false)
   allowDmsFromStudents  Boolean @default(true)
   allowMediaTagging     Boolean @default(true)
+  notifyGroupChats      Boolean @default(true) // new messages in group chats
+  notifyForumActivity   Boolean @default(true) // new posts in forums you're subscribed to
 
   // Class access (admin-controlled membership restrictions)
   blockedClassGroups ClassGroup[] @default([])
@@ -294,6 +349,73 @@ model User {
   challengesSent     ChallengeMatch[]  @relation("Challenger")
   challengesReceived ChallengeMatch[]  @relation("Challenged")
   waiverSignatures   WaiverSignature[]
+
+  // Phase 60 — onboarding/feature tour
+  tourSeenRoles Role[]         @default([]) // tour roles ('student' member / 'admin' gym / 'instructor') already auto-offered
+  tourFeedback  TourFeedback[]
+
+  // Phase 61 — personal (gym-independent) training schedule & self-tracking
+  personalClasses PersonalClass[]
+  selfCheckIns    SelfCheckIn[]
+
+  // Public-launch pivot — private self-identification (label only, NO admin powers).
+  selfIdInstructor Boolean @default(false)
+  selfIdGymOwner   Boolean @default(false)
+
+  // Public-launch pivot — group-chat join requests
+  forumJoinRequests ForumJoinRequest[]
+
+  // Public-launch pivot — feature-intro modals the user chose "don't show again" for (by featureKey)
+  dismissedIntros String[] @default([])
+
+  // App-wide user feedback (floating feedback button)
+  feedback Feedback[]
+
+  // Private-instructor application (vetting/background-check data)
+  providerApplication ProviderApplication?
+}
+
+// Private-instructor vetting application — collected on apply, reviewed by a verified
+// black belt / site admin before the applicant is listed. Holds the sensitive info
+// needed to verify credentials and run a background check.
+model ProviderApplication {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  fullName          String? // full legal name
+  dateOfBirth       String? // "YYYY-MM-DD"
+  contactEmail      String?
+  contactPhone      String?
+  instructorName    String? // the black belt they train under
+  instructorContact String? // that instructor's / gym's contact (email or phone)
+  gymName           String?
+  countiesLived     String? // counties/states lived in over the last 5 years
+  arrestLast5       Boolean  @default(false)
+  arrestDetails     String? // explanation if arrestLast5 is true
+  consent           Boolean  @default(false) // authorizes the background check + instructor contact
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// General in-app user feedback (ratings + short answers) from the floating feedback button.
+model Feedback {
+  id                String   @id @default(cuid())
+  userId            String?
+  userEmail         String? // cached for display
+  userName          String? // cached for display
+  ratingOverall     Int? // 1–5
+  ratingDisplay     Int? // 1–5
+  ratingNavigation  Int? // 1–5
+  ratingPerformance Int? // 1–5
+  changeRequest     String?
+  missingFeatures   String?
+  improvement       String?
+  createdAt         DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
 }
 
 model Account {
@@ -526,6 +648,7 @@ model Forum {
   beltLevel   Belt?
   title       String
   description String?
+  createdById String? // Public-launch pivot — creator/owner of a group_chat
   createdAt   DateTime    @default(now())
 
   class         Class?              @relation(fields: [classId], references: [id], onDelete: Cascade)
@@ -537,6 +660,21 @@ model Forum {
   subscriptions ForumSubscription[]
   reads         ForumRead[]
   media         MediaItem[]
+  joinRequests  ForumJoinRequest[]
+}
+
+// Public-launch pivot — request to join a group_chat; any current member approves.
+model ForumJoinRequest {
+  id        String   @id @default(cuid())
+  forumId   String
+  userId    String
+  status    String   @default("pending") // pending | approved | declined
+  createdAt DateTime @default(now())
+
+  forum Forum @relation(fields: [forumId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([forumId, userId])
 }
 
 model Post {
@@ -674,6 +812,7 @@ model StudentGoal {
   id          String    @id @default(cuid())
   userId      String
   description String
+  category    String? // e.g. consistency | technique | competition | fitness | mindset (free-form)
   targetDate  DateTime?
   completedAt DateTime?
   createdAt   DateTime  @default(now())
@@ -1352,9 +1491,9 @@ model MatchScoreEvent {
 enum ChallengeStatus {
   proposed // challenger sent; awaiting challenged
   countered // someone changed terms; awaiting the other side
-  accepted // both agree on terms; awaiting waivers + gym approval
-  gym_pending // both signed; awaiting host gym admin
-  scheduled // gym approved
+  accepted // both agree on terms; awaiting both signatures on the friendly-challenge waiver
+  gym_pending // deprecated (pre-pivot gym-approval stage); retained for old rows
+  scheduled // both signed the waiver — ready to run
   declined
   withdrawn
   completed
@@ -1413,8 +1552,16 @@ model ChallengeMatch {
   rulesetConfig Json?
   periodMs      Int? // agreed match length
   message       String? // optional note attached to the latest offer
+  stipulations  String? // optional custom rules/conditions both sides agree to
   lastActorId   String? // who made the current offer (whose-turn logic)
   termsVersion  Int       @default(1)
+
+  // Public-launch pivot — dual-signed platform "friendly challenge" waiver (no gym approval).
+  waiverVersion        Int?
+  challengerSignedName String?
+  challengerSignedAt   DateTime?
+  challengedSignedName String?
+  challengedSignedAt   DateTime?
 
   listOnCalendar Boolean @default(false)
   publicEventId  String?

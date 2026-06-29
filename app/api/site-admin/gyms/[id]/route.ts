@@ -113,3 +113,38 @@ export async function PUT(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+// DELETE /api/site-admin/gyms/[id] — permanently remove a gym (spam moderation).
+// Safety rail: the gym must be marked inactive first. Memberships/settings/programs
+// cascade-delete; users, forums and classes are detached (gymId set null).
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { error } = await requireSiteAdmin()
+  if (error) return error
+
+  const { id } = await params
+  const gym = await prisma.gym.findUnique({
+    where: { id },
+    select: { participatingStatus: true },
+  })
+  if (!gym) return NextResponse.json({ error: 'Gym not found' }, { status: 404 })
+  if (gym.participatingStatus !== 'inactive') {
+    return NextResponse.json(
+      { error: 'Mark the gym inactive before deleting it.' },
+      { status: 409 },
+    )
+  }
+
+  try {
+    await prisma.gym.delete({ where: { id } })
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error('[api/site-admin/gyms/[id] DELETE]', err)
+    return NextResponse.json(
+      { error: 'Could not delete — this gym still has linked records (orders, tournaments, etc.). Leave it inactive instead.' },
+      { status: 409 },
+    )
+  }
+}

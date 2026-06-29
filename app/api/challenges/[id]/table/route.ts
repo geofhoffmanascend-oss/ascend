@@ -6,7 +6,7 @@ import { getRuleset } from '@/lib/rulesets'
 import { randomBytes } from 'crypto'
 
 // POST /api/challenges/[id]/table — spawn a Phase 58 console table for a scheduled
-// challenge. Host gym admin / site_admin only. Idempotent.
+// challenge. Either competitor (or site_admin) can run it. Idempotent.
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -22,9 +22,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   if (!c) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const roles = session.user.roles ?? []
-  const isHostAdmin = roles.includes('admin') && !!c.hostGymId && session.user.gymId === c.hostGymId
-  if (!isHostAdmin && !roles.includes('site_admin')) {
-    return NextResponse.json({ error: 'Only the host gym admin can start the match' }, { status: 403 })
+  const isParty = c.challengerId === session.user.id || c.challengedId === session.user.id
+  if (!isParty && !roles.includes('site_admin')) {
+    return NextResponse.json({ error: 'Only a competitor can start the match' }, { status: 403 })
   }
   if (c.status !== 'scheduled') return NextResponse.json({ error: 'Challenge is not scheduled' }, { status: 409 })
 

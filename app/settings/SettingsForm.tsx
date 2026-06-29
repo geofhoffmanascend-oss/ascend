@@ -4,14 +4,13 @@ import { useState, useCallback } from 'react'
 import { JOURNAL_PROMPTS } from '@/lib/journalPrompts'
 import { PushPermissionButton } from '@/app/components/PushPermissionButton'
 import { Toast } from '@/app/components/Toast'
-import { ALL_GROUPS, GROUP_LABELS, GROUP_DESCRIPTIONS } from '@/lib/classGroups'
 import { GymPicker } from '@/app/components/GymPicker'
-import type { ClassGroup } from '@prisma/client'
 
 type Prefs = {
-  notifyClassUpdates:    boolean
   notifyInstructorNotes: boolean
   notifyPrivateMessages: boolean
+  notifyGroupChats:      boolean
+  notifyForumActivity:   boolean
   notifyCheckinPrompts:  boolean
   notifyFeedbackPrompts: boolean
   notifyByEmail:         boolean
@@ -23,26 +22,20 @@ type Prefs = {
 }
 
 type ForumRow = { id: string; title: string; type: string; classGroup: string | null; subscribed: boolean }
-
-type ClassGroupRow = { id: string; name: string; description: string | null }
+type ConnectedChat = { id: string; title: string; gymName: string | null; members: number; requested: boolean }
 
 type Props = {
   userId: string
   initial: Prefs
   forums: ForumRow[]
-  hiddenClassGroups: ClassGroup[]
-  classGroups: ClassGroupRow[]
-  hiddenProgramIds: string[]
+  connectedChats: ConnectedChat[]
   currentGym: { id: string; name: string } | null
 }
 
 const CATEGORY_LABELS = { wellness: 'Wellness', training: 'Training', reflection: 'Reflection' }
 
-export function SettingsForm({ userId, initial, forums: initialForums, hiddenClassGroups: initialHidden, classGroups, hiddenProgramIds: initialHiddenPrograms, currentGym }: Props) {
+export function SettingsForm({ userId, initial, forums: initialForums, connectedChats, currentGym }: Props) {
   const [prefs, setPrefs] = useState<Prefs>(initial)
-  const [hiddenGroups, setHiddenGroups] = useState<ClassGroup[]>(initialHidden)
-  const [hiddenPrograms, setHiddenPrograms] = useState<string[]>(initialHiddenPrograms)
-  const useProgramGroups = classGroups.length > 0
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
@@ -104,39 +97,16 @@ export function SettingsForm({ userId, initial, forums: initialForums, hiddenCla
     setSaved(false)
   }
 
-  function toggleHiddenGroup(group: ClassGroup) {
-    setHiddenGroups(prev =>
-      prev.includes(group) ? prev.filter(g => g !== group) : [...prev, group]
-    )
-    setSaved(false)
-  }
-
-  function toggleHiddenProgram(id: string) {
-    setHiddenPrograms(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id])
-    setSaved(false)
-  }
-
   async function handleSave() {
     setSaving(true)
-    await Promise.all([
-      fetch(`/api/users/${userId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(prefs),
-      }),
-      fetch('/api/user/class-preferences', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(useProgramGroups ? { hiddenProgramIds: hiddenPrograms } : { hiddenClassGroups: hiddenGroups }),
-      }),
-    ])
+    await fetch(`/api/users/${userId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(prefs),
+    })
     setSaving(false)
     setSaved(true)
   }
-
-  const generalForums = initialForums.filter(f => f.type !== 'class_forum' && f.type !== 'group_forum')
-  const classForums   = initialForums.filter(f => f.type === 'class_forum')
-  const groupForums   = initialForums.filter(f => f.type === 'group_forum')
 
   return (
     <div className="flex flex-col gap-6">
@@ -195,11 +165,26 @@ export function SettingsForm({ userId, initial, forums: initialForums, hiddenCla
       <section className="border border-smoke bg-paper p-6 flex flex-col gap-4">
         <p className="text-xs font-bold uppercase tracking-widest text-steel">Notification Types</p>
         <p className="text-xs text-ash -mt-2">Choose which notifications you'd like to receive.</p>
-        <Toggle label="Class updates"                                    checked={prefs.notifyClassUpdates}    onChange={() => toggle('notifyClassUpdates')} />
-        <Toggle label="Instructor notes"                                 checked={prefs.notifyInstructorNotes} onChange={() => toggle('notifyInstructorNotes')} />
-        <Toggle label="Private messages"                                 checked={prefs.notifyPrivateMessages} onChange={() => toggle('notifyPrivateMessages')} />
-        <Toggle label="Check-in reminders (15 min before class)"        checked={prefs.notifyCheckinPrompts}  onChange={() => toggle('notifyCheckinPrompts')} />
-        <Toggle label="Post-class feedback prompts (1 hr after class)"  checked={prefs.notifyFeedbackPrompts} onChange={() => toggle('notifyFeedbackPrompts')} />
+        <Toggle
+          label="Direct messages"
+          description="When someone sends you a direct message."
+          checked={prefs.notifyPrivateMessages} onChange={() => toggle('notifyPrivateMessages')} />
+        <Toggle
+          label="Group chats"
+          description="New messages in group chats you're part of."
+          checked={prefs.notifyGroupChats} onChange={() => toggle('notifyGroupChats')} />
+        <Toggle
+          label="Forum activity"
+          description="New posts in any forum you're subscribed to."
+          checked={prefs.notifyForumActivity} onChange={() => toggle('notifyForumActivity')} />
+        <Toggle
+          label="Instructor messages"
+          description="A direct message from an instructor you have an upcoming or past private lesson with."
+          checked={prefs.notifyInstructorNotes} onChange={() => toggle('notifyInstructorNotes')} />
+        <Toggle
+          label="Class check-in reminders"
+          description="A reminder 15 minutes before a class you've registered for. Only applies at participating gyms."
+          checked={prefs.notifyCheckinPrompts} onChange={() => toggle('notifyCheckinPrompts')} />
       </section>
 
       <section className="border border-smoke bg-paper p-6 flex flex-col gap-4">
@@ -228,47 +213,11 @@ export function SettingsForm({ userId, initial, forums: initialForums, hiddenCla
         />
       </section>
 
-      {/* Schedule preferences */}
-      <section className="border border-smoke bg-paper p-6 flex flex-col gap-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-steel">Schedule Preferences</p>
-          <p className="text-xs text-ash mt-1">Hide class groups you don't attend — they won't appear on your schedule. This only affects your view; admins can independently restrict your registration access.</p>
-        </div>
-        <div className="flex flex-col gap-3">
-          {useProgramGroups
-            ? classGroups.map(g => (
-                <label key={g.id} className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={!hiddenPrograms.includes(g.id)}
-                    onChange={() => toggleHiddenProgram(g.id)}
-                    className="mt-0.5 accent-brand-red"
-                  />
-                  <div>
-                    <p className="text-sm text-ink font-medium">{g.name}</p>
-                    {g.description && <p className="text-xs text-ash">{g.description}</p>}
-                  </div>
-                </label>
-              ))
-            : ALL_GROUPS.map(group => (
-                <label key={group} className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={!hiddenGroups.includes(group)}
-                    onChange={() => toggleHiddenGroup(group)}
-                    className="mt-0.5 accent-brand-red"
-                  />
-                  <div>
-                    <p className="text-sm text-ink font-medium">{GROUP_LABELS[group]}</p>
-                    <p className="text-xs text-ash">{GROUP_DESCRIPTIONS[group]}</p>
-                  </div>
-                </label>
-              ))}
-        </div>
-      </section>
+      {/* Forum subscriptions (public forums only) — saved immediately per toggle */}
+      <ForumSubscriptionsSection forums={initialForums} />
 
-      {/* Forum subscriptions — saved immediately per toggle */}
-      <ForumSubscriptionsSection generalForums={generalForums} classForums={classForums} groupForums={groupForums} />
+      {/* Group chats you can request to join (via people you follow / who follow you) */}
+      <ConnectedChatsSection chats={connectedChats} />
 
       <section className="border border-smoke bg-paper p-6 flex flex-col gap-4">
         <p className="text-xs font-bold uppercase tracking-widest text-steel">Default Journal Prompts</p>
@@ -309,18 +258,10 @@ export function SettingsForm({ userId, initial, forums: initialForums, hiddenCla
   )
 }
 
-function ForumSubscriptionsSection({
-  generalForums,
-  classForums,
-  groupForums,
-}: {
-  generalForums: ForumRow[]
-  classForums: ForumRow[]
-  groupForums: ForumRow[]
-}) {
+function ForumSubscriptionsSection({ forums }: { forums: ForumRow[] }) {
   const [subs, setSubs] = useState<Record<string, boolean>>(() => {
     const map: Record<string, boolean> = {}
-    ;[...generalForums, ...classForums, ...groupForums].forEach(f => { map[f.id] = f.subscribed })
+    forums.forEach(f => { map[f.id] = f.subscribed })
     return map
   })
   const [pending, setPending] = useState<string | null>(null)
@@ -336,61 +277,59 @@ function ForumSubscriptionsSection({
     setPending(null)
   }
 
-  const hasAny = generalForums.length > 0 || classForums.length > 0 || groupForums.length > 0
-  if (!hasAny) return null
+  if (forums.length === 0) return null
 
   return (
     <section className="border border-smoke bg-paper p-6 flex flex-col gap-4">
       <div>
         <p className="text-xs font-bold uppercase tracking-widest text-steel">Forum Subscriptions</p>
-        <p className="text-xs text-ash mt-1">Subscribed forums send you a notification when new posts are made. Class forums are auto-subscribed when you register for a class.</p>
+        <p className="text-xs text-ash mt-1">Get a notification when new posts are made in the public forums you subscribe to.</p>
       </div>
+      <div className="flex flex-col gap-3">
+        {forums.map(f => (
+          <ForumToggle key={f.id} forum={f} subscribed={subs[f.id] ?? false} loading={pending === f.id} onToggle={() => toggleForum(f.id)} />
+        ))}
+      </div>
+    </section>
+  )
+}
 
-      {generalForums.length > 0 && (
-        <div className="flex flex-col gap-3">
-          <p className="text-xs font-bold uppercase tracking-widest text-steel/60">General</p>
-          {generalForums.map(f => (
-            <ForumToggle
-              key={f.id}
-              forum={f}
-              subscribed={subs[f.id] ?? false}
-              loading={pending === f.id}
-              onToggle={() => toggleForum(f.id)}
-            />
-          ))}
-        </div>
-      )}
+function ConnectedChatsSection({ chats }: { chats: ConnectedChat[] }) {
+  const [requested, setRequested] = useState<Record<string, boolean>>(() => {
+    const map: Record<string, boolean> = {}
+    chats.forEach(c => { map[c.id] = c.requested })
+    return map
+  })
+  const [pending, setPending] = useState<string | null>(null)
 
-      {classForums.length > 0 && (
-        <div className="flex flex-col gap-3">
-          <p className="text-xs font-bold uppercase tracking-widest text-steel/60">Class Forums</p>
-          {classForums.map(f => (
-            <ForumToggle
-              key={f.id}
-              forum={f}
-              subscribed={subs[f.id] ?? false}
-              loading={pending === f.id}
-              onToggle={() => toggleForum(f.id)}
-            />
-          ))}
-        </div>
-      )}
+  async function request(chatId: string) {
+    setPending(chatId)
+    const res = await fetch(`/api/group-chats/${chatId}/join`, { method: 'POST' })
+    if (res.ok) setRequested(r => ({ ...r, [chatId]: true }))
+    setPending(null)
+  }
 
-      {groupForums.length > 0 && (
-        <div className="flex flex-col gap-3">
-          <p className="text-xs font-bold uppercase tracking-widest text-steel/60">Class Group Forums</p>
-          <p className="text-xs text-ash -mt-1">One forum per class group — subscribe to follow discussions across all classes in that group.</p>
-          {groupForums.map(f => (
-            <ForumToggle
-              key={f.id}
-              forum={f}
-              subscribed={subs[f.id] ?? false}
-              loading={pending === f.id}
-              onToggle={() => toggleForum(f.id)}
-            />
-          ))}
-        </div>
-      )}
+  if (chats.length === 0) return null
+
+  return (
+    <section className="border border-smoke bg-paper p-6 flex flex-col gap-4">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-widest text-steel">Group Chats You Can Join</p>
+        <p className="text-xs text-ash mt-1">Chats that people you’re connected to are part of. Request to join, and any member can approve you.</p>
+      </div>
+      <div className="flex flex-col gap-2">
+        {chats.map(c => (
+          <div key={c.id} className="flex items-center justify-between gap-3 border border-smoke px-3 py-2">
+            <div className="min-w-0">
+              <p className="text-sm text-ink font-medium truncate">{c.title}</p>
+              <p className="text-xs text-ash">{c.gymName ? `${c.gymName} · ` : ''}{c.members} {c.members === 1 ? 'member' : 'members'}</p>
+            </div>
+            {requested[c.id]
+              ? <span className="text-xs text-slate shrink-0">Requested</span>
+              : <button onClick={() => request(c.id)} disabled={pending === c.id} className="text-xs bg-brand-red text-paper font-bold px-3 py-1.5 disabled:opacity-50 shrink-0">Request</button>}
+          </div>
+        ))}
+      </div>
     </section>
   )
 }

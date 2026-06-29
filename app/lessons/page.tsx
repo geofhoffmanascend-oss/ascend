@@ -84,7 +84,7 @@ export default async function LessonsPage() {
 
       <p className="text-xs text-ash mb-6">
         Teach privately?{' '}
-        <Link href="/provider" className="text-brand-red font-semibold hover:underline">Offer private lessons as an independent provider →</Link>
+        <Link href="/provider" className="text-brand-red font-semibold hover:underline">Apply to be a private instructor →</Link>
       </p>
 
       {/* Instructors offering private lessons */}

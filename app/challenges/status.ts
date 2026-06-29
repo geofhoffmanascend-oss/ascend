@@ -2,8 +2,8 @@
 export const CHALLENGE_STATUS_LABELS: Record<string, string> = {
   proposed: 'Proposed',
   countered: 'Countered',
-  accepted: 'Accepted — waivers',
-  gym_pending: 'Awaiting gym',
+  accepted: 'Accepted — sign waiver',
+  gym_pending: 'Awaiting gym', // deprecated stage (old rows only)
   scheduled: 'Scheduled',
   declined: 'Declined',
   withdrawn: 'Withdrawn',

@@ -166,7 +166,7 @@ export async function POST(req: NextRequest) {
             userId: admin.id,
             type: 'general' as const,
             title: 'New gym registered',
-            body: `"${gym.name}" has been created and is awaiting review.`,
+            body: `"${gym.name}" just registered (free tier) and is live. Open it to set its tier or moderate.`,
             link: `/site-admin/gyms/${gym.id}`,
           })),
         })

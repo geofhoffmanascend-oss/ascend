@@ -4,7 +4,9 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect } from 'next/navigation'
 import prisma from '@/lib/database'
 import Image from 'next/image'
+import Link from 'next/link'
 import { OnboardingWizard } from './OnboardingWizard'
+import { primaryTourForUser, TOURS } from '@/lib/tour'
 
 export const metadata: Metadata = { title: 'Get Started' }
 
@@ -52,6 +54,12 @@ export default async function OnboardingPage({
           </div>
           <h1 className="font-display text-2xl text-ink">Let's get you set up</h1>
           <p className="text-slate text-sm mt-2">Quick setup — takes about 2 minutes. Everything is optional.</p>
+          <Link
+            href={TOURS[primaryTourForUser(user.roles ?? [])].href}
+            className="inline-block text-sm text-brand-red font-medium mt-3 hover:underline"
+          >
+            New here? Take a quick tour first →
+          </Link>
         </div>
         <OnboardingWizard
           userId={user.id}

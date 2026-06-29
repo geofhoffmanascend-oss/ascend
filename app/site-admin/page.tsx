@@ -6,7 +6,7 @@ export const metadata = { title: 'Site Admin' }
 export default async function SiteAdminPage() {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
 
-  const [totalGyms, participatingGyms, totalUsers, unaffiliatedUsers, pendingEventsCount, newGymsCount, recentGyms, pendingEvents] = await Promise.all([
+  const [totalGyms, participatingGyms, totalUsers, unaffiliatedUsers, pendingEventsCount, newGymsCount, recentGyms, pendingEvents, feedbackCount] = await Promise.all([
     prisma.gym.count(),
     prisma.gym.count({ where: { participatingStatus: 'participating' } }),
     prisma.user.count(),
@@ -15,6 +15,7 @@ export default async function SiteAdminPage() {
     prisma.gym.count({ where: { participatingStatus: 'free', createdAt: { gte: sevenDaysAgo } } }),
     prisma.gym.findMany({ orderBy: { createdAt: 'desc' }, take: 5, select: { id: true, name: true, slug: true, participatingStatus: true, createdAt: true } }),
     prisma.publicEvent.findMany({ where: { status: 'pending' }, orderBy: { createdAt: 'asc' }, take: 3, select: { id: true, title: true, type: true, city: true, state: true, startDate: true } }),
+    prisma.feedback.count().catch(() => 0),
   ])
 
   const TIER_STYLES: Record<string, string> = {
@@ -59,6 +60,11 @@ export default async function SiteAdminPage() {
           <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">New Gyms (7d)</p>
           <p className="font-display text-3xl font-bold text-ink">{newGymsCount}</p>
           <p className="text-xs text-ash mt-1">Review for outreach →</p>
+        </Link>
+        <Link href="/site-admin/user-feedback" className="border border-smoke bg-paper p-5 hover:border-steel transition-colors">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">User Feedback</p>
+          <p className="font-display text-3xl font-bold text-ink">{feedbackCount}</p>
+          <p className="text-xs text-ash mt-1">View &amp; export →</p>
         </Link>
       </div>
 

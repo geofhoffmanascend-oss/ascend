@@ -11,13 +11,15 @@ export async function GET(req: NextRequest) {
   if (!q || q.length < 2) return NextResponse.json([])
 
   // Scope DM/tag search to the searcher's own gym (multi-tenancy). Cross-gym
-  // reach is reserved for public forums, events, and private-instructor search.
+  // reach is reserved for public forums, events, private-instructor search, and
+  // group-chat invites (which pass all=1 to opt into a platform-wide search).
+  const all = req.nextUrl.searchParams.get('all') === '1'
   const gymId = session.user.gymId ?? null
 
   const users = await prisma.user.findMany({
     where: {
       id: { not: session.user.id },
-      gymId,
+      ...(all ? {} : { gymId }),
       name: { contains: q, mode: 'insensitive' },
     },
     select: { id: true, name: true, avatarUrl: true, roles: true, belt: true },

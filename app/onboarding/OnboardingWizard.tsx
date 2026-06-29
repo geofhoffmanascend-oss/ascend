@@ -9,6 +9,11 @@ import { GymForumPrompt } from '@/app/components/GymForumPrompt'
 const BELTS = ['white', 'blue', 'purple', 'brown', 'black'] as const
 type Belt = typeof BELTS[number]
 
+const TRAIN_DAYS: [string, string][] = [
+  ['monday', 'Mon'], ['tuesday', 'Tue'], ['wednesday', 'Wed'], ['thursday', 'Thu'],
+  ['friday', 'Fri'], ['saturday', 'Sat'], ['sunday', 'Sun'],
+]
+
 type OnboardForum = { id: string; title: string; type: string; posts: number; subscribers: number; subscribed: boolean }
 type ClassGroup = { id: string; name: string; description: string | null }
 type OnboardInfo = { hasAdmin: boolean; forums: OnboardForum[]; classGroups: ClassGroup[] }
@@ -61,20 +66,17 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
   const [info, setInfo] = useState<OnboardInfo | null>(null)
   const [subWorking, setSubWorking] = useState<string | null>(null)
 
-  // Step 3 — gym class-group schedule visibility (checked = shown)
-  const [checkedPrograms, setCheckedPrograms] = useState<Set<string>>(new Set())
+  // Step 3 — personal training schedule (weekday -> "HH:MM" for selected days)
+  const [trainDays, setTrainDays] = useState<Record<string, string>>({})
 
   // Step 4 — reflection
   const [whyStarted, setWhyStarted] = useState('')
   const [challenges, setChallenges] = useState('')
   const [goals, setGoals] = useState('')
 
-  const hasScheduleStep = (info?.classGroups.length ?? 0) > 0
-  // When there's no schedule step (independent users / gyms with no class
-  // groups), Step 3 is skipped — renumber the remaining steps so the labels
-  // and progress dots stay contiguous (e.g. "Step 3 of 4" instead of "Step 4 of 5").
-  const displayTotal = hasScheduleStep ? 5 : 4
-  const displayStep = hasScheduleStep ? step : step <= 2 ? step : step - 1
+  // Five steps: 1 profile, 2 gym, 3 training schedule, 4 reflection, 5 completion.
+  const displayTotal = 5
+  const displayStep = step
 
   async function patch(data: Record<string, unknown>) {
     const res = await fetch(`/api/users/${userId}`, {
@@ -89,7 +91,6 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
     const res = await fetch(`/api/gyms/${gymId}/onboarding`)
     const data: OnboardInfo = await res.json()
     setInfo(data)
-    setCheckedPrograms(new Set(data.classGroups.map(g => g.id)))
     return data
   }
 
@@ -105,18 +106,25 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
     setSubWorking(null)
   }
 
-  function toggleProgram(id: string) {
-    setCheckedPrograms(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+  function toggleTrainDay(day: string) {
+    setTrainDays(prev => {
+      const next = { ...prev }
+      if (day in next) delete next[day]
+      else next[day] = '18:00'
       return next
     })
   }
 
-  async function saveStep3() {
-    if (!info) return
-    const hiddenProgramIds = info.classGroups.map(g => g.id).filter(id => !checkedPrograms.has(id))
-    await patch({ hiddenProgramIds })
+  async function saveTrainingSchedule() {
+    const entries = Object.entries(trainDays)
+    if (entries.length === 0) return
+    await Promise.all(entries.map(([day, time]) =>
+      fetch('/api/personal-classes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: 'Training', dayOfWeek: day, startTime: time, type: 'gi' }),
+      })
+    ))
   }
 
   async function saveStep4() {
@@ -135,10 +143,10 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
     router.refresh()
   }
 
-  // Leaving the step-2 forum sub-step → schedule prefs (if the gym has groups) else reflection.
+  // Leaving the step-2 forum sub-step → training schedule.
   function afterGym() {
     setShowGymForumPrompt(false)
-    setStep(hasScheduleStep ? 3 : 4)
+    setStep(3)
   }
 
   const inputCls = 'w-full px-4 py-3 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors'
@@ -181,7 +189,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
             </div>
 
             <p className="text-xs text-ash border border-smoke bg-mist px-3 py-2">
-              Your belt is self-reported. Once you join a gym, a gym admin can verify it — verified belts show a checkmark on your profile and forum posts.
+              Your belt is self-reported — you can update it anytime.
             </p>
 
             {error && <p className="text-sm text-brand-red">{error}</p>}
@@ -218,13 +226,13 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
 
             {error && <p className="text-sm text-brand-red">{error}</p>}
 
-            <div className="flex justify-between">
-              <button onClick={() => setStep(1)} className={secondaryBtn}>← Back</button>
-              <div className="flex gap-3">
-                <button onClick={() => { setSelectedGym(null); setInfo(null); setStep(4) }} className={secondaryBtn}>I train independently</button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+              <button onClick={() => setStep(1)} className={`${secondaryBtn} w-full sm:w-auto`}>← Back</button>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button onClick={() => { setSelectedGym(null); setInfo(null); setStep(3) }} className={`${secondaryBtn} w-full sm:w-auto`}>I train independently</button>
                 <button
                   onClick={async () => {
-                    if (!selectedGym) { setStep(4); return }
+                    if (!selectedGym) { setStep(3); return }
                     setSaving(true); setError('')
                     try {
                       await fetch(`/api/gyms/${selectedGym.id}/membership`, { method: 'PUT' })
@@ -234,7 +242,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
                     finally { setSaving(false) }
                   }}
                   disabled={saving}
-                  className={primaryBtn}
+                  className={`${primaryBtn} w-full sm:w-auto`}
                 >
                   {saving ? 'Saving…' : 'Next →'}
                 </button>
@@ -290,34 +298,47 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
           </div>
         )}
 
-        {/* ── Step 3: Class-group schedule preferences (gym-defined) ── */}
+        {/* ── Step 3: Personal training schedule ── */}
         {step === 3 && (
           <div className="flex flex-col gap-5">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Step {displayStep} of {displayTotal}</p>
-              <h2 className="font-display text-xl text-ink mb-1">Which classes do you normally attend?</h2>
-              <p className="text-sm text-slate">Unchecked groups from {selectedGym?.name ?? 'your gym'} are hidden from your schedule. You can change this in Settings.</p>
+              <h2 className="font-display text-xl text-ink mb-1">Set your training schedule</h2>
+              <p className="text-sm text-slate">Pick the days you commit to train and a time for each. You'll check them off to build a consistency streak — change this anytime in My Training.</p>
             </div>
 
-            <div className="flex flex-col gap-3">
-              {info?.classGroups.map(g => (
-                <label key={g.id} className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" checked={checkedPrograms.has(g.id)} onChange={() => toggleProgram(g.id)} className="mt-0.5 w-4 h-4 accent-brand-red" />
-                  <div>
-                    <div className="text-sm font-medium text-ink">{g.name}</div>
-                    {g.description && <div className="text-xs text-slate">{g.description}</div>}
+            <div className="flex flex-col gap-2">
+              {TRAIN_DAYS.map(([val, label]) => {
+                const selected = val in trainDays
+                return (
+                  <div key={val} className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => toggleTrainDay(val)}
+                      className={`w-16 py-2 text-sm font-medium border transition-colors ${selected ? 'bg-brand-red text-paper border-brand-red' : 'border-smoke text-steel hover:border-steel'}`}
+                    >
+                      {label}
+                    </button>
+                    {selected && (
+                      <input
+                        type="time"
+                        value={trainDays[val]}
+                        onChange={e => setTrainDays(prev => ({ ...prev, [val]: e.target.value }))}
+                        className="px-3 py-2 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red"
+                      />
+                    )}
                   </div>
-                </label>
-              ))}
+                )
+              })}
             </div>
 
             {error && <p className="text-sm text-brand-red">{error}</p>}
 
-            <div className="flex justify-between">
-              <button onClick={() => { setStep(2); setShowGymForumPrompt(true) }} className={secondaryBtn}>← Back</button>
-              <div className="flex gap-3">
-                <button onClick={() => setStep(4)} className={secondaryBtn}>Skip for now</button>
-                <button onClick={async () => { setSaving(true); setError(''); try { await saveStep3(); setStep(4) } catch { setError('Failed to save. Please try again.') } finally { setSaving(false) } }} disabled={saving} className={primaryBtn}>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+              <button onClick={() => { setStep(2); setShowGymForumPrompt(Boolean(selectedGym)) }} className={`${secondaryBtn} w-full sm:w-auto`}>← Back</button>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button onClick={() => setStep(4)} className={`${secondaryBtn} w-full sm:w-auto`}>Skip for now</button>
+                <button onClick={async () => { setSaving(true); setError(''); try { await saveTrainingSchedule(); setStep(4) } catch { setError('Failed to save. Please try again.') } finally { setSaving(false) } }} disabled={saving} className={`${primaryBtn} w-full sm:w-auto`}>
                   {saving ? 'Saving…' : 'Next →'}
                 </button>
               </div>
@@ -350,7 +371,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
             {error && <p className="text-sm text-brand-red">{error}</p>}
 
             <div className="flex justify-between">
-              <button onClick={() => { if (hasScheduleStep) setStep(3); else { setStep(2); setShowGymForumPrompt(Boolean(selectedGym)) } }} className={secondaryBtn}>← Back</button>
+              <button onClick={() => setStep(3)} className={secondaryBtn}>← Back</button>
               <div className="flex gap-3">
                 <button onClick={() => setStep(5)} className={secondaryBtn}>Skip for now</button>
                 <button onClick={async () => { setSaving(true); setError(''); try { await saveStep4(); setStep(5) } catch { setError('Failed to save. Please try again.') } finally { setSaving(false) } }} disabled={saving} className={primaryBtn}>
@@ -379,24 +400,23 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
               </p>
             </div>
 
-            {selectedGym ? (
-              <Link href="/schedule" className="block border border-smoke border-l-2 border-l-brand-red bg-paper p-4 hover:border-steel transition-colors">
-                <p className="text-sm font-bold text-ink">Register for class →</p>
-                <p className="text-xs text-ash mt-0.5">See {selectedGym.name}&apos;s schedule and reserve your spot.</p>
-              </Link>
-            ) : (
-              <Link href="/events" className="block border border-smoke border-l-2 border-l-brand-red bg-paper p-4 hover:border-steel transition-colors">
-                <p className="text-sm font-bold text-ink">Find local open mats, tournaments &amp; seminars →</p>
-                <p className="text-xs text-ash mt-0.5">You're training independently — see what's happening near you.</p>
-              </Link>
-            )}
+            <Link href="/my-training" className="block border border-smoke border-l-2 border-l-brand-red bg-paper p-4 hover:border-steel transition-colors">
+              <p className="text-sm font-bold text-ink">Set your training schedule →</p>
+              <p className="text-xs text-ash mt-0.5">Pick the days you commit to train and check them off to build a streak.</p>
+            </Link>
 
             <div className="flex flex-col gap-3 border-t border-smoke pt-5">
-              <Link href="/forum" className="flex items-center justify-between py-2 text-sm text-ink hover:text-brand-red transition-colors">
+              <Link href="/lessons" className="flex items-center justify-between py-2 text-sm text-ink hover:text-brand-red transition-colors">
+                <span>Search for a Private Instructor</span><span className="text-ash">→</span>
+              </Link>
+              <Link href="/forum" className="flex items-center justify-between py-2 text-sm text-ink hover:text-brand-red transition-colors border-t border-smoke">
                 <span>Browse Forums</span><span className="text-ash">→</span>
               </Link>
               <Link href="/journal/new" className="flex items-center justify-between py-2 text-sm text-ink hover:text-brand-red transition-colors border-t border-smoke">
                 <span>Start a Journal Entry</span><span className="text-ash">→</span>
+              </Link>
+              <Link href="/events" className="flex items-center justify-between py-2 text-sm text-ink hover:text-brand-red transition-colors border-t border-smoke">
+                <span>Find Open Mats &amp; Events Near You</span><span className="text-ash">→</span>
               </Link>
             </div>
 

@@ -5,12 +5,14 @@ import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { PasswordInput } from '@/app/components/PasswordInput'
+import { SIMPLE_LAUNCH } from '@/lib/launchMode'
 
 function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const intent = searchParams.get('intent') === 'owner' ? 'owner' : 'athlete'
-  const isOwner = intent === 'owner'
+  // Public-launch pivot: gym registration is paused — everyone registers as an athlete.
+  const isOwner = !SIMPLE_LAUNCH && intent === 'owner'
   const inviteToken = searchParams.get('invite')
   const onboardingPath = isOwner ? '/onboarding/owner' : '/onboarding'
 
@@ -72,30 +74,6 @@ function RegisterForm() {
               ? "First create your account, then you'll add your gym and set it up."
               : 'Create your account to connect with your team and track your journey.'}
           </p>
-
-          {/* Intent switch */}
-          <div className="mt-4 flex gap-2 text-xs">
-            <Link
-              href="/register"
-              className={`px-3 py-1.5 border transition-colors ${
-                !isOwner
-                  ? 'border-brand-red text-ink font-semibold'
-                  : 'border-smoke text-slate hover:border-steel hover:text-ink'
-              }`}
-            >
-              Join as an athlete
-            </Link>
-            <Link
-              href="/register?intent=owner"
-              className={`px-3 py-1.5 border transition-colors ${
-                isOwner
-                  ? 'border-brand-red text-ink font-semibold'
-                  : 'border-smoke text-slate hover:border-steel hover:text-ink'
-              }`}
-            >
-              Register a gym
-            </Link>
-          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

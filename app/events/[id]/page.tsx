@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import Link from 'next/link'
 import prisma from '@/lib/database'
+import { ReportEventButton } from './ReportEventButton'
 
 const TYPE_LABELS: Record<string, string> = {
   open_mat: 'Open Mat',
@@ -147,11 +148,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         </div>
       </div>
 
-      <p className="text-xs text-ash mt-4">
-        <a href={`mailto:support@ascendit.app?subject=Report event: ${encodeURIComponent(event.title)}`} className="hover:text-ink transition-colors">
-          Report this event
-        </a>
-      </p>
+      <ReportEventButton eventId={event.id} isLoggedIn={!!session?.user?.id} />
     </div>
   )
 }

@@ -2,12 +2,20 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 type Goal = {
   id: string
   description: string
+  category: string | null
   targetDate: string | null
   completedAt: string | null
+}
+
+const CATEGORIES = ['consistency', 'technique', 'competition', 'fitness', 'mindset'] as const
+const CATEGORY_LABELS: Record<string, string> = {
+  consistency: 'Consistency', technique: 'Technique', competition: 'Competition',
+  fitness: 'Fitness', mindset: 'Mindset',
 }
 
 export function GoalsSection({ goals: initial }: { goals: Goal[] }) {
@@ -15,6 +23,7 @@ export function GoalsSection({ goals: initial }: { goals: Goal[] }) {
   const [goals, setGoals] = useState(initial)
   const [showForm, setShowForm] = useState(false)
   const [description, setDescription] = useState('')
+  const [category, setCategory] = useState('')
   const [targetDate, setTargetDate] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -26,13 +35,14 @@ export function GoalsSection({ goals: initial }: { goals: Goal[] }) {
     const res = await fetch('/api/goals', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ description, targetDate: targetDate || null }),
+      body: JSON.stringify({ description, category: category || null, targetDate: targetDate || null }),
     })
 
     if (res.ok) {
       const goal = await res.json()
       setGoals(g => [goal, ...g])
       setDescription('')
+      setCategory('')
       setTargetDate('')
       setShowForm(false)
       router.refresh()
@@ -82,7 +92,15 @@ export function GoalsSection({ goals: initial }: { goals: Goal[] }) {
             placeholder="Describe your goal…"
             autoFocus
           />
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <select
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+              className="px-4 py-2 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors"
+            >
+              <option value="">Category…</option>
+              {CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
+            </select>
             <input
               type="date"
               value={targetDate}
@@ -97,6 +115,11 @@ export function GoalsSection({ goals: initial }: { goals: Goal[] }) {
               {saving ? 'Saving…' : 'Add'}
             </button>
           </div>
+          {category === 'consistency' && (
+            <p className="text-xs text-slate">
+              Consistency goals pair with your <Link href="/my-training" className="text-brand-red hover:underline">training schedule &amp; streaks</Link>.
+            </p>
+          )}
         </form>
       )}
 
@@ -114,7 +137,15 @@ export function GoalsSection({ goals: initial }: { goals: Goal[] }) {
                 title="Mark complete"
               />
               <div className="flex-1 min-w-0">
-                <p className="text-ink text-sm">{goal.description}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {goal.category && (
+                    <span className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 bg-mist text-steel">{CATEGORY_LABELS[goal.category] ?? goal.category}</span>
+                  )}
+                  <p className="text-ink text-sm">{goal.description}</p>
+                </div>
+                {goal.category === 'consistency' && (
+                  <Link href="/my-training" className="text-brand-red text-xs hover:underline mt-0.5 inline-block">Track streak →</Link>
+                )}
                 {goal.targetDate && (
                   <p className="text-ash text-xs mt-0.5">
                     Target: {new Date(goal.targetDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}

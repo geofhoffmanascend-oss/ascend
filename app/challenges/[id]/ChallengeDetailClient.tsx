@@ -12,18 +12,20 @@ type Challenge = {
   hostGym: { id: string; name: string } | null
   rulesetName: string; rulesetId: string | null; periodMs: number | null
   scheduledAt: string | null; location: string | null; message: string | null
+  stipulations: string | null; challengerName: string | null; challengedName: string | null
   lastActorId: string | null; winnerId: string | null; winBy: string | null
 }
-type Waiver = { id: string; title: string; body: string | null; fileUrl: string | null; version: number; signed: boolean }
+type Waiver = { title: string; body: string; version: number }
+type SigState = { mySigned: boolean; otherSigned: boolean; bothSigned: boolean }
 
 const inputCls = 'w-full px-3 py-2 border border-smoke bg-paper text-ink text-sm focus:outline-none focus:border-brand-red transition-colors'
 const labelCls = 'text-xs font-bold uppercase tracking-widest text-steel'
 const primaryBtn = 'bg-brand-red text-paper font-bold text-sm tracking-wide px-5 py-2 hover:bg-red-700 transition-colors disabled:opacity-50'
 const secondaryBtn = 'border border-smoke text-steel text-sm font-medium px-4 py-2 hover:border-steel hover:text-ink transition-colors disabled:opacity-50'
 
-export function ChallengeDetailClient({ viewerId, isHostAdmin, canRespond, canWithdraw, waiver, table, challenge }: {
-  viewerId: string; isHostAdmin: boolean; canRespond: boolean; canWithdraw: boolean
-  waiver: Waiver | null; table: { id: string; publicSlug: string } | null; challenge: Challenge
+export function ChallengeDetailClient({ viewerId, amParty, canRunConsole, canRespond, canWithdraw, waiver, sig, table, challenge }: {
+  viewerId: string; amParty: boolean; canRunConsole: boolean; canRespond: boolean; canWithdraw: boolean
+  waiver: Waiver; sig: SigState; table: { id: string; publicSlug: string } | null; challenge: Challenge
 }) {
   const router = useRouter()
   const c = challenge
@@ -31,9 +33,9 @@ export function ChallengeDetailClient({ viewerId, isHostAdmin, canRespond, canWi
   const [error, setError] = useState('')
   const [countering, setCountering] = useState(false)
   const [typedName, setTypedName] = useState('')
+  const [ageConfirmed, setAgeConfirmed] = useState(false)
 
   const oppName = c.challenger.id === viewerId ? c.challenged.name : c.challenger.name
-  const amParty = c.challenger.id === viewerId || c.challenged.id === viewerId
 
   async function act(url: string, body?: unknown, method = 'POST') {
     setBusy(true); setError('')
@@ -68,6 +70,7 @@ export function ChallengeDetailClient({ viewerId, isHostAdmin, canRespond, canWi
         <Row k="Host gym" v={c.hostGym?.name ?? '—'} />
         {c.scheduledAt && <Row k="When" v={new Date(c.scheduledAt).toLocaleString()} />}
         {c.location && <Row k="Where" v={c.location} />}
+        {c.stipulations && <Row k="Stipulations" v={c.stipulations} />}
         {c.message && <Row k="Note" v={c.message} />}
       </div>
 
@@ -106,47 +109,39 @@ export function ChallengeDetailClient({ viewerId, isHostAdmin, canRespond, canWi
         />
       )}
 
-      {/* Waiver e-sign */}
-      {amParty && c.status === 'accepted' && waiver && !waiver.signed && (
+      {/* Friendly-challenge waiver — both parties sign before it schedules */}
+      {amParty && c.status === 'accepted' && !sig.mySigned && (
         <div className="mt-4 border border-smoke bg-mist p-4">
-          <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Sign waiver — {waiver.title} (v{waiver.version})</p>
-          {waiver.body && <div className="text-xs text-steel whitespace-pre-wrap max-h-40 overflow-y-auto border border-smoke bg-paper p-2 my-2">{waiver.body}</div>}
-          {waiver.fileUrl && <a href={waiver.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-brand-red">Open waiver PDF ↗</a>}
-          <div className="flex items-center gap-2 mt-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-steel mb-1">Sign to confirm — {waiver.title}</p>
+          <div className="text-xs text-steel whitespace-pre-wrap max-h-56 overflow-y-auto border border-smoke bg-paper p-3 my-2">{waiver.body}</div>
+          <label className="flex items-start gap-2 text-sm text-ink my-2">
+            <input type="checkbox" checked={ageConfirmed} onChange={e => setAgeConfirmed(e.target.checked)} className="w-4 h-4 accent-brand-red mt-0.5" />
+            I am 18 or older and agree to this release.
+          </label>
+          <div className="flex items-center gap-2 mt-1">
             <input className={inputCls + ' max-w-xs'} placeholder="Type your full legal name" value={typedName} onChange={e => setTypedName(e.target.value)} />
-            <button onClick={() => act(`/api/challenges/${c.id}/sign`, { typedName })} disabled={busy || !typedName.trim()} className={primaryBtn}>Sign</button>
+            <button onClick={() => act(`/api/challenges/${c.id}/sign`, { typedName, ageConfirmed })} disabled={busy || !typedName.trim() || !ageConfirmed} className={primaryBtn}>Sign</button>
           </div>
         </div>
       )}
-      {amParty && c.status === 'accepted' && waiver && waiver.signed && (
-        <p className="mt-4 text-sm text-steel">You&apos;ve signed the waiver. Waiting for {oppName ?? 'the other competitor'} to sign.</p>
-      )}
-      {amParty && c.status === 'accepted' && !waiver && (
-        <p className="mt-4 text-sm text-steel">Terms accepted. Waiting for the host gym to approve.</p>
+      {amParty && c.status === 'accepted' && sig.mySigned && !sig.bothSigned && (
+        <p className="mt-4 text-sm text-steel">You&apos;ve signed. Waiting for {oppName ?? 'the other competitor'} to sign the waiver.</p>
       )}
 
-      {/* Host gym approval */}
-      {isHostAdmin && c.status === 'gym_pending' && (
-        <div className="mt-4 border border-smoke bg-paper p-4">
-          <p className="text-xs font-bold uppercase tracking-widest text-steel mb-2">Host gym approval</p>
-          <p className="text-sm text-slate mb-3">Both competitors have signed. Approve to schedule this challenge.</p>
-          <button onClick={() => act(`/api/challenges/${c.id}/approve`, {})} disabled={busy} className={primaryBtn}>Approve & schedule</button>
-        </div>
-      )}
-
-      {/* Run on console */}
+      {/* Run on console — once both signed (scheduled). Either competitor (or site admin) can run it. */}
       {c.status === 'scheduled' && (
         <div className="mt-4 border border-smoke bg-paper p-4">
-          <p className="text-xs font-bold uppercase tracking-widest text-steel mb-2">Live console</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-steel mb-2">Run the match</p>
+          <p className="text-xs text-slate mb-3">Both competitors signed. Get the venue&apos;s OK, line up a black-belt referee, then run it live.</p>
           {table ? (
             <div className="flex flex-wrap gap-3">
-              {isHostAdmin && <a href={`/console/${table.id}`} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-brand-red">Open console ↗</a>}
+              {canRunConsole && <a href={`/console/${table.id}`} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-brand-red">Open console ↗</a>}
               <a href={`/scoreboard/${table.publicSlug}`} target="_blank" rel="noopener noreferrer" className="text-sm text-steel hover:text-ink">Scoreboard ↗</a>
             </div>
-          ) : isHostAdmin ? (
+          ) : canRunConsole ? (
             <button onClick={() => act(`/api/challenges/${c.id}/table`, {})} disabled={busy} className={primaryBtn}>Start match on console</button>
           ) : (
-            <p className="text-sm text-slate">Waiting for the host gym to start the match.</p>
+            <p className="text-sm text-slate">Waiting for a competitor to start the match.</p>
           )}
         </div>
       )}

@@ -21,11 +21,6 @@ const TOGGLES: { key: keyof PlatformFlags; label: string; description: string; d
     description: 'Allow users to post in the public belt forums. Disable if belt forums are not yet seeded or you want to open them gradually.',
   },
   {
-    key: 'allowEventSubmission',
-    label: 'Community Event Submission',
-    description: 'Allow any authenticated user to submit events to the public calendar. Disable before launch while the approval workflow is being tested.',
-  },
-  {
     key: 'allowTournamentRegistration',
     label: 'Tournament Registration',
     description: 'Allow members to register for tournament divisions. Disable to freeze registrations while brackets are being set up.',
@@ -63,7 +58,12 @@ const TOGGLES: { key: keyof PlatformFlags; label: string; description: string; d
   {
     key: 'eventsEnabled',
     label: 'Events (nav)',
-    description: 'Show the Events link + dashboard Events tile for non-admins.',
+    description: 'Show the Events link + dashboard Events tile for non-admins. This only controls visibility of the calendar — whether users can submit new events is the "Community Event Submission" toggle below.',
+  },
+  {
+    key: 'allowEventSubmission',
+    label: 'Community Event Submission',
+    description: 'Allow any authenticated user to submit events to the public calendar. Submitted events go to the approval queue at /site-admin/events. Leave OFF to keep the calendar curated (seeded/admin events only); turn ON to crowdsource events. Requires "Events (nav)" above to be on for users to reach the submit form.',
   },
 ]
 

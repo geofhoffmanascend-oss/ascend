@@ -36,7 +36,7 @@ export default async function ProfilePage() {
       gym: { select: { participatingStatus: true, name: true, slug: true } },
       goalsAsStudent: {
         orderBy: { createdAt: 'desc' },
-        select: { id: true, description: true, targetDate: true, completedAt: true },
+        select: { id: true, description: true, category: true, targetDate: true, completedAt: true },
       },
       competitions: {
         orderBy: { date: 'desc' },

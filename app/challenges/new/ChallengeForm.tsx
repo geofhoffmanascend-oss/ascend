@@ -16,6 +16,7 @@ export function ChallengeForm({ opponentId, opponentName }: { opponentId: string
   const [scheduledAt, setScheduledAt] = useState('')
   const [location, setLocation] = useState('')
   const [message, setMessage] = useState('')
+  const [stipulations, setStipulations] = useState('')
   const [agree, setAgree] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -44,6 +45,7 @@ export function ChallengeForm({ opponentId, opponentName }: { opponentId: string
           scheduledAt: scheduledAt || null,
           location,
           message,
+          stipulations,
         }),
       })
       const data = await res.json()
@@ -76,8 +78,8 @@ export function ChallengeForm({ opponentId, opponentName }: { opponentId: string
       </div>
 
       <div>
-        <label className={labelCls}>Host gym (optional)</label>
-        <p className="text-xs text-ash mb-1">Must be a gym that hosts challenge matches. Leave blank to settle later.</p>
+        <label className={labelCls}>Suggested venue gym (optional)</label>
+        <p className="text-xs text-ash mb-1">Just a suggestion to make it easy to find — you’ll arrange the venue and get its permission yourselves. Leave blank to settle later.</p>
         <GymPicker value={hostGym} onChange={setHostGym} onCreateNew={() => {}} />
       </div>
 
@@ -93,13 +95,18 @@ export function ChallengeForm({ opponentId, opponentName }: { opponentId: string
       </div>
 
       <div>
+        <label className={labelCls}>Custom stipulations (optional)</label>
+        <textarea className={inputCls + ' mt-1'} rows={2} value={stipulations} onChange={e => setStipulations(e.target.value)} placeholder="e.g. no heel hooks, sub-only, best of 3…" />
+      </div>
+
+      <div>
         <label className={labelCls}>Message to {opponentName} (optional)</label>
         <textarea className={inputCls + ' mt-1'} rows={3} value={message} onChange={e => setMessage(e.target.value)} placeholder="Friendly roll, gi, etc." />
       </div>
 
       <label className="flex items-start gap-2 text-xs text-steel">
         <input type="checkbox" checked={agree} onChange={e => setAgree(e.target.checked)} className="mt-0.5" />
-        <span>I understand participation is at my own risk, the host gym&apos;s own waiver governs the event, and I hold AscendIt harmless for any injury, dispute, or outcome.</span>
+        <span>I understand this is a friendly challenge. Before it&apos;s scheduled, both of us will sign a release, and we&apos;re responsible for getting any venue&apos;s permission and signing its waivers.</span>
       </label>
 
       {error && <p className="text-sm text-brand-red">{error}</p>}

@@ -75,9 +75,14 @@ export default function TourPage() {
           <p className="text-ash text-lg max-w-xl leading-relaxed">
             From your first class to your black belt — AscendIt is built for the whole journey.
           </p>
-          <Link href="/register" className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors">
-            Start for Free
-          </Link>
+          <div className="flex gap-3 flex-wrap justify-center">
+            <Link href="/register" className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-brand-red-dark transition-colors">
+              Start for Free
+            </Link>
+            <Link href="/tour/member" className="px-6 py-3 border border-steel text-ash text-sm font-medium hover:border-paper hover:text-paper transition-colors">
+              Take the interactive tour →
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -196,9 +201,14 @@ export default function TourPage() {
               Sign In
             </Link>
           </div>
-          <Link href="/tour/admin" className="text-paper/50 hover:text-paper/80 text-xs transition-colors mt-2">
-            Managing a gym? See the gym owner tour →
-          </Link>
+          <div className="flex gap-4 flex-wrap justify-center mt-2">
+            <Link href="/tour/admin" className="text-paper/50 hover:text-paper/80 text-xs transition-colors">
+              Managing a gym? See the gym owner tour →
+            </Link>
+            <Link href="/tour/instructor" className="text-paper/50 hover:text-paper/80 text-xs transition-colors">
+              Teaching? See the instructor tour →
+            </Link>
+          </div>
         </div>
       </section>
     </div>

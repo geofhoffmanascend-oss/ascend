@@ -17,21 +17,40 @@ export function addressString(p: AddressParts): string {
 }
 
 // Geocode an address (or any place string) → {lat,lng} or null.
+// Uses Google when a key is configured, otherwise falls back to OpenStreetMap
+// Nominatim (no key required) so location search works everywhere.
 export async function geocode(query: string): Promise<LatLng | null> {
+  if (!query?.trim()) return null
   const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-  if (!query?.trim() || !key) return null
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${key}`
-  try {
-    const res = await fetch(url)
-    const data = await res.json()
-    if (data.status !== 'OK' || !data.results?.[0]) {
+  if (key) {
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${key}`
+    try {
+      const res = await fetch(url)
+      const data = await res.json()
+      if (data.status === 'OK' && data.results?.[0]) {
+        const loc = data.results[0].geometry.location
+        return { lat: loc.lat, lng: loc.lng }
+      }
       if (data.status && data.status !== 'ZERO_RESULTS') {
         console.warn('[geocode]', data.status, data.error_message ?? '')
       }
-      return null
-    }
-    const loc = data.results[0].geometry.location
-    return { lat: loc.lat, lng: loc.lng }
+    } catch { /* fall through to Nominatim */ }
+  }
+  return geocodeNominatim(query)
+}
+
+// Free fallback geocoder (OpenStreetMap). Their usage policy requires a User-Agent
+// and low volume — fine for occasional provider/search geocoding.
+async function geocodeNominatim(query: string): Promise<LatLng | null> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`,
+      { headers: { 'User-Agent': 'AscendIt/1.0 (jiu-jitsu app)' } },
+    )
+    if (!res.ok) return null
+    const data = await res.json()
+    if (!Array.isArray(data) || !data[0]?.lat || !data[0]?.lon) return null
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
   } catch {
     return null
   }

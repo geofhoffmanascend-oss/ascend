@@ -41,10 +41,42 @@
 
 ---
 
-## ⏭ NEXT SESSION — Status (updated 2026-06-12)
+## ⏭ NEXT SESSION — Status (updated 2026-06-29)
 
-### ▶️ START HERE next session
-**Phase 58 (M1+M2) and Phase 59 (Challenge Matches) are DONE & browser-verified** (db pushes run; dev restarted). Next options: finish the **Phase 59 deferred bits** (below), or move to another open phase (Phase 47 beta blockers, Phase 46 gym onboarding, Phase 51 org identity).
+### ▶️ START HERE next session — PUBLIC-LAUNCH PIVOT (guide: `guides/public-launch-pivot.md`)
+**The app pivoted to a simple, social-first product; gym-management is hidden in production (code retained).** Activate the pivot in prod by setting **`NEXT_PUBLIC_LAUNCH_MODE=simple`** in Vercel (in dev leave unset to see gym features). All work below built + tsc/build clean + DB pushes run (additive). **Nothing committed to git — user does that.** No persistent dev server is left running.
+
+**DONE this session (2026-06-28/29):**
+- **Phase 1 launch switch** — `lib/launchMode.ts` `SIMPLE_LAUNCH`; hides Admin/Instructor/Vendor nav + redirects `/admin`,`/instructor`,`/vendor`,`/tournaments`,`/store`,`/gyms/register`→`/dashboard`; forces store/tournaments/**schedule** off in `getEffectiveFeatures`.
+- **Phase 2 profile self-ID** (`selfIdInstructor`/`selfIdGymOwner`, private) + Consistency·Reflection·Connection dashboard easter-egg → `/ethos` (rewritten: "The Ascent", logo, mountain/iceberg essay, no developer-"we").
+- **Phase 3 goals+self-tracking** — goal `category` (consistency→links My Training); **pushed Phase 60 tour + Phase 61 personal training live**; "My Training" in nav.
+- **Phase 4 group chats** — `Forum type=group_chat` + `ForumJoinRequest`; `/chats` + `/chats/[id]`; invite (cross-gym), connected-join, request→member-approval, gallery in chat. Pushed.
+- **Phase 5 challenge rework** — platform **VA-law dual-signed waiver** (`lib/challengeWaiver.ts`, ⚠️needs attorney), 18+, stipulations, **no gym approval**, either competitor runs console. Pushed.
+- **Tour/landing/UI sweep** — member tour edits (no class-reg/check-in/tournaments; group-chats; gallery photos; vendor line); landing "Join now" + pillars; removed gym-mgmt language (register toggle, about, BetaNotice); `independent provider`→`private instructor` across UI (code keeps `provider`/`/provider`).
+- **Feature-intro modals** — `FeatureIntroAuto` (1 mount in providers), per-feature explainer on page open, "don't show again" persisted (`User.dismissedIntros`). Pushed.
+- **Feedback button** — floating draggable + modal + admin viewer `/site-admin/user-feedback` + CSV export + `Feedback` model. Pushed. Drag-stretch bug fixed.
+- **Settings overhaul** — notification types relevance + descriptions (removed class-updates + feedback-prompts; Direct messages / Group chats / Forum activity toggles `notifyGroupChats`/`notifyForumActivity`); forum subs = **public only + dedupe** (fixes dup-forums bug); removed schedule prefs; added "Group Chats You Can Join" (follow-graph). Pushed.
+- **Onboarding** — removed gym-verify line; mobile Next on own row; removed class-groups step; **new Step 3 = personal training schedule day/time picker** (creates PersonalClass); final step "Set your training schedule" + "Search for a Private Instructor"; tour-during-onboarding returns to `/onboarding`.
+- **Schedule = personal in simple mode** — `/schedule`→`/my-training` redirect; gym Schedule nav hidden.
+- **Private-instructor application** — corrected copy (verify black belt + background check, 1–5 days); **new `ProviderApplication` model** (legal name, DOB, contact, instructor+gym contact, counties-5yr, arrest-5yr+details, consent); approval view shows it. Pushed.
+- **Geocode fix** — added **no-key OpenStreetMap/Nominatim fallback** to `lib/geocode` (Google key optional); instructor search self-heals providers missing coords (fixes "search does nothing" + "approved Test User not listed").
+
+### ⏭ NEW ACTION ITEMS (this session — not yet done)
+- **Nav: remove "Schedule"** (My Training has replaced it). In simple mode `features.schedule` is already off so the link is hidden, but the unconditional `<NavLink href="/dashboard">…</NavLink>` block + any stray Schedule link should be cleaned so it's gone for good, not just flag-gated.
+- **Nav: add "Events"** for the public events calendar (there's an `eventsNav` feature flag + `/events` page + `PublicEvent` model already).
+- [x] **Events calendar — built + seeded (2026-06-29).** `/events` now has Grid/List/Month views (`EventsClient.tsx`, AscendIt-styled, adapted from bapol). Seeded 41 approved `PublicEvent`s via `scripts/seed-events.ts` (40 §A/§B open mats over 8 weeks + Copa Virginia Fall 2026 as a `competition`). "Report this event" now notifies all site admins (`/api/events/[id]/report`). Tournament filter removed from the calendar for now (kept Competition). Smoothcomp/IBJJF are JS-rendered → no auto-scraper; refresh is manual (below).
+- 🔁 **RECURRING — Refresh events calendar. NEXT DUE: 2026-07-29 (monthly).** Run the prompt in `guides/refresh-events-calendar.md` (re-run `scripts/seed-events.ts --apply` to top up the rolling 8-week window + sweep sources for new/changed events). After each run, bump this date +1 month.
+- **(Optional) Enable submissions:** event submission is gated by the `allowEventSubmission` platform flag (currently OFF) at `/site-admin/settings` → "Community Event Submission". OFF = curated/admin-only calendar; ON = users can submit → approval queue at `/site-admin/events`.
+- **Open question for user:** add the "convicted of a violent/sexual offense?" question to the private-instructor application (safety-critical; flagged, not yet added).
+- ⚠️ **Pre-launch:** review `lib/challengeWaiver.ts` (attorney) + confirm 18+/minors; revert TEST-ONLY tournament-gate bypass.
+
+**🎯 LAUNCH TARGET 2026-07-06.** Launch blockers still: email (Resend domain), legal/ToS + waivers (attorney), rate limiting. See PHASE 62 + PHASE 47.
+
+**Phase 60 — Onboarding Tour: guide written + feature BUILT (2026-06-16).** tsc + `npm run build` clean; tour routes SSR-200 smoke-tested; feedback API verified (graceful when table absent). **NOT committed.** ⚠️ **Two things remain:** (1) run `prisma db push` (additive `User.tourSeenRoles` + `TourFeedback`) then restart dev — until then feedback isn't saved and the auto-prompt stays hidden; (2) interactive browser-verify of the driver.js spotlight + control bar at desktop & mobile. Full details in the **Phase 60** block below.
+
+Other options: finish the **Phase 59 deferred bits** (below), or move to another open phase (Phase 47 beta blockers, Phase 46 gym onboarding, Phase 51 org identity).
+
+**Phase 58 (M1+M2) and Phase 59 (Challenge Matches) are DONE & browser-verified** (db pushes run; dev restarted).
 
 **Phase 59 deferred follow-ups** (core flow works without them): (1) **public hosting directory** — `/gyms?hosting=challenges` filter so a challenger can find an open host gym (today you pick a gym via the GymPicker, which works but isn't filtered to hosts); (2) **calendar listing** — `listOnCalendar`/`publicEventId` fields exist; wire an approved challenge into a `PublicEvent` (Phase 28); (3) **onboarding step** — opt-ins live in `/settings` only, not in the onboarding wizard yet; (4) **nav entry** — `/challenges` has no header link (reached via profile button + notifications); (5) **attorney ToS copy** — the hold-harmless language (guide §6) is summarized in the challenge form checkbox + waiver, but needs real legal text (ties to Phase 43/47.2); (6) **auto-expire** — `expiresAt` is set (+14d) but nothing sweeps stale `proposed`/`countered` (no cron on Hobby; do it inline/lazily).
 
@@ -103,6 +135,105 @@ Standalone single-match console; db push run, dev restarted. Playwright-verified
 - **Phase 55** — background checks for out-of-gym private instructors + class/private role separation (gym-admin vs site-admin approval). Planned, see `memory/project_trust_safety.md`.
 - **Map display UI** (gym finder / events-near-me) — backlog.
 - Small parked: 36.7 (trim onboarding reflection), 45.8 (show phone/email on profile), 48.2 ('ScendIt Group B rename), 49.7 (forum video uploads).
+
+---
+
+## PHASE 60 — Onboarding / Feature Tour + Test-User Survey — DESIGN LOCKED, NOT STARTED (2026-06-16)
+
+**Goal (user's ask):** an interactive "introduction tour" that walks newly-registered users through *all* features so they learn the ways the app can be used. Three role tracks: **member**, **gym admin/owner**, **private instructor**. Tour renders mock pages that mimic the real UI (desktop + mobile breakpoints) pre-filled with sample data (so a brand-new user with no data still sees a full UI). Overlay arrows point at key links/buttons with back/next nav. Viewable **before** onboarding and replayable **after** via a menu. Also: a **test-user survey** to gather per-feature feedback — folded into the same guide.
+
+### ✅ Decisions locked (user-approved — "C, lets go")
+- **Render approach:** Self-contained **mock pages** at `/tour/member`, `/tour/gym`, `/tour/instructor` — faux app shell (header + body) with sample data, **no real navigation**. The coachmark engine swaps the mock "screen" as you advance through steps. Never empty, works pre-login, renders at real Tailwind breakpoints.
+- **Engine:** **driver.js** (~5kb, framework-agnostic spotlight + popover + arrows + next/back + keyboard nav). Theme to tokens (`brand-red`, Space Grotesk). (`react-joyride` was the rejected alternative.)
+- **Existing marketing tours:** **Upgrade & reuse** the current `/tour` + `/tour/admin` scroll demos + personas (`lib/tourData.ts`, personas **Marcus**/black, **Jordan**/blue, **Sam**/white); add the missing **instructor** tour. Reuse Marcus/Jordan/Sam as sample data (user did not ask for fresh personas).
+- **Replay entry points (all three):** **Settings page**, **Help page**, and **auto-prompt once on first login**. Tracked by a **per-role `tourSeen` flag** on the User. **No** profile-menu entry.
+- **Private-instructor tour scope = C (both):** one tour covers **gym-employed instructors** who teach privates (`/instructor/*` surfaces) **and** the **independent/non-gym provider** path (`/provider/*` apply → black-belt approval → discoverable in radius search), noting which applies to whom.
+- **Feature-toggle handling:** show **all** capabilities with a small "**if your gym enables this**" note rather than hiding toggled-off features — so users learn what's possible.
+- **Data-driven steps:** one config array per role: `{ screen, selector, title, body, placement }`, easy to edit/localize.
+- **Mobile wrinkle:** real nav collapses to a hamburger; mobile steps pointing at nav need an "open the menu first" hook via driver.js `onHighlightStarted`.
+
+### 📝 Survey (fold into same guide)
+- Lightweight **per-feature** prompt attached to each tour stop ("Was this clear? Would you use it?" 👍/👎 + optional note), plus a short **overall** survey at the end (most-wanted feature, confusion points, NPS-style "how likely to use weekly").
+- New **`TourFeedback`** model: `userId?` (nullable → anonymous pre-onboarding viewers OK), `role`, `featureKey`, `rating`, `comment`, `createdAt`.
+- **Results dashboard** for site-admin at `/site-admin/feedback`, aggregated by feature. Survey reuses the step configs' `featureKey`s.
+
+### 🗺️ Feature stops per tour (the agreed walk-throughs)
+**👤 Member:** 1 Dashboard · 2 Schedule · 3 Check-in (window + QR + streak) · 4 Feed (follows) · 5 Forums (gym/public DMV/program-group, threaded, per-forum galleries, subscribe) · 6 Direct messages (requests/privacy) · 7 Profile & 3-tier privacy (belt, reflection, share link) · 8 Follow graph (followers/following) · 9 Private lessons (find → slots → request → in-thread msg → review) · 10 Journal (free-form + guided, private toggle, share) · 11 Events (calendar + near me) · 12 Tournaments (browse/register, brackets, results, comp history) · 13 Challenge matches (opt-in, Challenge button, propose/negotiate, waiver e-sign, live scoreboard, record) · 14 Gallery (tagging, hashtags, slideshow/layout) · 15 Store (cart, pay-at-pickup) · 16 Notifications & Settings (push opt-in, prefs, home gym, replay tour).
+
+**🏢 Gym admin/owner:** 1 Admin dashboard (counters + setup checklist) · 2 Gym profile & settings (logo/desc, review URL, feature toggles) · 3 Members (roster, roles, belt verify/promote, per-member class access) · 4 View As (read-only impersonation) · 5 Classes (wizard, programs/groups, bulk day-of-week, sessions) · 6 Attendance reports (group/instructor/member) · 7 Forum moderation · 8 Invitations (link/QR + bulk CSV) · 9 Tournaments (create, divisions, registrations, brackets, run on console) · 10 Challenge hosting (opt-ins, visitor waivers, approve & run) · 11 Store management (products, fulfillment) · 12 Instructor oversight (approvals) · 13 Gym claiming + notifications.
+
+**🥋 Private instructor (scope C):** 1 Instructor dashboard (upcoming, registered/checked-in) · 2 Availability (recurring + one-off, blocks, "accept outside my gym" toggle) · 3 Private-lesson inbox (requests, confirm/complete, messaging) · 4 Class schedule & session detail (attendance, public/private notes) · 5 Class release/substitution · 6 Student notes & lesson plans · 7 Push to committed students · 8 Instructor-only forum · 9 Ratings & reviews (earned on completed lessons, shown on profile) · 10 Independent provider path (`/provider` apply → black-belt approval → discoverable in radius search).
+
+### ✅ BUILT 2026-06-16 — tsc + `npm run build` clean; SSR smoke-tested (NOT committed; ⚠️ needs `prisma db push`)
+1. [x] **Guide written** → `guides/phase60-onboarding-tour.md`.
+2. [x] `driver.js@1.4.0` installed.
+3. [x] Schema added (NOT yet pushed): `User.tourSeenRoles Role[]` + `TourFeedback` model (nullable userId). `prisma generate` run.
+4. [x] Mock screens for all 3 roles — `app/tour/screens/` (`MockShell`, `MockScreen` registry, `member.tsx` 15 screens, `gym.tsx` 11, `instructor.tsx` 8) + `primitives.tsx`. Reuse `lib/tourData.ts` personas.
+5. [x] `lib/tour/` step configs (`memberTour` 16 stops, `gymTour` 12, `instructorTour` 10 — scope C) + `index.ts` helpers.
+6. [x] `TourRunner.tsx` — driver.js spotlight/popover (single-highlight, manual nav) + custom bottom control bar (Back/Next/Exit/progress) + per-step 👍/👎 + end-of-tour survey modal. Mobile: hamburger step retargets to `[data-tour="nav-menu"]` and opens the menu. Keyboard ← → Esc. Theme in `app/tour/tour.css`.
+7. [x] Routes `/tour/member|gym|instructor` (public via existing `/tour` middleware rule).
+8. [x] Survey APIs: `POST /api/tour/feedback` (public, anon ok, graceful if table missing → `{ok:false}` 200) + `POST /api/tour/seen` (per-role flag). `/site-admin/feedback` results dashboard (by role → featureKey: 👍/👎, % positive, comments, NPS avg, most-wanted/confusion).
+9. [x] Entry points: Settings "Product Tour" section + Help banner (`TourReplayButton`, role-aware); first-login `TourAutoPromptGate` on `/dashboard` + `/admin` + `/instructor`; pre-onboarding link on `/onboarding`; "interactive tour" CTAs added to marketing `/tour` + `/tour/admin`.
+
+### ⚠️ Before it fully works (next session / user)
+- **Run `prisma db push`** (additive: `User.tourSeenRoles`, `TourFeedback` table) then **fully restart dev** (`fuser -k 3002/tcp`). Until then: feedback isn't persisted (route no-ops gracefully), the auto-prompt always shows (seen-flag read fails safe → no prompt actually; gate returns null on error so **auto-prompt won't show until pushed**), and `/site-admin/feedback` shows a "table not migrated" banner.
+- **Browser-verify interactively** (driver.js spotlight + control-bar click-through at desktop & mobile widths) — SSR + route 200s + API verified, but the live driver.js overlay/z-index interaction wasn't clicked through in a real browser.
+- Optional: delete `crash,md` (project root) — its context is now captured here + in the guide.
+
+---
+
+## PHASE 61 — Personal Training Schedule & Self-Tracking — BUILT 2026-06-16 (⚠️ needs `prisma db push`; NOT committed)
+Lets **any** user (no gym, or a non-participating gym with no schedule) build their own recurring schedule and one-tap check in to track consistency — feeding the **same** streak/attendance UI gym members get. Closes a real gap (attendance/streak were hard-bound to admin-created `ClassSession`s). Guide: `guides/phase61-personal-training.md`. tsc + `npm run build` clean.
+- **Schema (additive, NOT pushed):** `PersonalClass` (recurring slot: label/type/dayOfWeek/startTime/endTime/location/isActive) + `SelfCheckIn` (date `@db.Date`, optional `personalClassId`, label/note) + `User.personalClasses`/`selfCheckIns`. Reuses existing `DayOfWeek`/`ClassType` enums. `prisma generate` run.
+- **API:** `GET/POST /api/personal-classes`, `PATCH/DELETE /api/personal-classes/[id]` (soft-delete via isActive, owner-gated), `GET/POST /api/self-checkin` (date defaults today, dedupes per day+slot, no time-window), `DELETE /api/self-checkin/[id]`. `lib/personalTraining.ts` = week-key (matches dashboard), validation, labels, time format.
+- **UI:** `/my-training` — week-streak + last-30 stats, Today's slots with one-tap check-in + ad-hoc "log a session", weekly-schedule CRUD (add form, soft-remove), recent sessions w/ undo. Always available (not feature-gated).
+- **Dashboard integration:** streak + "Sessions Trained" count now **union** gym `Attendance` with `SelfCheckIn` (30-day window). Attendance card shows when either exists; a "Track your own training →" entry card shows when neither does. Link added to `/schedule` header too.
+- **⚠️ TO ACTIVATE:** run `prisma db push` (additive: `PersonalClass` + `SelfCheckIn`) then restart dev. `/my-training` needs the tables to work. (Dashboard is now **resilient** — the `selfCheckIn` query is wrapped in `.catch(() => [])` so it no longer 500s pre-push; it just shows no self check-ins until pushed.) Then browser-verify.
+
+---
+
+## Approval-flow audit & fixes — DONE 2026-06-22 (NOT committed)
+User reported getting notifications for new gyms + independent providers but couldn't find where to approve. Findings + fixes (tsc + build clean):
+- **Independent providers — flow already worked**, just undiscoverable (only reachable by clicking the notification or a card on `/provider`). **Added standing entry points:** "Provider Apps" item in the **site-admin nav** with a pending-count badge → `/provider/approvals`; plus a pending-applications card on the **`/admin` dashboard** for verified-black-belt approvers who aren't site admins (`canApproveProviders`). Approve/reject logic unchanged (`PATCH /api/provider/applications/[id]`).
+- **New gyms — there was NO approval step** (gyms auto-activate as free-tier by design). Per decision = **moderation, not a gate**: (a) fixed the misleading "awaiting review" notification copy → now says the gym is live + how to moderate; (b) the gym detail page already had a Tier selector (free/participating/inactive) + "Mark as Inactive" — reframed it as a **Moderation** section with clearer copy; (c) added **safe delete**: `DELETE /api/site-admin/gyms/[id]` (gym must be Inactive first; cascades handle memberships/settings/programs, users/forums/classes detach via SetNull; friendly 409 if linked records block) + a "Delete gym…" button in the danger zone (only once inactive).
+
+---
+
+## PHASE 62 — PUBLIC LAUNCH READINESS — 🎯 target 2026-07-06 (~2 weeks) — NEW 2026-06-22
+
+Go public in ~2 weeks. Everything below is launch-gating. The through-line: **messaging, onboarding, and scheduling must be correct, feel like primary functions, and be self-explanatory** — a brand-new member, private instructor, or gym admin should always know *what is possible and how to do it* (tooltips + short inline UI notes wherever they could be unsure). Plus a short "ascent" doctrine essay tying the tools to the app's purpose.
+
+### 62.0 — Activate pending work (UNBLOCKS launch features)
+- [ ] Additive `prisma db push` for Phase 60 (`User.tourSeenRoles`, `TourFeedback`) + Phase 61 (`PersonalClass`, `SelfCheckIn`); restart dev. (user-authorized DB op)
+- [ ] Revert the TEST-ONLY tournament participating-gym gate bypass (`app/api/admin/tournaments/route.ts` + `app/admin/tournaments/page.tsx`).
+
+### 62.1 — Messaging must be correct + a PRIMARY function (direct + gym forums)
+- [ ] **DM audit:** request/approval flow, student-DM opt-out, instructor-always-allowed, gym-scoping, blocked-user handling, unread badges, realtime delivery.
+- [ ] **Forum audit:** gym general/announcement forums, program/group forums, public belt + DMV forums, threaded replies, pinning, per-forum galleries, subscribe/auto-subscribe, moderation.
+- [ ] **Prominence:** messaging + forums reachable in ≤1 tap from the main nav (desktop + mobile hamburger); they should read as core, not buried.
+- [ ] Empty states for DMs + forums explain what they're for and how to start a conversation/post.
+
+### 62.2 — Onboarding correct + intuitive for ALL roles (member · private instructor · gym/gym-admin)
+- [ ] Walk every onboarding path end-to-end and fix wrong/missing/confusing steps: member, independent member (no gym), private/independent instructor, gym owner/admin.
+- [ ] Browser-verify the Phase 60 tour (driver.js spotlight + control bar, desktop + mobile) for all 3 tracks; confirm replay entry points (Settings/Help/first-login).
+- [ ] **Tooltip + UI-note pass:** add hover/tap tooltips + short inline notes on every primary surface (dashboard, schedule, check-in, journal, forums, DMs, lessons, gym-admin setup, instructor availability) so it's clear WHAT is possible and HOW. Track which surfaces are covered.
+- [ ] "If your gym enables this" notes on gym-gated features so users learn what's possible even when off.
+
+### 62.3 — Scheduling: gym + personal
+- [ ] Verify gym scheduling end-to-end (wizard, programs/groups, sessions, register/check-in, blocked-group graying).
+- [ ] Activate + browser-verify Phase 61 personal schedule for individuals / non-participating-gym members (add personal class → check in → streak); ensure it's discoverable from the dashboard entry card + `/schedule`.
+
+### 62.4 — Doctrine / purpose essay → **Ethos page** (BUILT 2026-06-23, NOT committed)
+- [x] **`/ethos` page created** (`app/ethos/page.tsx`), split off from About per user. Theme: "you only ever see one side" — we apprehend things one face at a time; the three tools are three ways of seeing more than the one face. Pillars: **Consistency** (schedule/check-in), **Reflection** (journal), **Connection** (shared reflection + messaging). Philosophical but not buried in the mountain metaphor (user direction). Made public in `middleware.ts`; linked from `Footer` + `About`.
+- [ ] User review of final copy (tone/length); tweak if needed.
+- [ ] Optional: short teaser hooks where each tool lives (e.g. journal empty state) pointing at the ethos.
+
+### 62.5 — Pre-launch blockers carried from Phase 47
+- [ ] Email (Resend) out of sandbox / verified domain (47.1).
+- [ ] Legal: ToS / waivers / privacy (Phase 43 — attorney copy), incl. challenge hold-harmless.
+- [ ] Rate limiting on auth + write endpoints.
+- [ ] Add `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to Vercel (prod geocoding/search); verify Vercel env + redeploy (NEXTAUTH_URL/email).
+- [ ] Delete leftover `Mat A — Demo` MatchTable row + `crash,md` file.
 
 ---
 
@@ -885,6 +1016,7 @@ Soft-release data cleanup is DONE (see 2026-06-02 log). Code pushed to `origin/m
 ### [ ] 47.6 — Seed a welcome/announcement post in General + 6am Crew so forums aren't empty on day one.
 ### [x] 47.7 — Hide dev "Delete account" button in production (`NODE_ENV !== 'production'` gate on dashboard). NOTE: `DELETE /api/account` route still live (self-only); optionally gate it too.
 ### [x] 47.8 — Forum media (photos) — DONE via **Phase 49** (per-forum galleries). Photos upload + inline + per-forum gallery; video file upload still deferred (links only).
+### [ ] 47.9 — Trademark the **AscendIt** name + logo (USPTO) — business/brand task, NOT a beta blocker. Start with a clearance knockout search ("Ascend" root is the risk), then file the word mark in Class 42 (SaaS) under use-in-commerce, logo as a 2nd app. Full step-by-step + specimen/first-use/ownership checklist + budget in `guides/trademark-clearance-checklist.md`. Ballpark: ~$700 DIY (word, 2 classes) up to ~$1.4k + ~$1–3k attorney.
 
 ---
 

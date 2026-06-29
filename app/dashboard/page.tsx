@@ -7,6 +7,7 @@ import { getMondayOfWeek } from '@/lib/generateSessions'
 import { getEffectiveFeatures } from '@/lib/features'
 import { DeleteAccountButton } from '@/app/components/DeleteAccountButton'
 import { CheckinButton } from '@/app/components/CheckinButton'
+import { TourAutoPromptGate } from '@/app/components/TourAutoPromptGate'
 
 const DAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -25,7 +26,7 @@ export default async function DashboardPage() {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
   thirtyDaysAgo.setUTCHours(0, 0, 0, 0)
 
-  const [commitments, attendanceRecords, recentLogs, recentPosts, unreadMessages] = await Promise.all([
+  const [commitments, attendanceRecords, recentLogs, recentPosts, unreadMessages, selfCheckIns] = await Promise.all([
   prisma.commitment.findMany({
     where: {
       userId: session.user.id,
@@ -83,6 +84,12 @@ export default async function DashboardPage() {
   prisma.directMessage.count({
     where: { recipientId: session.user.id, readAt: null },
   }),
+  // Phase 61 — personal self-tracking; unioned into the streak/attendance below.
+  // Resilient: returns [] if the table isn't migrated yet (pre db push) so the dashboard never 500s.
+  prisma.selfCheckIn.findMany({
+    where: { userId: session.user.id, date: { gte: thirtyDaysAgo } },
+    select: { date: true },
+  }).catch(() => [] as { date: Date }[]),
 ])
 
   const hasGym = !!session.user.gymId
@@ -91,16 +98,20 @@ export default async function DashboardPage() {
   const todayStr = new Date().toISOString().split('T')[0]
   const checkedInIds = new Set(attendanceRecords.map(r => r.classSessionId))
 
-  // Compute streak: consecutive calendar weeks (Mon–Sun) with at least one attended class
-  const attendedWeeks = new Set(
-    attendanceRecords.map(r => {
-      const d = new Date(r.classSession.date)
-      const day = d.getUTCDay()
-      const diff = (day === 0 ? -6 : 1 - day)
-      d.setUTCDate(d.getUTCDate() + diff)
-      return d.toISOString().split('T')[0]
-    })
-  )
+  // Compute streak: consecutive calendar weeks (Mon–Sun) with at least one attended class.
+  // Unions gym attendance with personal self check-ins (Phase 61) so solo trainers get a streak too.
+  const toWeekKey = (date: Date) => {
+    const d = new Date(date)
+    const day = d.getUTCDay()
+    const diff = (day === 0 ? -6 : 1 - day)
+    d.setUTCDate(d.getUTCDate() + diff)
+    return d.toISOString().split('T')[0]
+  }
+  const attendedWeeks = new Set<string>([
+    ...attendanceRecords.map(r => toWeekKey(r.classSession.date)),
+    ...selfCheckIns.map(c => toWeekKey(c.date)),
+  ])
+  const trainingCount = attendanceRecords.length + selfCheckIns.length
   let streak = 0
   const checkWeek = getMondayOfWeek(new Date())
   for (let i = 0; i < 52; i++) {
@@ -115,6 +126,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
+      <TourAutoPromptGate />
       <div className="mb-8">
         <div className="inline-block bg-brand-red px-3 py-1 mb-3">
           <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">
@@ -229,14 +241,17 @@ export default async function DashboardPage() {
           {features.privateLessons && <Tile href="/lessons" icon="🎯" accent="steel" title="Private Lessons" subtitle="Request or view" />}
         </div>
 
-        {/* Attendance — only when there's something to show */}
-        {attendanceRecords.length > 0 && (
+        {/* Attendance — only when there's something to show (gym attendance or self check-ins) */}
+        {trainingCount > 0 && (
           <div className="mb-6">
-            <p className="text-xs font-bold uppercase tracking-widest text-steel mb-3">Attendance (Last 30 Days)</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-steel">Attendance (Last 30 Days)</p>
+              <Link href="/my-training" className="text-xs text-ash hover:text-ink transition-colors">My training →</Link>
+            </div>
             <div className="flex gap-4 flex-wrap mb-3">
               <div className="border border-smoke bg-paper px-5 py-4">
-                <p className="text-2xl font-display font-bold text-ink">{attendanceRecords.length}</p>
-                <p className="text-xs text-ash uppercase tracking-wide">Classes Attended</p>
+                <p className="text-2xl font-display font-bold text-ink">{trainingCount}</p>
+                <p className="text-xs text-ash uppercase tracking-wide">Sessions Trained</p>
               </div>
               <div className="border border-smoke bg-paper px-5 py-4">
                 <p className="text-2xl font-display font-bold text-ink">{streak}</p>
@@ -244,6 +259,14 @@ export default async function DashboardPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Personal training entry — surfaced especially when there's no gym attendance to show */}
+        {trainingCount === 0 && (
+          <Link href="/my-training" className="block border border-smoke bg-paper p-4 mb-6 hover:border-steel transition-colors">
+            <p className="text-sm font-bold text-ink">Track your own training →</p>
+            <p className="text-xs text-slate mt-0.5">Build a personal schedule and log every session to start a consistency streak — no gym required.</p>
+          </Link>
         )}
 
       {/* Recent journal entries */}
@@ -304,6 +327,14 @@ export default async function DashboardPage() {
           <DeleteAccountButton />
         </div>
       )}
+
+      {/* Quiet easter-egg link to the ethos */}
+      <div className="mt-12 pt-6 border-t border-smoke text-center">
+        <Link href="/ethos" className="group inline-flex flex-wrap items-center justify-center gap-1.5 text-xs text-ash hover:text-slate transition-colors">
+          <span className="font-medium text-slate">Consistency</span> · <span className="font-medium text-slate">Reflection</span> · <span className="font-medium text-slate">Connection</span>
+          <span className="group-hover:text-brand-red">— the shared pursuit of continuous improvement on a journey towards mastery →</span>
+        </Link>
+      </div>
     </div>
   )
 }

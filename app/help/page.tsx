@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { HelpSection } from './HelpSection'
 import { BetaNotice } from '@/app/components/BetaNotice'
+import { TourReplayButton } from '@/app/tour/TourReplayButton'
+import { tourRolesForUser } from '@/lib/tour'
 
 export const metadata = { title: 'Help' }
 
@@ -25,6 +27,15 @@ export default async function HelpPage() {
         </span>
         <h1 className="font-display text-2xl text-ink">Using AscendIt</h1>
         <p className="mt-2 text-sm text-slate">Click any section to expand it.</p>
+      </div>
+
+      {/* Interactive tour */}
+      <div className="mb-8 border border-smoke bg-paper p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+        <div>
+          <p className="text-sm font-bold text-ink">Take the guided tour</p>
+          <p className="text-sm text-slate">A quick interactive walkthrough of every feature.</p>
+        </div>
+        <TourReplayButton roles={tourRolesForUser(roles)} />
       </div>
 
       {/* Student sections — always shown */}

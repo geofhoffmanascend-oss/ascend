@@ -30,7 +30,7 @@ export default async function NewChallengePage({ searchParams }: { searchParams:
     <div className="max-w-xl mx-auto px-4 py-10">
       <Link href={`/profile/${opponent.id}`} className="text-sm text-slate hover:text-ink">← Profile</Link>
       <h1 className="font-display text-2xl font-bold text-ink mt-3 mb-1">Challenge {opponent.name ?? 'member'}</h1>
-      <p className="text-sm text-slate mb-6">Propose terms. They can accept, counter, or decline. Both of you sign the host gym&apos;s waiver and the gym approves before it&apos;s scheduled.</p>
+      <p className="text-sm text-slate mb-6">Propose terms. They can accept, counter, or decline. Once you agree, both of you sign a friendly-challenge release and it&apos;s scheduled — you arrange the venue and referee yourselves.</p>
       <ChallengeForm opponentId={opponent.id} opponentName={opponent.name ?? 'member'} />
     </div>
   )

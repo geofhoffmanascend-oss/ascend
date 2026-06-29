@@ -24,6 +24,7 @@ export default async function ForumListPage() {
       select: { blockedClassGroups: true, hiddenClassGroups: true, blockedProgramIds: true },
     }),
     prisma.forum.findMany({
+      where: { type: { not: 'group_chat' } }, // group chats live at /chats, not the forum list
       include: {
         _count: { select: { posts: true } },
         posts: { orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true, author: { select: { name: true } } } },

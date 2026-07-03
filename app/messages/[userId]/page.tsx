@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { redirect, notFound } from 'next/navigation'
+import Link from 'next/link'
 import prisma from '@/lib/database'
 import { MessageThread } from './MessageThread'
 
@@ -64,7 +65,10 @@ export default async function ConversationPage({ params }: { params: Promise<{ u
             Messages
           </span>
         </div>
-        <h1 className="font-display text-2xl text-ink">{other.name ?? 'Unknown'}</h1>
+        <Link href={`/profile/${otherId}`} className="inline-flex items-center gap-2 group">
+          <h1 className="font-display text-2xl text-ink group-hover:text-brand-red transition-colors">{other.name ?? 'Unknown'}</h1>
+          <span className="text-xs text-ash group-hover:text-brand-red transition-colors">View profile →</span>
+        </Link>
       </div>
       <MessageThread
         messages={serialized}

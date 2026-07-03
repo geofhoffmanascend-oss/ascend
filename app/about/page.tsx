@@ -21,10 +21,16 @@ export default function AboutPage() {
           deepen coach-student relationships, and help every athlete track their progress from white
           belt to black belt.
         </p>
+        <p className="mt-4 text-sm text-slate leading-relaxed">
+          It&apos;s also a public marketplace for private instruction and community events: find a private
+          instructor, discover open mats and seminars near you, and connect with training partners.
+          Gym owners are welcome to list events on the public calendar and apply for an instructor
+          profile to offer private lessons.
+        </p>
         <p className="mt-4 text-sm text-slate">
           Curious about the thinking behind it?{' '}
           <Link href="/ethos" className="text-ink underline underline-offset-2 hover:text-brand-red transition-colors">
-            Read our Ethos.
+            Read the Ethos.
           </Link>
         </p>
       </div>

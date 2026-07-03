@@ -25,7 +25,7 @@ export default async function LessonsPage() {
   if (!privateLessons) redirect('/dashboard')
 
   const gymId = session.user.gymId ?? null
-  const [lessons, instructors] = await Promise.all([
+  const [lessons, instructors, me] = await Promise.all([
     prisma.privateLesson.findMany({
       where: { OR: [{ requesterId: session.user.id }, { instructorId: session.user.id }] },
       include: { requester: { select: { name: true } }, instructor: { select: { name: true } } },
@@ -37,7 +37,10 @@ export default async function LessonsPage() {
       select: { id: true, name: true, belt: true, avatarUrl: true, _count: { select: { availability: true } } },
       orderBy: { name: 'asc' },
     }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { providerStatus: true } }),
   ])
+
+  const providerStatus = me?.providerStatus ?? 'none'
 
   const pending = lessons.filter(l => l.status === 'pending')
   const confirmed = lessons.filter(l => l.status === 'confirmed')
@@ -82,10 +85,26 @@ export default async function LessonsPage() {
         </Link>
       </div>
 
-      <p className="text-xs text-ash mb-6">
-        Teach privately?{' '}
-        <Link href="/provider" className="text-brand-red font-semibold hover:underline">Apply to be a private instructor →</Link>
-      </p>
+      {/* Become / manage private-instructor status (state-aware) */}
+      {providerStatus === 'approved' ? (
+        <Link href="/provider" className="block border border-amber-300 border-l-4 border-l-amber-400 bg-amber-50/50 px-4 py-3 mb-6 hover:border-amber-400 transition-colors">
+          <p className="text-sm font-bold text-ink">🥋 You&apos;re a private instructor — manage your lessons →</p>
+          <p className="text-xs text-slate mt-0.5">Set your availability and review incoming lesson requests.</p>
+        </Link>
+      ) : providerStatus === 'pending' ? (
+        <div className="border border-smoke bg-mist/50 px-4 py-3 mb-6">
+          <p className="text-sm text-steel">Your private-instructor application is in review. <Link href="/provider" className="text-brand-red font-medium hover:underline">View status →</Link></p>
+        </div>
+      ) : (
+        <div className="border border-smoke bg-mist/50 px-4 py-3 mb-6">
+          <p className="text-sm text-steel">
+            Teach privately? Offer paid private lessons to students on and off the platform.{' '}
+            <Link href="/provider" className="text-brand-red font-semibold hover:underline">
+              {providerStatus === 'rejected' ? 'Reapply to be a private instructor →' : 'Apply to be a private instructor →'}
+            </Link>
+          </p>
+        </div>
+      )}
 
       {/* Instructors offering private lessons */}
       <section className="mb-8">

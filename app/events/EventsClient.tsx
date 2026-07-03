@@ -63,6 +63,10 @@ function formatEventDate(iso: string) {
   })
 }
 
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+}
+
 function eventLocationLine(event: Event) {
   return [event.location, [event.city, event.state].filter(Boolean).join(', ')]
     .filter(Boolean)
@@ -159,7 +163,7 @@ export function EventsClient({ events }: { events: Event[] }) {
                 <span className={`px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${TYPE_STYLES[event.type]}`}>
                   {TYPE_LABELS[event.type]}
                 </span>
-                <span suppressHydrationWarning className="text-xs text-ash">{formatEventDate(event.startDate)}</span>
+                <span suppressHydrationWarning className="text-xs text-ash">{formatEventDate(event.startDate)} · {formatTime(event.startDate)}</span>
               </div>
               <p className="font-display text-base font-bold text-ink mb-1">{event.title}</p>
               {eventLocationLine(event) && (
@@ -186,7 +190,7 @@ export function EventsClient({ events }: { events: Event[] }) {
                     <span className={`px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${TYPE_STYLES[event.type]}`}>
                       {TYPE_LABELS[event.type]}
                     </span>
-                    <span suppressHydrationWarning className="text-xs text-ash">{formatEventDate(event.startDate)}</span>
+                    <span suppressHydrationWarning className="text-xs text-ash">{formatEventDate(event.startDate)} · {formatTime(event.startDate)}</span>
                   </div>
                   <p className="font-display text-base font-bold text-ink truncate">{event.title}</p>
                   {eventLocationLine(event) && (
@@ -253,7 +257,11 @@ export function EventsClient({ events }: { events: Event[] }) {
                       today ? 'bg-brand-red/5' : ''
                     } ${isSelected ? 'ring-2 ring-brand-red ring-inset' : ''}`}
                   >
-                    <div className={`text-xs font-bold mb-1 ${today ? 'text-brand-red' : 'text-ink'}`}>{day}</div>
+                    {today ? (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-brand-red text-paper text-xs font-bold mb-1">{day}</span>
+                    ) : (
+                      <div className="text-xs font-bold mb-1 text-ink">{day}</div>
+                    )}
                     <div className="flex flex-wrap gap-1">
                       {dayEvents.slice(0, 4).map(e => (
                         <span key={`${e.type}-${e.id}`} className={`w-2 h-2 rounded-full ${TYPE_DOTS[e.type]}`} title={e.title} />
@@ -290,6 +298,7 @@ export function EventsClient({ events }: { events: Event[] }) {
                           <span className={`px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${TYPE_STYLES[event.type]}`}>
                             {TYPE_LABELS[event.type]}
                           </span>
+                          <span suppressHydrationWarning className="text-xs text-ash">{formatTime(event.startDate)}</span>
                         </div>
                         <p className="font-display text-sm font-bold text-ink">{event.title}</p>
                         {eventLocationLine(event) && (

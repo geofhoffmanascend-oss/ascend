@@ -88,7 +88,11 @@ export default async function MessagesPage() {
 
       {conversations.length === 0 ? (
         <div className="border border-smoke bg-paper p-10 text-center">
-          <p className="text-ash text-sm">No messages yet.</p>
+          <p className="text-sm font-medium text-ink">No conversations yet</p>
+          <p className="text-sm text-ash mt-1 max-w-sm mx-auto">
+            Direct messages let you talk privately with training partners, instructors, and people you
+            follow. Use <span className="font-medium text-steel">New Message</span> above to find someone and start a conversation.
+          </p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">

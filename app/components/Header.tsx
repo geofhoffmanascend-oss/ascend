@@ -11,11 +11,13 @@ import { SIMPLE_LAUNCH } from '@/lib/launchMode'
 function NavLink({
   href,
   highlight,
+  accent,
   onClick,
   children,
 }: {
   href: string
   highlight?: boolean
+  accent?: boolean
   onClick?: () => void
   children: React.ReactNode
 }) {
@@ -24,7 +26,11 @@ function NavLink({
       href={href}
       onClick={onClick}
       className={`px-1.5 py-1 text-sm font-medium transition-colors shrink-0 ${
-        highlight ? 'text-brand-red hover:text-red-400' : 'text-paper hover:text-brand-red'
+        accent
+          ? 'text-amber-300 hover:text-amber-200 font-semibold'
+          : highlight
+            ? 'text-brand-red hover:text-red-400'
+            : 'text-paper hover:text-brand-red'
       }`}
     >
       {children}
@@ -32,7 +38,7 @@ function NavLink({
   )
 }
 
-export function Header({ initialSession, features }: { initialSession?: Session | null; features?: EffectiveFeatures | null }) {
+export function Header({ initialSession, features, isProvider }: { initialSession?: Session | null; features?: EffectiveFeatures | null; isProvider?: boolean }) {
   // useSession provides reactive updates (e.g. after sign-out); initialSession
   // ensures the server and initial client render match, eliminating hydration mismatches.
   const { data: liveSession } = useSession()
@@ -48,7 +54,7 @@ export function Header({ initialSession, features }: { initialSession?: Session 
   // personal dashboard. (Their personal dashboard is still reachable from /admin.)
   const homeHref = !session
     ? '/'
-    : session.user.roles?.includes('admin')
+    : !SIMPLE_LAUNCH && session.user.roles?.includes('admin')
       ? '/admin'
       : '/dashboard'
 
@@ -94,6 +100,8 @@ export function Header({ initialSession, features }: { initialSession?: Session 
               {session.user.roles?.includes('site_admin') && (
                 <NavLink href="/site-admin" highlight>Site Admin</NavLink>
               )}
+
+              {isProvider && <NavLink href="/provider" accent>Private Instructor</NavLink>}
 
               <span className="w-px h-4 bg-steel/50 mx-1.5 shrink-0" />
               <NavBadges />
@@ -205,6 +213,8 @@ export function Header({ initialSession, features }: { initialSession?: Session 
               {session.user.roles?.includes('site_admin') && (
                 <NavLink href="/site-admin" highlight onClick={close}>Site Admin</NavLink>
               )}
+
+              {isProvider && <NavLink href="/provider" accent onClick={close}>Private Instructor</NavLink>}
 
               <div className="h-px bg-steel/30 my-2" />
               <NavLink href="/profile" onClick={close}>Profile</NavLink>

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import prisma from '@/lib/database'
 import { JoinButton } from './JoinButton'
 import { GymForumPrompt } from '@/app/components/GymForumPrompt'
+import { SIMPLE_LAUNCH } from '@/lib/launchMode'
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
@@ -111,7 +112,7 @@ export default async function GymProfilePage(
             </div>
           </div>
 
-          {/* Join action */}
+          {/* "Set as my gym" — lightweight teammate-location association (not gym management) */}
           {session?.user?.id && (
             <JoinButton
               gymId={gym.id}
@@ -120,8 +121,8 @@ export default async function GymProfilePage(
             />
           )}
 
-          {/* Phase 39 — claim CTA for an unclaimed listing */}
-          {session?.user?.id && !isClaimed && (
+          {/* Phase 39 — claim CTA for an unclaimed listing (gym management; hidden in simple-launch mode) */}
+          {!SIMPLE_LAUNCH && session?.user?.id && !isClaimed && (
             <p className="mt-4 text-xs text-ash">
               Is this your gym?{' '}
               <Link href="/gyms/claim" className="text-brand-red font-semibold hover:underline">Claim it</Link>{' '}

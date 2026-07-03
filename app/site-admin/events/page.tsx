@@ -11,18 +11,27 @@ export default async function SiteAdminEventsPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.roles?.includes('site_admin')) redirect('/dashboard')
 
-  const pending = await prisma.publicEvent.findMany({
-    where: { status: 'pending' },
-    orderBy: { createdAt: 'asc' },
+  const all = await prisma.publicEvent.findMany({
+    orderBy: { startDate: 'desc' },
     include: { submittedBy: { select: { name: true, email: true } }, gym: { select: { name: true } } },
   })
 
-  const serialized = pending.map(e => ({
-    ...e,
+  const serialized = all.map(e => ({
+    id: e.id,
+    title: e.title,
+    type: e.type,
+    description: e.description,
+    location: e.location,
+    address: e.address,
+    city: e.city,
+    state: e.state,
+    zip: e.zip,
+    status: e.status,
     startDate: e.startDate.toISOString(),
     endDate: e.endDate?.toISOString() ?? null,
+    submittedBy: e.submittedBy,
+    gym: e.gym,
     createdAt: e.createdAt.toISOString(),
-    updatedAt: e.updatedAt.toISOString(),
   }))
 
   return (
@@ -34,8 +43,8 @@ export default async function SiteAdminEventsPage() {
         <div className="inline-block bg-brand-red px-3 py-1 mb-3">
           <span className="font-display text-xs font-bold tracking-widest uppercase text-paper">Event Queue</span>
         </div>
-        <h1 className="font-display text-2xl text-ink">Pending Events</h1>
-        <p className="text-sm text-ash mt-1">{pending.length} event{pending.length !== 1 ? 's' : ''} awaiting review</p>
+        <h1 className="font-display text-2xl text-ink">Manage Events</h1>
+        <p className="text-sm text-ash mt-1">{all.length} event{all.length !== 1 ? 's' : ''} total — approve, edit, or delete</p>
       </div>
 
       <EventApprovalClient events={serialized} />

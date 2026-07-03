@@ -4,7 +4,7 @@ import { SIMPLE_LAUNCH } from '@/lib/launchMode'
 
 // Page surfaces hidden in simple-launch mode (gym-management + paused features). Code retained;
 // these just redirect to the dashboard. /site-admin stays (owner control panel).
-const LAUNCH_HIDDEN_PREFIXES = ['/admin', '/instructor', '/vendor', '/tournaments', '/store', '/gyms/register']
+const LAUNCH_HIDDEN_PREFIXES = ['/admin', '/instructor', '/vendor', '/tournaments', '/store', '/gyms/register', '/tour/admin', '/onboarding/owner']
 
 export default withAuth(
   function middleware(req) {

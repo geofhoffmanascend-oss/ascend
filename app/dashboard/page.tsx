@@ -94,6 +94,10 @@ export default async function DashboardPage() {
 
   const hasGym = !!session.user.gymId
   const isStaff = session.user.roles?.includes('instructor') || session.user.roles?.includes('admin')
+  const isApprovedProvider = (await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { providerStatus: true },
+  }))?.providerStatus === 'approved'
 
   const todayStr = new Date().toISOString().split('T')[0]
   const checkedInIds = new Set(attendanceRecords.map(r => r.classSessionId))
@@ -240,6 +244,14 @@ export default async function DashboardPage() {
           {features.journal && <Tile href="/journal" icon="📓" accent="steel" title="Journal" subtitle="Log your training" />}
           {features.privateLessons && <Tile href="/lessons" icon="🎯" accent="steel" title="Private Lessons" subtitle="Request or view" />}
         </div>
+
+        {/* Private-instructor tools — only for approved providers (distinct amber accent so it's easy to find) */}
+        {isApprovedProvider && (
+          <Link href="/provider" className="block border border-amber-300 border-l-4 border-l-amber-400 bg-amber-50/50 p-4 mb-6 hover:border-amber-400 transition-colors">
+            <p className="text-sm font-bold text-ink">🥋 Private Instructor tools →</p>
+            <p className="text-xs text-slate mt-0.5">You&apos;re an approved private instructor. Manage your availability and lesson requests.</p>
+          </Link>
+        )}
 
         {/* Attendance — only when there's something to show (gym attendance or self check-ins) */}
         {trainingCount > 0 && (

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { GymPicker } from '@/app/components/GymPicker'
 import { GymForumPrompt } from '@/app/components/GymForumPrompt'
+import { SIMPLE_LAUNCH } from '@/lib/launchMode'
 
 const BELTS = ['white', 'blue', 'purple', 'brown', 'black'] as const
 type Belt = typeof BELTS[number]
@@ -65,6 +66,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
   const [justCreatedGym, setJustCreatedGym] = useState(returningFromRegister)
   const [info, setInfo] = useState<OnboardInfo | null>(null)
   const [subWorking, setSubWorking] = useState<string | null>(null)
+  const [gymNote, setGymNote] = useState('')
 
   // Step 3 — personal training schedule (weekday -> "HH:MM" for selected days)
   const [trainDays, setTrainDays] = useState<Record<string, string>>({})
@@ -213,9 +215,21 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
 
             <GymPicker
               value={selectedGym}
-              onChange={gym => { setSelectedGym(gym); setJustCreatedGym(false) }}
-              onCreateNew={gymName => { router.push(`/gyms/register?returnTo=onboarding&name=${encodeURIComponent(gymName)}`) }}
+              onChange={gym => { setSelectedGym(gym); setJustCreatedGym(false); setGymNote('') }}
+              onCreateNew={gymName => {
+                // In simple-launch mode gym registration is paused (/gyms/register redirects),
+                // so don't dump the user out of onboarding — let them continue and add it later.
+                if (SIMPLE_LAUNCH) {
+                  setGymNote(`We couldn't find “${gymName}”. You can train independently for now and add your gym later from your profile.`)
+                  return
+                }
+                router.push(`/gyms/register?returnTo=onboarding&name=${encodeURIComponent(gymName)}`)
+              }}
             />
+
+            {gymNote && (
+              <p className="text-sm text-steel border border-smoke bg-mist px-4 py-3">{gymNote}</p>
+            )}
 
             {selectedGym && (
               <div className="flex items-center gap-2 px-4 py-3 bg-mist border border-smoke text-sm text-ink">
@@ -394,7 +408,7 @@ export function OnboardingWizard({ userId, userName, userBelt, userStripes, redi
             <div className="border border-smoke bg-mist p-4 flex items-center gap-3">
               <span className="text-2xl animate-bounce leading-none" aria-hidden>☰</span>
               <p className="text-sm text-steel">
-                Find everything — schedule, forums, messages &amp; journal — in the{' '}
+                Find everything — your training schedule, forums, messages &amp; journal — in the{' '}
                 <span className="font-bold text-ink">menu</span> at the top
                 <span className="hidden sm:inline"> right</span> of every page.
               </p>

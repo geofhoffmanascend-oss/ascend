@@ -12,7 +12,7 @@ export function BetaNotice({ variant = 'footer' }: { variant?: 'footer' | 'help'
   if (variant === 'help') {
     return (
       <div className="border border-brand-red/30 bg-brand-red/5 p-4 mb-8 text-sm text-steel">
-        <p className="font-bold text-ink mb-1">🚧 AscendIt is in active testing</p>
+        <p className="font-bold text-ink mb-1">🚧 AscendIt is in pre-launch testing</p>
         <p><span className="font-medium text-ink">Available now:</span> {AVAILABLE}.</p>
         <p className="mt-1"><span className="font-medium text-ink">Coming soon:</span> {COMING_SOON}. Some tools may be hidden while they're in development.</p>
         <p className="mt-2">
@@ -27,7 +27,7 @@ export function BetaNotice({ variant = 'footer' }: { variant?: 'footer' | 'help'
   return (
     <div className="border-t border-smoke bg-brand-red/5">
       <div className="max-w-6xl mx-auto px-4 py-3 text-xs text-steel">
-        🚧 <span className="font-bold text-ink">AscendIt is in active testing</span>.{' '}
+        🚧 <span className="font-bold text-ink">AscendIt is in pre-launch testing</span>.{' '}
         <span className="font-medium text-ink">Available now:</span> {AVAILABLE}.{' '}
         <span className="font-medium text-ink">Coming soon:</span> {COMING_SOON}.{' '}
         <Link href={ADMIN_DM} className="text-brand-red font-medium hover:underline">

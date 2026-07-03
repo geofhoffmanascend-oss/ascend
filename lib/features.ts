@@ -47,14 +47,24 @@ function applyLaunchMode(f: EffectiveFeatures): EffectiveFeatures {
 
 export async function getEffectiveFeatures(session: Session | null): Promise<EffectiveFeatures> {
   const roles = session?.user?.roles ?? []
+
+  // Fetch platform settings first: even the admin bypass must honor platform-wide
+  // *pauses* (e.g. tournament registration) so a toggled-off feature isn't surfaced.
+  const platform = await getPlatformSettings()
+
   if (roles.includes('admin') || roles.includes('site_admin')) {
-    return applyLaunchMode({ ...ALL_ON })
+    return applyLaunchMode({
+      ...ALL_ON,
+      // Platform-wide toggles stay authoritative even inside the admin bypass, so a
+      // paused feature's nav link hides for EVERYONE — including gym/site admins (who
+      // otherwise bypass toggles). Fixes the "still showing for former gym admins" case.
+      // (Admins still bypass PER-GYM toggles for other features.)
+      tournaments: platform.allowTournamentRegistration,
+      store: platform.storeEnabled,
+    })
   }
 
-  const [platform, gym] = await Promise.all([
-    getPlatformSettings(),
-    getGymFeatures(session?.user?.gymId),
-  ])
+  const gym = await getGymFeatures(session?.user?.gymId)
 
   const galleryVisible = platform.galleryEnabled && gym.galleryEnabled
 

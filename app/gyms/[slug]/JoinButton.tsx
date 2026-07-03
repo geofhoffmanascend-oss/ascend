@@ -15,16 +15,16 @@ export function JoinButton({ gymId, isMember, membershipStatus }: JoinButtonProp
   if (isMember) {
     return (
       <span className="inline-block px-4 py-2 border border-smoke text-sm text-slate font-medium">
-        {membershipStatus === 'pending' ? 'Membership pending approval' : "You're a member"}
+        {membershipStatus === 'pending' ? 'Pending approval' : 'This is your gym'}
       </span>
     )
   }
 
   if (status === 'joined') {
-    return <span className="inline-block px-4 py-2 border border-smoke text-sm text-slate font-medium">You're a member</span>
+    return <span className="inline-block px-4 py-2 border border-smoke text-sm text-slate font-medium">This is your gym</span>
   }
   if (status === 'pending') {
-    return <span className="inline-block px-4 py-2 border border-smoke text-sm text-slate font-medium">Membership pending approval</span>
+    return <span className="inline-block px-4 py-2 border border-smoke text-sm text-slate font-medium">Pending approval</span>
   }
 
   async function handleJoin() {
@@ -46,7 +46,7 @@ export function JoinButton({ gymId, isMember, membershipStatus }: JoinButtonProp
       disabled={loading}
       className="px-6 py-3 bg-brand-red text-paper font-bold text-sm tracking-wide hover:bg-red-700 transition-colors disabled:opacity-60"
     >
-      {loading ? 'Joining…' : 'Join this gym'}
+      {loading ? 'Saving…' : 'Set as my gym'}
     </button>
   )
 }

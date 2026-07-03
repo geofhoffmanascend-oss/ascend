@@ -5,6 +5,7 @@ import './globals.css'
 import { getServerSession } from 'next-auth'
 import { authOptions } from './api/auth/[...nextauth]/route'
 import { getEffectiveFeatures } from '@/lib/features'
+import prisma from '@/lib/database'
 import { Providers } from './providers'
 import { Header } from './components/Header'
 import { Footer } from './components/Footer'
@@ -39,6 +40,9 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions)
   const features = session ? await getEffectiveFeatures(session) : null
+  const isProvider = session?.user?.id
+    ? (await prisma.user.findUnique({ where: { id: session.user.id }, select: { providerStatus: true } }))?.providerStatus === 'approved'
+    : false
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
       <head>
@@ -48,7 +52,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Providers session={session}>
           <LayoutChrome
             banner={<ViewAsBanner />}
-            header={<Header initialSession={session} features={features} />}
+            header={<Header initialSession={session} features={features} isProvider={isProvider} />}
             footer={<Footer />}
           >
             {children}
